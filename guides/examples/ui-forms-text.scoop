@@ -1,0 +1,137 @@
+//! dep: scoop:scoop.window:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+import scoop.window.Utf8Range
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.text.*
+
+/** Keeps only ASCII digits. */
+fun digitsOnly(text: String): Boolean {
+    for (character in text)
+        if (character.code < 48 || character.code > 57)
+            return false
+    return true
+}
+
+/** Removes spaces and dashes that a paste brought in, e.g. "138-0013 8000". */
+fun stripSeparators(candidate: TextEditCandidate): TextEditDecision {
+    val removals = ArrayList<TextEditReplacement>()
+    var offset = 0L
+    for (character in candidate.after.text) {
+        val width = character.toString().byteLength
+        if (character == ' ' || character == '-')
+            removals.add(TextEditReplacement(Utf8Range(offset, offset + width), ""))
+        offset += width
+    }
+    return TextEditDecision.Transform(removals.toArray())
+}
+
+class TextInputs(scope: ComponentScope): Component(scope) {
+    // The theme in effect, used to paint the page background.
+    private val theme = currentThemeSource()
+    // The caller owns every editing model; controls only borrow them.
+    private val name = TextEditorState()
+    private val phone = TextEditorState()
+    private val password = TextEditorState()
+    private val site = TextEditorState("scoop-lang.org")
+    private val note = TextEditorState()
+    private val code = TextEditorState()
+    private val revealed = state(false)
+    private val greeting = state("Press Enter in the name field.")
+    private val verified = state("")
+
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val name = this.name
+        val phone = this.phone
+        val password = this.password
+        val site = this.site
+        val note = this.note
+        val code = this.code
+        val revealed = this.revealed
+        val greeting = this.greeting
+        val verified = this.verified
+        val content =
+            column {
+                this.typography("Text input", TypographyRole.H3)
+                this.input(name) {
+                    this.placeholder = "Your name"
+                    this.policy = textEditPolicy { this.maxLength = Some(20L) }
+                    this.onSubmit = { editor -> greeting.value = f"Hello, ${editor.text}!" }
+                }
+                this.label(greeting.value)
+                this.input(phone) {
+                    this.placeholder = "Phone (digits only, paste may contain spaces)"
+                    this.policy =
+                        textEditPolicy {
+                            this.maxLength = Some(11L)
+                            this.paste { candidate -> stripSeparators(candidate) }
+                            this.accepts { text -> digitsOnly(text) }
+                        }
+                }
+                this.row {
+                    this.input(password) {
+                        this.placeholder = "Password"
+                        this.projection =
+                            if (revealed.value)
+                                textProjection()
+                            else
+                                textMask()
+                    }
+                    this.button(
+                        if (revealed.value)
+                            "Hide"
+                        else
+                            "Show",
+                        { revealed.value = !revealed.value }
+                    ) { this.variant = ButtonVariant.Outline }
+                    this.spacing = 8.0
+                }
+                this.inputGroup {
+                    this.addon { this.text("https://") }
+                    this.input(site) { this.placeholder = "example.com" }
+                    this.addon(InputGroupAlign.InlineEnd) {
+                        this.button("Clear", { site.replaceAll("") })
+                    }
+                }
+                this.textarea(note) {
+                    this.rows = 4L
+                    this.placeholder = "A longer note. Primary+Enter submits."
+                    this.onSubmit =
+                        {
+                            editor -> greeting.value =
+                                f"Note saved (${editor.text.charLength} chars)"
+                        }
+                }
+                this.typography("Verification code", TypographyRole.Small)
+                this.inputOtp(code, 6L) {
+                    this.onComplete = { editor -> verified.value = f"Code ${editor.text} complete" }
+                }
+                this.label(verified.value)
+                this.spacing = 12.0
+                this.padding = Insets.all(20.0)
+                this.alignment = CrossAlignment.Stretch
+            }
+        return frame(content) {
+            this.alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            this.style { this.background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Text input", { scope -> TextInputs(scope) })
+    }
+}

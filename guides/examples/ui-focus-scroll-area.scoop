@@ -1,0 +1,92 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+import scoop.graphics.Paint
+import scoop.graphics.Point
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.text.TextEditorState
+
+class ScrollDemo(scope: ComponentScope): Component(scope) {
+    // The theme in effect, used to paint the page background.
+    private val theme = currentThemeSource()
+    private val scroll = ScrollState()
+    private val reply = TextEditorState()
+    private val replyFocus = FocusHandle()
+
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val scroll = this.scroll
+        val reply = this.reply
+        val replyFocus = this.replyFocus
+        val messages =
+            column {
+                for (index in 1 .. 40) {
+                    this.label(f"Message ${index}")
+                    this.separator()
+                }
+                this.input(reply) {
+                    this.placeholder = "Reply at the very bottom"
+                    this.focus = FocusOptions(Some(replyFocus))
+                }
+                this.spacing = 8.0
+                this.padding = Insets.all(12.0)
+                this.alignment = CrossAlignment.Stretch
+            }
+        val content =
+            column {
+                this.row {
+                    this.button("Top", { scroll.scrollTo(Point(0.0, 0.0)) })
+                    this.button(
+                        "Bottom (animated)",
+                        { scroll.animateTo(Point(0.0, scroll.maximum.y)) }
+                    )
+                    this.button(
+                        "Down 100",
+                        {
+                            scroll.scrollBy(Point(0.0, 100.0));
+                            Unit
+                        }
+                    )
+                    this.button(
+                        "Focus reply",
+                        {
+                            replyFocus.requestFocus();
+                            Unit
+                        }
+                    )
+                    this.spacing = 8.0
+                }
+                this.scrollArea(messages) {
+                    this.state = Some(scroll)
+                    this.height = Some(320.0)
+                }
+                this.label(
+                    f"offset ${scroll.offset.y.toInt()} / ${scroll.maximum.y.toInt()}, viewport ${
+                        scroll.viewport.height.toInt()
+                    }"
+                )
+                this.spacing = 12.0
+                this.padding = Insets.all(20.0)
+                this.alignment = CrossAlignment.Stretch
+            }
+        return frame(content) {
+            this.alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            this.style { this.background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Scroll", { scope -> ScrollDemo(scope) })
+    }
+}

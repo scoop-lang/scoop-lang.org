@@ -1,0 +1,41 @@
+package guide.examples.shopping
+
+import scoop.test.*
+
+@Test
+private class ShoppingListTests {
+    private val list = ShoppingList()
+
+    @Test
+    fun `adding trims text and updates the summary`() {
+        assertEquals("Nothing to buy", list.summary)
+        assertTrue(list.add("  milk "))
+        assertEquals("milk", list.items.value[0L])
+        assertEquals("1 item", list.summary)
+    }
+
+    @Test
+    fun `empty and duplicate items are rejected`() {
+        assertFalse(list.add("   "))
+        assertTrue(list.add("milk"))
+        assertFalse(list.add("milk"))
+        assertEquals(1L, list.items.value.size)
+    }
+
+    @Test
+    fun `the list stops at its limit`() {
+        for (name in ["a", "b", "c", "d", "e"])
+            assertTrue(list.add(name))
+        assertFalse(list.add("f"))
+        assertEquals("5 items", list.summary)
+        list.clear()
+        assertEquals("Nothing to buy", list.summary)
+    }
+
+    @Test
+    fun `a binding writes through to the same state`() {
+        val items = list.items.binding()
+        items.value = ["tea"]
+        assertEquals("1 item", list.summary)
+    }
+}

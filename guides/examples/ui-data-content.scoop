@@ -1,0 +1,142 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.avatar as makeAvatar
+import scoop.ui.component.badge as makeBadge
+import scoop.ui.component.button as makeButton
+import scoop.ui.component.column as makeColumn
+import scoop.ui.component.typography as makeText
+import scoop.ui.style.Insets
+import scoop.ui.style.Theme
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+
+class UploadModel {
+    val loading = state(true)
+    val uploaded = state(35.0)
+    val files = state(0)
+
+    fun advance() {
+        val next = uploaded.value + 15.0
+        uploaded.value =
+            if (next > 100.0)
+                100.0
+            else
+                next
+    }
+}
+
+fun contentPage(model: UploadModel, theme: Theme): View {
+    val profile =
+        makeColumn {
+            contentItem {
+                title("Ada Lovelace")
+                description("Owner · updated just now")
+                media(makeAvatar("AL") { badge() })
+                actions(makeBadge("Admin") { variant = ButtonVariant.Secondary })
+                variant = ItemVariant.Outline
+            }
+            avatarGroup {
+                avatar("AL")
+                avatar("LT")
+                avatar("GH")
+                count(4L)
+            }
+            spacing = 12.0
+        }
+    val upload =
+        makeColumn {
+            progress(Some(model.uploaded.value)) {
+                label("Upload")
+                showValue = true
+            }
+            row {
+                button("+15%", { model.advance() })
+                spinner { running = model.uploaded.value < 100.0 }
+                spacing = 12.0
+                alignment = CrossAlignment.Center
+            }
+            spacing = 12.0
+            alignment = CrossAlignment.Stretch
+        }
+    val left =
+        makeColumn {
+            row {
+                button(
+                    if (model.loading.value)
+                        "Reveal content"
+                    else
+                        "Show skeleton",
+                    { model.loading.value = !model.loading.value }
+                ) { variant = ButtonVariant.Outline }
+                badge(f"${model.files.value} files")
+                spacing = 12.0
+                alignment = CrossAlignment.Center
+            }
+            skeleton(profile) { loading = model.loading.value }
+            alert(makeText("Storage is 90% full.", TypographyRole.Muted)) {
+                title("Almost out of space")
+                variant = AlertVariant.Destructive
+            }
+            spacing = 16.0
+            alignment = CrossAlignment.Stretch
+        }
+    val right =
+        makeColumn {
+            card(upload) {
+                title("Project files")
+                description("Uploads continue in the background.")
+                footer(makeButton("Add file", { model.files.value += 1 }))
+            }
+            if (model.files.value == 0)
+                emptyState(makeButton("Add file", { model.files.value += 1 })) {
+                    title("No files yet")
+                    description("Files you add appear here.")
+                    outlined = true
+                }
+            spacing = 16.0
+            alignment = CrossAlignment.Stretch
+        }
+    val content =
+        row {
+            item(left) {
+                grow = 1.0
+                basis = FlexBasis.Fixed(0.0)
+            }
+            item(right) {
+                grow = 1.0
+                basis = FlexBasis.Fixed(0.0)
+            }
+            spacing = 24.0
+            alignment = CrossAlignment.Start
+        }
+    return page(theme, content)
+}
+
+/** Paints the theme background and places the content at the top-left. */
+fun page(theme: Theme, content: View): View =
+    frame(content) {
+        padding = Some(Insets.all(24.0))
+        alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+        style { background(Some(Paint(theme.tokens.palette.background.background))) }
+    }
+
+class ContentDemo(scope: ComponentScope): Component(scope) {
+    private val model = UploadModel()
+    private val theme = currentThemeSource()
+    public override fun render(): View = contentPage(model, theme.current.value)
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Content", { scope -> ContentDemo(scope) })
+    }
+}

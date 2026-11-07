@@ -1,0 +1,72 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+import scoop.graphics.Color
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+
+fun swatch(color: Color, radius: Double = 0.0): View =
+    frame(empty()) {
+        style {
+            background(Some(Paint(color)))
+            corners(Corners.all(radius))
+        }
+    }
+
+fun cover(): View =
+    absolute {
+        // Stretch pins both edges: the background fills the whole container.
+        item(swatch(Color(0.16, 0.20, 0.32), 12.0)) {
+            horizontal = AbsoluteAxis.Stretch()
+            vertical = AbsoluteAxis.Stretch()
+        }
+        // Declared before the title but drawn above everything: zIndex wins.
+        // A row measures its children at natural width first, so the badge hugs its text
+        // instead of stretching to the container width like a bare bounded label would.
+        item(frame(row { label("NEW") { style { color = Some(Color.White); weight = Some(700) } } }) {
+            padding = Some(Insets(8.0, 4.0, 8.0, 4.0))
+            style {
+                background(Some(Paint(Color(0.90, 0.30, 0.25))))
+                corners(Corners.all(6.0))
+            }
+        }) {
+            horizontal = AbsoluteAxis.End(12.0)
+            vertical = AbsoluteAxis.Start(12.0)
+            zIndex = 1
+        }
+        item(label("Analytical Engine") {
+            style { color = Some(Color.White); fontSize = Some(22.0); weight = Some(700) }
+        }) {
+            horizontal = AbsoluteAxis.Start(16.0)
+            vertical = AbsoluteAxis.End(16.0)
+        }
+        // A fixed 40x40 square centered in the container.
+        item(swatch(Color(1.0, 1.0, 1.0, 0.25), 20.0)) {
+            horizontal = AbsoluteAxis.Center(0.0, Some(40.0))
+            vertical = AbsoluteAxis.Center(0.0, Some(40.0))
+        }
+    }
+
+class CoverDemo(scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+
+    public override fun render(): View {
+        val page = this.theme.current.value.tokens.palette.background.background
+        // aspectRatio keeps 16:9 inside the 420-wide frame: the cover is 420 x 236.25.
+        return frame(
+            frame(aspectRatio(cover(), 16.0 / 9.0)) { width = Some(420.0) }
+        ) { style { background(Some(Paint(page))) } }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Absolute", { scope -> CoverDemo(scope) })
+    }
+}

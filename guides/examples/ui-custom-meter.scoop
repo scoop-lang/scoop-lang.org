@@ -1,0 +1,147 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.graphics.text:0.1.0
+//! dep: scoop:scoop.surface:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+import scoop.graphics.*
+import scoop.graphics.text.TextAlignment
+import scoop.surface.*
+import scoop.ui.*
+import scoop.ui.component.label
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.window.*
+
+/** Props of the self-drawn meter: the current level and how to change it. */
+struct MeterInput(val level: Int, val steps: Int, val onChange: (Int) -> Unit)
+
+class MeterDemo(scope: ComponentScope): Component(scope) {
+    private val level = state(3)
+
+    public override fun render(): View {
+        val level = this.level
+        val caption =
+            label(f"Level ${level.value} of 10") { settings { alignment = TextAlignment.Center } }
+        return element(
+            MeterInput(level.value, 10, { next -> level.value = next }),
+            { props, mount -> Meter(props, mount) },
+            [caption]
+        )
+    }
+}
+
+class Meter(private val props: Props<MeterInput>, scope: ComponentScope): Element<Unit>(scope) {
+    private var area: InputArea? = None
+    private var fill: Animatable<Double>? = None
+    private var marker: Path? = None
+    private var dragging = false
+    private var track = Rect(0.0, 0.0, 0.0, 0.0)
+
+    public override fun onMount() {
+        // Resources registered here are closed automatically on unmount.
+        marker =
+            Some(
+                scope.resource {
+                    path {
+                        moveTo(Point(-7.0, 0.0))
+                        lineTo(Point(7.0, 0.0))
+                        lineTo(Point(0.0, 9.0))
+                        closeContour()
+                    }
+                }
+            )
+        fill = Some(scope.animation(fraction()))
+        area = Some(scope.createArea { current, event -> handle(current, event) })
+    }
+
+    /** Pointer handling: press or drag picks a level, release ends the drag. */
+    private fun handle(current: RoutedEventContext, event: InputEvent) {
+        if (current.phase != RoutedPhase.Target)
+            return
+        when (event) {
+            case Pointer(InputPointerEvent.Button(_, MouseButton.Left, button, _)) -> {
+                dragging = button == ElementState.Pressed
+                if (dragging)
+                    pick(current.localPosition!!)
+                current.consume()
+            }
+            case Pointer(InputPointerEvent.Moved(_)) -> {
+                if (dragging) {
+                    pick(current.localPosition!!)
+                    current.consume()
+                }
+            }
+            case Pointer(InputPointerEvent.Cancelled(_, _)) -> dragging = false
+            else -> {}
+        }
+    }
+
+    private fun fraction(): Double = props.value.level.toDouble() / props.value.steps.toDouble()
+
+    /** Converts a local pointer position into a level and reports it upward. */
+    private fun pick(position: Point) {
+        var ratio = (position.x - track.x) / track.width
+        if (ratio < 0.0)
+            ratio = 0.0
+        if (ratio > 1.0)
+            ratio = 1.0
+        val next = (ratio * props.value.steps.toDouble() + 0.5).toInt()
+        if (next != props.value.level)
+            props.value.onChange(next)
+    }
+
+    /** The track sits in a 96-point band centered vertically in the element. */
+    private fun trackRect(size: Size): Rect =
+        Rect(24.0, (size.height - 96.0) / 2.0 + 24.0, size.width - 48.0, 14.0)
+
+    public override fun update(): UiInvalidation {
+        // New Props arrived: start a spring toward the new level.
+        val target = fraction()
+        if (fill!!.target != target)
+            fill!!.animateTo(target, AnimationSpec.Spring())
+        return UiInvalidation.Scene
+    }
+
+    public override fun measure(context: MeasureContext, constraints: Constraints): LayoutResult<
+        Unit
+    > {
+        val size = constraints.constrain(Size(constraints.maxWidth ?: 360.0, 96.0))
+        val bar = trackRect(size)
+        // Measure the caption as wide as the track, then place it below the track.
+        context.measureChild(0L, Constraints(maxWidth = Some(bar.width)))
+        context.placeChild(0L, Point(bar.x, bar.y + 28.0))
+        return LayoutResult(LayoutMetrics(size), Unit)
+    }
+
+    public override fun scene(context: SceneContext, layout: Unit) {
+        track = trackRect(context.size)
+        val filled = Rect(track.x, track.y, track.width * fill!!.value, track.height)
+        context.place(area!!, Rect(0.0, 0.0, context.size.width, context.size.height))
+        // Background drawing first, then the child caption, then the marker on top.
+        context.draw {
+            paint ->
+            paint.canvas.clear(Color(0.96, 0.97, 0.99))
+            paint.canvas.drawRoundRect(track, 7.0, 7.0, Paint(Color(0.86, 0.88, 0.92)))
+            paint.canvas.drawRoundRect(filled, 7.0, 7.0, Paint(Color(0.18, 0.42, 0.85)))
+        }
+        context.children()
+        context.draw {
+            paint ->
+            paint.canvas.save()
+            paint.canvas.translate(filled.x + filled.width, track.y - 11.0)
+            paint.canvas.drawPath(marker!!, Paint(Color(0.12, 0.27, 0.65)))
+            paint.canvas.restore()
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Meter", { scope -> MeterDemo(scope) })
+    }
+}

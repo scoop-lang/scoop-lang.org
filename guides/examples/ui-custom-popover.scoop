@@ -1,0 +1,145 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.surface:0.1.0
+import scoop.graphics.*
+import scoop.surface.InputArea
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+
+class ColorPicker(scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+    private val open = state(false)
+    private val choice = state("none")
+    private val anchor = LayoutAnchor()
+
+    public override fun render(): View {
+        val open = this.open
+        val choice = this.choice
+        val anchor = this.anchor
+        val palette = this.theme.current.value.tokens.palette
+
+        // The trigger: an ordinary button wrapped by an element that publishes the anchor.
+        val trigger =
+            element(
+                anchor,
+                { props, mount -> AnchorBox(props, mount) },
+                [button("Choose a color", { open.value = !open.value })]
+            )
+
+        // The layer content: a styled card whose blank area still counts as "inside".
+        val pick =
+            {
+                name: String ->
+                choice.value = name
+                open.value = false
+            }
+        val card =
+            styled(
+                frame(
+                    column {
+                        spacing = 6.0
+                        label("Pick one")
+                        row {
+                            spacing = 6.0
+                            button("Red", { pick("red") })
+                            button("Green", { pick("green") })
+                            button("Blue", { pick("blue") })
+                        }
+                    }
+                ) {
+                    // Layers get bounded constraints; give the card its own width.
+                    width = Some(240.0)
+                    padding = Some(Insets.all(12.0))
+                }
+            ) {
+                style {
+                    background = Some(Paint(palette.popover.background))
+                    border = Some(Border.all(1.0, palette.border))
+                    corners = Corners.all(10.0)
+                    boxShadows = [BoxShadow(Point(0.0, 6.0), 10.0, 10.0, palette.shadow)]
+                }
+            }
+        val panel = element({ mount -> PanelArea(mount) }, [card])
+
+        val layer =
+            portal(open.binding(), panel) {
+                anchored(anchor) {
+                    preferredSide = OverlaySide.Bottom
+                    gap = 6.0
+                }
+                dismiss {
+                    escape = true
+                    outsidePress = OutsidePress.CloseAndConsume
+                }
+            }
+
+        val content =
+            column {
+                spacing = 12.0
+                row {
+                    spacing = 12.0
+                    alignment = CrossAlignment.Center
+                    add(trigger)
+                    label(f"Selected: ${choice.value}")
+                }
+                add(layer)
+            }
+        return frame(content) {
+            padding = Some(Insets.all(24.0))
+            alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            style { background(Some(Paint(palette.background.background))) }
+        }
+    }
+}
+
+/** Passes its single child through and reports the child's rectangle as an anchor. */
+class AnchorBox(private val props: Props<LayoutAnchor>, scope: ComponentScope): Element<Unit>(
+    scope
+) {
+    public override fun onMount() {
+        scope.layoutAnchor(props.value)
+    }
+    public override fun measure(context: MeasureContext, constraints: Constraints): LayoutResult<
+        Unit
+    > {
+        val child = context.measureChild(0L, constraints)
+        context.placeChild(0L, Point(0.0, 0.0))
+        return LayoutResult(child, Unit)
+    }
+    public override fun scene(context: SceneContext, layout: Unit) {
+        context.anchor(props.value, Rect(0.0, 0.0, context.size.width, context.size.height))
+        context.children()
+    }
+}
+
+/** Declares the panel's whole rectangle as an input area so clicks on padding stay inside. */
+class PanelArea(scope: ComponentScope): Element<Unit>(scope) {
+    private var area: InputArea? = None
+    public override fun onMount() {
+        area = Some(scope.createArea())
+        scope.routeChildren(area!!)
+    }
+    public override fun measure(context: MeasureContext, constraints: Constraints): LayoutResult<
+        Unit
+    > {
+        val child = context.measureChild(0L, constraints)
+        context.placeChild(0L, Point(0.0, 0.0))
+        return LayoutResult(child, Unit)
+    }
+    public override fun scene(context: SceneContext, layout: Unit) {
+        context.place(area!!, Rect(0.0, 0.0, context.size.width, context.size.height))
+        context.children()
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Popover", { scope -> ColorPicker(scope) })
+    }
+}

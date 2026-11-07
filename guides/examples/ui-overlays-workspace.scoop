@@ -1,0 +1,164 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.column as makeColumn
+import scoop.ui.component.command as makeCommand
+import scoop.ui.component.frame as makeFrame
+import scoop.ui.component.resizable as makeResizable
+import scoop.ui.component.sidebarMenu as makeSidebarMenu
+import scoop.ui.component.textarea as makeEditor
+import scoop.ui.component.typography as makeText
+import scoop.ui.style.Insets
+import scoop.ui.style.Theme
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+import scoop.ui.text.TextEditorState
+
+class WorkspaceModel {
+    val navigation = state(true)
+    val tab = state<Int?>(Some(0))
+    val commandsOpen = state(false)
+    val log = state("Ready")
+    val draft = TextEditorState("Write the project plan here.")
+    val query = TextEditorState()
+    val queryFocus = FocusHandle()
+    val sizes =
+        state(
+            [
+                ResizableSize(ViewKey.Text("editor"), 0.7),
+                ResizableSize(ViewKey.Text("inspector"), 0.3)
+            ]
+        )
+    val commands = workspaceCommands(this)
+
+    fun openCommands() {
+        query.replaceAll("")
+        commandsOpen.value = true
+    }
+}
+
+fun workspaceCommands(model: WorkspaceModel): CommandContent =
+    commandItems {
+        group(ViewKey.Text("view"), "View") {
+            item(ViewKey.Text("document"), "Show document", { model.tab.value = Some(0) })
+            item(ViewKey.Text("preview"), "Show preview", { model.tab.value = Some(1) }) {
+                keywords = ["read", "render"]
+            }
+            item(
+                ViewKey.Text("sidebar"),
+                "Toggle sidebar",
+                { model.navigation.value = !model.navigation.value }
+            )
+        }
+        group(ViewKey.Text("project"), "Project") {
+            item(ViewKey.Text("save"), "Save draft", { model.log.value = "Draft saved" })
+        }
+    }
+
+fun navigationMenuFor(model: WorkspaceModel, collapsed: Boolean): View =
+    makeSidebarMenu {
+        this.collapsed = collapsed
+        item(ViewKey.Text("document"), "Document", { model.tab.value = Some(0) }) {
+            active = model.tab.value == Some(0)
+            icon(makeText("D", TypographyRole.Small))
+        }
+        item(ViewKey.Text("preview"), "Preview", { model.tab.value = Some(1) }) {
+            active = model.tab.value == Some(1)
+            icon(makeText("P", TypographyRole.Small))
+        }
+    }
+
+fun editorPanels(model: WorkspaceModel): View =
+    makeResizable(model.sizes.binding()) {
+        panel(
+            ViewKey.Text("editor"),
+            makeFrame(makeEditor(model.draft) { rows = 10L }) { padding = Some(Insets.all(8.0)) }
+        ) { minimum = 200.0 }
+        panel(
+            ViewKey.Text("inspector"),
+            makeColumn {
+                typography("Inspector", TypographyRole.Small)
+                typography(model.log.value, TypographyRole.Muted)
+                spacing = 8.0
+                padding = Insets.all(8.0)
+            }
+        ) {
+            minimum = 120.0
+            collapsible = true
+        }
+        withHandle = true
+    }
+
+fun workspaceContent(model: WorkspaceModel): View =
+    makeColumn {
+        row {
+            sidebarTrigger(model.navigation.binding())
+            button("Commands", { model.openCommands() }) { variant = ButtonVariant.Outline }
+            spacing = 8.0
+            alignment = CrossAlignment.Center
+        }
+        tabs(model.tab.binding()) {
+            variant = TabsVariant.Line
+            retention = ContentRetention.KeepMounted
+            item(Choice(ViewKey.Text("document"), 0, "Document"), editorPanels(model))
+            item(Choice(ViewKey.Text("preview"), 1, "Preview"), makeText(model.draft.text))
+        }
+        dialog(
+            model.commandsOpen.binding(),
+            makeCommand(model.commands, model.query) {
+                focus = FocusOptions(Some(model.queryFocus))
+                onSelect = { _ -> model.commandsOpen.value = false }
+            }
+        ) {
+            title("Commands")
+            focus { initialFocus = Some(model.queryFocus) }
+        }
+        spacing = 12.0
+        padding = Insets.all(12.0)
+        alignment = CrossAlignment.Stretch
+    }
+
+fun workspacePage(model: WorkspaceModel, theme: Theme): View {
+    val shell =
+        sidebar(
+            model.navigation.binding(),
+            { shown -> navigationMenuFor(model, shown.collapsed) }
+        ) {
+            variant = SidebarVariant.Inset
+            collapsible = SidebarCollapse.Icon
+            rail = true
+            header {
+                shown -> makeText(
+                    if (shown.collapsed)
+                        "A"
+                    else
+                        "Atlas",
+                    TypographyRole.Small
+                )
+            }
+            inset(workspaceContent(model))
+        }
+    return makeFrame(shell) {
+        style { background(Some(Paint(theme.tokens.palette.background.background))) }
+    }
+}
+
+class Workspace(scope: ComponentScope): Component(scope) {
+    private val model = WorkspaceModel()
+    private val theme = currentThemeSource()
+    public override fun render(): View = workspacePage(model, theme.current.value)
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Workspace", { scope -> Workspace(scope) })
+    }
+}

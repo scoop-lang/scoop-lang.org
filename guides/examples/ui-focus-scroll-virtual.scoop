@@ -1,0 +1,104 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+import scoop.text.toLongOrNone
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.text.*
+
+/** One hundred million rows, computed on demand: nothing is stored per row. */
+class NumberRows(private val picked: State<Long>): ItemSource {
+    public override val count: Long get() = 100000000L
+    public override fun keyAt(index: Long): ViewKey = ViewKey.Number(index)
+    public override fun indexOfKey(key: ViewKey): Long? =
+        when (key) {
+            case Number(index) -> if (index >= 0L && index < count)
+                Some(index)
+            else
+                None
+            else -> None
+        }
+    public override fun build(index: Long): View {
+        val picked = this.picked
+        return button(f"Row ${index}  ·  square = ${index * index}", { picked.value = index }) {
+            this.variant = ButtonVariant.Ghost
+        }
+    }
+}
+
+class HugeList(scope: ComponentScope): Component(scope) {
+    // The theme in effect, used to paint the page background.
+    private val theme = currentThemeSource()
+    private val picked = state(-1L)
+    private val rows = NumberRows(picked)
+    private val list = VirtualListHandle()
+    private val target = TextEditorState("50000000")
+
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val picked = this.picked
+        val rows = this.rows
+        val list = this.list
+        val target = this.target
+        val visible =
+            when (list.reading) {
+                case Some(snapshot) -> f"${snapshot.visible.start} ..< ${snapshot.visible.end}"
+                case None -> "not laid out yet"
+            }
+        val content =
+            column {
+                this.row {
+                    this.input(target) {
+                        this.placeholder = "Row number"
+                        this.policy = textEditPolicy { this.maxLength = Some(9L) }
+                    }
+                    this.button(
+                        "Scroll to",
+                        {
+                            val index = target.text.toLongOrNone() ?: 0L
+                            list.scrollToItem(ViewKey.Number(index), ScrollAlignment.Center)
+                            Unit
+                        }
+                    )
+                    this.button(
+                        "Focus it",
+                        {
+                            val index = target.text.toLongOrNone() ?: 0L
+                            list.focusItem(ViewKey.Number(index))
+                            Unit
+                        }
+                    ) { this.variant = ButtonVariant.Outline }
+                    this.spacing = 8.0
+                }
+                this.virtualList(rows, ItemExtent.Fixed(32.0)) {
+                    this.handle = Some(list)
+                    this.height = Some(400.0)
+                    this.overscan = 64.0
+                    this.navigation = ItemNavigation.Roving()
+                }
+                this.label(f"Visible: ${visible}   Picked: ${picked.value}")
+                this.spacing = 12.0
+                this.padding = Insets.all(20.0)
+                this.alignment = CrossAlignment.Stretch
+            }
+        return frame(content) {
+            this.alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            this.style { this.background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("100M rows", { scope -> HugeList(scope) })
+    }
+}

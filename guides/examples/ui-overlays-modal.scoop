@@ -1,0 +1,135 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.column as makeColumn
+import scoop.ui.component.input as makeInput
+import scoop.ui.component.typography as makeText
+import scoop.ui.style.Insets
+import scoop.ui.style.Theme
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+import scoop.ui.text.TextEditorState
+
+class ProjectModel {
+    val name = state("Atlas")
+    val editOpen = state(false)
+    val deleteOpen = state(false)
+    val settingsOpen = state(false)
+    val activityOpen = state(false)
+    val draft = TextEditorState("Atlas")
+    val draftFocus = FocusHandle()
+    val toasts = ToastState()
+
+    fun startEdit() {
+        draft.replaceAll(name.value)
+        editOpen.value = true
+    }
+    fun save() {
+        if (draft.text.charLength == 0L) {
+            toasts.show("The name cannot be empty") { kind = ToastKind.Error }
+            return
+        }
+        val next = draft.committedText
+        name.value = next
+        editOpen.value = false
+        toasts.show("Project renamed") {
+            kind = ToastKind.Success
+            description(f"The project is now called ${next}.")
+        }
+    }
+}
+
+fun modalPage(model: ProjectModel, theme: Theme): View {
+    val form =
+        makeColumn {
+            typography("Project name", TypographyRole.Small)
+            add(makeInput(model.draft) { focus = FocusOptions(Some(model.draftFocus)) })
+            spacing = 6.0
+            alignment = CrossAlignment.Stretch
+        }
+    val footer =
+        makeColumn {
+            button("Save", { model.save() })
+            alignment = CrossAlignment.Stretch
+        }
+    val content =
+        makeColumn {
+            typography(f"Project: ${model.name.value}", TypographyRole.H3)
+            row {
+                button("Rename…", { model.startEdit() })
+                button("Delete", { model.deleteOpen.value = true }) {
+                    variant = ButtonVariant.Destructive
+                }
+                button("Settings", { model.settingsOpen.value = true }) {
+                    variant = ButtonVariant.Outline
+                }
+                button("Activity", { model.activityOpen.value = true }) {
+                    variant = ButtonVariant.Outline
+                }
+                spacing = 8.0
+            }
+            dialog(model.editOpen.binding(), form) {
+                title("Rename project")
+                description("The new name is applied when you press Save.")
+                focus = OverlayFocusOptions(Some(model.draftFocus))
+                footer(footer)
+            }
+            alertDialog(
+                model.deleteOpen.binding(),
+                makeText("Deleting cannot be undone.", TypographyRole.Muted)
+            ) {
+                title(f"Delete ${model.name.value}?")
+                action(
+                    "Delete",
+                    {
+                        model.deleteOpen.value = false
+                        model.toasts.show("Project deleted") { kind = ToastKind.Warning }
+                    }
+                ) { variant = ButtonVariant.Destructive }
+                cancel("Keep project")
+            }
+            sheet(
+                model.settingsOpen.binding(),
+                makeText("Settings live in a side panel.", TypographyRole.P)
+            ) {
+                title("Project settings")
+                side = SheetSide.End
+            }
+            drawer(
+                model.activityOpen.binding(),
+                makeText("Renamed project · just now", TypographyRole.P)
+            ) { title("Recent activity") }
+            toaster(model.toasts) { position = ToastPosition.BottomEnd }
+            spacing = 16.0
+            alignment = CrossAlignment.Start
+        }
+    return page(theme, content)
+}
+
+/** Paints the theme background and places the content at the top-left. */
+fun page(theme: Theme, content: View): View =
+    frame(content) {
+        padding = Some(Insets.all(24.0))
+        alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+        style { background(Some(Paint(theme.tokens.palette.background.background))) }
+    }
+
+class ModalDemo(scope: ComponentScope): Component(scope) {
+    private val model = ProjectModel()
+    private val theme = currentThemeSource()
+    public override fun render(): View = modalPage(model, theme.current.value)
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Dialogs", { scope -> ModalDemo(scope) })
+    }
+}
