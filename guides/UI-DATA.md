@@ -44,6 +44,8 @@ order: 46
 scoop run ui-data-content.scoop --release
 ```
 
+![内容展示：点 Reveal content 后显示资料条目、头像组和存储提示，右侧是带进度条的卡片和空状态](images/ui/ui-data-content.png){: .screenshot width="800"}
+
 Windows 写作 `sco run ui-data-content.scoop --release`，本篇其余命令同理。
 
 窗口分为左右两栏。左栏开始时是一块灰色的骨架占位，点 Reveal content 后显示 Ada Lovelace 的资料条目（带头像状态点和 Admin 标签）以及一组叠放的头像；下面是红色标题的存储空间提示。右栏的 Project files 卡片中有 35% 的上传进度条和一个转动的 Spinner：每点一次 +15% 进度增加，到 100% 时 Spinner 停止。卡片页脚和下方空状态里的 Add file 按钮会增加顶部标签中的文件数，数量大于 0 后空状态消失。
@@ -75,6 +77,8 @@ Windows 写作 `sco run ui-data-content.scoop --release`，本篇其余命令同
 ```sh
 scoop run ui-data-table.scoop --release
 ```
+
+![表格示例：上方是发票表格和合计行，下方是带筛选、选择框、排序表头和分页的付款数据表](images/ui/ui-data-table.png){: .screenshot width="800"}
 
 窗口上方是三行发票和 Total 合计行组成的固定表格；下方是付款数据表：工具栏左侧是筛选框，右侧的 Columns 菜单可以隐藏列。每行左侧有选择框，底部显示 `Selected: 0 · Rows: 40`、每页行数选择和翻页按钮。可以这样试：
 
@@ -133,6 +137,8 @@ fun replaceRows(payments: DataTableState<Payment>, items: Array<Payment>) {
 scoop run ui-data-dates.scoop --release
 ```
 
+![日期示例：左侧单选日历选中 6 日，右侧范围日历选中 6 日到 9 日，下方是两个日期选择按钮](images/ui/ui-data-dates.png){: .screenshot width="571"}
+
 窗口上方并排显示两个 2026 年 11 月的日历：左边单选，6 日被选中；右边是范围选择，6 日到 9 日高亮，6 日之前的日期因为 `minDate` 而变灰不可选。下面是 Due date 和 `2026-11-06 .. 2026-11-09` 两个按钮。点 Due date 弹出日历，选 20 日后弹层关闭，按钮和底部文字都变成 `2026-11-20`。在右侧日历上重新选择范围，范围按钮和 `Stay` 一行同步更新——两者绑定的是同一个 `model.stay`。
 
 日历支持完整的键盘操作：方向键在日期间移动，PageUp／PageDown 翻月。需要让用户直接输入日期时，给 `datePicker` 设置 `draft = Some(DatePickerDraft())`：输入框按严格的 `YYYY-MM-DD`（范围为 `start .. end`）解析，按 Enter 提交，解析失败时保留原文供用户修改；`parser` 可以换成自己的解析函数。
@@ -157,6 +163,8 @@ scoop run ui-data-dates.scoop --release
 ```sh
 scoop run ui-data-chart.scoop --release
 ```
+
+![图表与会话：左侧是 Desktop 与 Mobile 的柱状图，右侧是一段带步骤和气泡的对话](images/ui/ui-data-chart.png){: .screenshot width="800"}
 
 左栏是 1 月到 6 月 Desktop 与 Mobile 访问量的柱状图，下方有图例；点上方的 Line 或 Area 切换图表类型，悬停柱子显示具体数值。右栏是一段对话：顶部是 “Today at 10:24” 分隔线，用户的问题以深色气泡靠右显示；接着是可展开的 “Read the analytics report” 步骤和一个带转圈图标的 “Drafting the summary” 运行中步骤；最后是带 AI 头像、Assistant 标题和 Just now 页脚的回复。
 

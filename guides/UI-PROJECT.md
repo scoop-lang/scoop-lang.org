@@ -49,6 +49,8 @@ order: 51
 scoop run ui-project-step1.scoop --release
 ```
 
+![第一步：Payments 标题和 24 行付款表格，每页 10 行，带排序表头和分页](images/ui/ui-project-step1.png){: .screenshot width="800"}
+
 窗口显示标题“Payments”和一张 24 行的付款表格，每页 10 行，表体可以滚动。点击 Status、Email 或 Amount 表头，会按该列升序排序，表头出现 `↑` 标记；再点一次改为降序，第三次取消排序；每行开头的复选框可以选中行；右上角的 Columns 按钮可以隐藏或显示列；表格底部显示“Selected: 0 · Rows: 24”和分页控件。
 
 这段代码有几处值得注意：
@@ -145,6 +147,8 @@ render 中新增筛选框，并配置表格：
 筛选框在 `column { ... }` 之前创建，再通过 `toolbar` 放到表格工具栏中。不能在 `column` 的 lambda 里直接写 `input(...)` 或 `label(...)`：那里的同名调用会解析成 builder 的成员方法，作用是“把一个子项加入 column”，返回 `Unit` 而不是 `View`。`pageSizes` 是页大小下拉框的选项。
 
 运行后，在筛选框中输入 `ada`，表格只剩 6 条 ada@example.com 的付款，底部显示“Rows: 6”。选中几行，下方的“Selected amount”随之变化；切换页码时，其他页上的选择仍然保留。
+
+![第二步：勾选两行后，底部显示 Selected: 2 和 Selected amount: USD 400](images/ui/ui-project-step2.png){: .screenshot width="800"}
 
 ### 23.4 第三步：行菜单与删除确认
 
@@ -267,6 +271,8 @@ Store 新增三项状态和三个操作：
 
 运行后点击某一行的 `…`，菜单显示“Payment N”、“View details”和红色的“Delete payment”。选择 Delete payment 后，页面变暗，弹出“Delete this payment?”对话框并显示该行的邮箱；点击“Keep payment”关闭对话框，数据不变；点击“Delete payment”后对话框关闭，底部的行数减 1，状态文字变为“Payment N deleted.”。
 
+![第三步：从行菜单选择 Delete payment 后弹出的确认对话框](images/ui/ui-project-step3.png){: .screenshot width="800"}
+
 ### 23.5 第四步：撤销与汇总联动
 
 最后一步完成整个应用：删除后弹出带“Undo”按钮的通知，点击后把记录恢复到原来的位置；表格上方增加三张统计卡片和一张按状态统计的柱状图，它们随删除和恢复同步更新。保存为 `ui-project-step4.scoop`（[下载](examples/ui-project-step4.scoop)）：
@@ -280,6 +286,8 @@ Store 新增三项状态和三个操作：
 ```sh
 scoop run ui-project-step4.scoop --release
 ```
+
+![第四步：删除一条付款后，卡片和柱状图更新，右下角出现带 Undo 的通知](images/ui/ui-project-step4.png){: .screenshot width="800"}
 
 窗口顶部显示三张卡片：Payments 24、Total volume USD 9525、Pending 5；下面是柱状图，Success 14、Processing 5、Pending 5。删除一条 Success 状态、金额 425 的付款后，卡片变为 23 和 USD 9100，Success 柱降到 13；窗口右下角滑出“Payment deleted”通知，显示邮箱和金额，旁边有“Undo”按钮。5 秒内点击 Undo，通知关闭，记录回到表格中原来的位置，卡片和图表恢复原值。页面比默认窗口高，可以用滚轮滚动查看表格和底部的状态文字。
 

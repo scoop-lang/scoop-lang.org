@@ -60,6 +60,8 @@ fun guardedOpen(open: State<Boolean>, locked: State<Boolean>): Binding<Boolean> 
 scoop run ui-overlays-popover.scoop --release
 ```
 
+![Popover 示例：点 Edit name 后在按钮下方打开 Display name 弹层](images/ui/ui-overlays-popover.png){: .screenshot width="345"}
+
 Windows 写作 `sco run ui-overlays-popover.scoop --release`，本篇其余命令同理。
 
 窗口顶部是黑色的 Save 按钮和文字 `@ada`：悬停 Save 显示“Save the current name”提示，在 `@ada` 上停留片刻会弹出资料卡片。中间一排按钮切换 Popover 的模式。点击 Edit name 会在按钮下方打开标题为 Display name 的弹层，光标已经在输入框中。
@@ -94,6 +96,8 @@ Popover 的其他常用配置有 `side` / `alignment`（首选方向与对齐，
 scoop run ui-overlays-modal.scoop --release
 ```
 
+![对话框示例：点 Rename… 后背景变暗，中央是 Rename project 对话框](images/ui/ui-overlays-modal.png){: .screenshot width="800"}
+
 窗口显示标题 `Project: Atlas` 和四个按钮。点 Rename… 打开 Rename project 对话框，输入框已获得焦点，内容是当前名称；把它改成 `Atlas Prime` 再点 Save，对话框关闭，标题随之更新，右下角出现 “Project renamed” 的成功通知。点 Delete 打开确认框，焦点在 Keep project 上；点 Activity 会从底部滑出 Recent activity 抽屉。
 
 这个例子没有使用 `trigger(...)`：四个弹层都由页面上的普通按钮修改状态打开。`startEdit()` 在打开前用 `draft.replaceAll(name.value)` 把草稿重置为当前名称，这样取消后再次打开，看到的仍是最新名称。
@@ -122,6 +126,8 @@ scoop run ui-overlays-modal.scoop --release
 ```sh
 scoop run ui-overlays-menus.scoop --release
 ```
+
+![菜单示例：点 File 后弹出的菜单，包含命令、子菜单、勾选项、单选组和红色的 Delete](images/ui/ui-overlays-menus.png){: .screenshot width="286"}
 
 点 File 弹出菜单：第一组是 Open…（右侧显示 `⌘o`）和带箭头的 Share 子菜单，下面是勾选项、Appearance 单选组和红色的 Delete。右键点击“Right-click here”方框会在指针处弹出同一份菜单。选择普通命令后菜单关闭，底部文字显示所选命令；勾选项和单选项在切换后**保持菜单打开**，方便连续调整，按 Escape 或点击外部关闭。方向键移动高亮，直接键入字母可以跳到以它开头的条目。
 
@@ -202,6 +208,8 @@ dialog(guardedOpen(model.open, model.locked), form) {
 scoop run ui-overlays-nav.scoop --release
 ```
 
+![导航示例：顶部导航菜单、Home › Guides › Overview 面包屑和 Overview／Notes 页签](images/ui/ui-overlays-nav.png){: .screenshot width="241"}
+
 窗口顶部是 Home 和带下拉箭头的 Guides；下面是面包屑 `Home › Guides › Overview`，再下面是 Overview / Notes 两个页签。悬停或点击 Guides 展开三个链接，点 Language guide 后面板收起，面包屑末项和正文都变成 Language guide。切到 Notes 页签修改输入框，再切回 Overview 又切回来，修改仍在——这是 `KeepMounted` 的效果。
 
 ### 12.2 侧栏、可调面板与命令面板
@@ -241,6 +249,8 @@ sidebar(model.nav.binding(), links) {
 ```sh
 scoop run ui-overlays-workspace.scoop --release
 ```
+
+![工作区示例：左侧侧栏，右侧页签与可调面板，中央打开了 Commands 命令面板](images/ui/ui-overlays-workspace.png){: .screenshot width="725"}
 
 可以这样试用：
 

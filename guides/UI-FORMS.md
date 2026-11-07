@@ -77,6 +77,8 @@ order: 43
 scoop run ui-forms-text.scoop --release
 ```
 
+![文本输入示例：姓名、手机号、密码框和 Show 按钮、https:// 输入组、多行备注和 6 位验证码](images/ui/ui-forms-text.png){: .screenshot width="800"}
+
 你会看到一列输入框。在姓名框中输入名字并按 Enter，下方提示变为 `Hello, <名字>!`；姓名最多 20 个字符。手机号框只接受数字，最多 11 位，粘贴 `138-0013 8000` 会得到 `13800138000`，输入字母则不会产生任何变化。点击 Show 显示密码明文，再点 Hide 恢复为圆点。输入组前面是固定的 `https://`，末尾的 Clear 清空网址。验证码填满 6 位时，下方显示 `Code ... complete`。
 
 `stripSeparators` 展示了粘贴改写的写法：`candidate.after.text` 是粘贴后的完整文字，`TextEditReplacement` 用 **UTF-8 字节**范围描述要替换的片段（因此用 `byteLength` 累加偏移，`Utf8Range` 来自 `scoop.window`，需要声明对应依赖）。粘贴结果先经过 `paste`，再经过 `accepts` 和长度限制。
@@ -137,6 +139,8 @@ this.switchControl(darkMode.binding())
 ```sh
 scoop run ui-forms-choices.scoop --release
 ```
+
+![选择类控件：三态全选复选框、开关、切换按钮、单选组、单滑块和区间滑块、下拉选择和多选组合框](images/ui/ui-forms-choices.png){: .screenshot width="800"}
 
 窗口从上到下依次是：
 
@@ -204,6 +208,8 @@ val nameErrors: Array<String> get() =
 ```sh
 scoop run ui-forms-profile.scoop --release
 ```
+
+![资料表单：直接点 Save 后，Display name 和 Email 显示错误样式与错误信息](images/ui/ui-forms-profile.png){: .screenshot width="800"}
 
 窗口中有 “Account” 和 “Preferences” 两组字段。直接点击 Save：Display name 和 Email 下方出现错误，输入框变为错误样式，焦点移到 Display name。填好名字再保存，错误转移到 Email；输入不带 `@` 的地址会提示 `Include an @ sign.`。两项都合法后，底部显示 `Saved <名字> <<邮箱>>`。Bio 下方实时显示字数，超过 160 个字符的输入不会被接受。点击 “Monthly newsletter” 文字可以切换勾选框。Reset 清空所有内容，错误也随之隐藏。
 

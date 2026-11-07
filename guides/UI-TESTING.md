@@ -58,6 +58,8 @@ ui-testing-cone/
 
 在 Cone 目录的上一级运行 `scoop run ui-testing-cone --release`，可以看到这个窗口：顶部是 `Nothing to buy`，下面三个按钮；点 Add milk 后出现 `• milk`，摘要变为 `1 item`。
 
+![购物清单窗口：点 Add milk 后显示 1 item 和 • milk](images/ui/ui-testing-cone.png){: .screenshot width="275"}
+
 ### 22.3 纯状态测试
 
 `tests/list.scoop` 直接测试 `ShoppingList`，不创建任何窗口（[下载](examples/ui-testing-cone/tests/list.scoop)）：

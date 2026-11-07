@@ -105,6 +105,8 @@ scope.resource {
 scoop run ui-focus-scroll-keyboard.scoop --release
 ```
 
+![键盘示例：工具按钮组、Search 输入框与快捷键标签、Note 输入框和两个按钮](images/ui/ui-focus-scroll-keyboard.png){: .screenshot width="800"}
+
 操作一下：
 
 - 窗口获得焦点后按 Tab，焦点首先落在 Search 输入框上，因为它的 `order` 是 `-1`。
@@ -150,6 +152,8 @@ scoop run ui-focus-scroll-keyboard.scoop --release
 ```sh
 scoop run ui-focus-scroll-area.scoop --release
 ```
+
+![滚动区域示例：顶部四个定位按钮，下面是消息列表和实时滚动位置](images/ui/ui-focus-scroll-area.png){: .screenshot width="800"}
 
 窗口顶部有四个按钮，下面是一个 320 高的滚动区域，包含 40 条消息和底部的回复框，最下一行实时显示滚动位置。滚动时数字随之变化；Top 立即回到顶部；“Bottom (animated)” 平滑滚到底部；“Down 100” 每次向下 100；“Focus reply” 把回复框滚入视野并聚焦，可以直接输入。
 
@@ -235,6 +239,8 @@ this.virtualList(notes, ItemExtent.Variable(56.0)) {
 ```sh
 scoop run ui-focus-scroll-virtual.scoop --release
 ```
+
+![一亿行虚拟列表：点 Scroll to 后，第 50000000 行滚动到列表中央](images/ui/ui-focus-scroll-virtual.png){: .screenshot width="800"}
 
 窗口启动和滚动都和普通列表一样快，尽管列表有一亿行：每一行的文字在 `build` 中即时计算，程序没有为任何一行预先分配数据。拖动滚动条可以快速到达任意位置；底部一行显示当前可见的行号范围和最后点击的行。在输入框中填入行号（默认 `50000000`）后点击 “Scroll to”，列表把该行滚动到中央；“Focus it” 则聚焦这一行的按钮，此时可以用上下方向键逐行移动，按 Space 点击当前行。
 

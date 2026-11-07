@@ -48,6 +48,8 @@ Element 类继承 `Element<L>`，`L` 是 measure 交给 scene 的布局数据类
 scoop run ui-custom-meter.scoop --release
 ```
 
+![自绘级别条：蓝色填充表示第 3 级，下方显示 Level 3 of 10](images/ui/ui-custom-meter.png){: .screenshot width="800"}
+
 Windows 写作 `sco run ui-custom-meter.scoop --release`。在条上点击或按住拖动，下面的文字立即变成新的级别，填充部分则以弹簧动画滑到新位置。
 
 接下来按生命周期的顺序拆解这个程序。
@@ -173,6 +175,8 @@ Scoop UI 只在有事要做时才绘制：State 改变、Props 更新、显式�
 scoop run ui-custom-task.scoop --release
 ```
 
+![自绘任务行：两行带勾选标记的任务，下方是完成计数和 Reset 按钮](images/ui/ui-custom-task.png){: .screenshot width="204"}
+
 点击一行切换勾选，下面的计数随之变化；鼠标悬停时整行显示圆角背景。按 Tab 在两行和 Reset 按钮之间移动焦点，聚焦的行在标记上显示主题的焦点环，按空格或回车切换。
 
 ### 17.1 可聚焦：focusTarget
@@ -251,6 +255,8 @@ decoration!!.scene(context, rowStyle) {
 scoop run ui-custom-paragraph.scoop --release
 ```
 
+![行内子项：一段文字中嵌着显示计数的蓝色按钮，点击两次后显示 2](images/ui/ui-custom-paragraph.png){: .screenshot width="776"}
+
 窗口中是一段文字，中间嵌着一个显示计数的蓝色按钮；点击按钮计数增加。把窗口拉窄，文字重新换行，按钮随文字移动，计数保持不变。
 
 几个要点：
@@ -320,6 +326,8 @@ class Badge(private val props: Props<Int>, scope: ComponentScope): Element<Unit>
 ```sh
 scoop run ui-custom-popover.scoop --release
 ```
+
+![自绘弹层：点 Choose a color 后，按钮下方出现带阴影的颜色卡片](images/ui/ui-custom-popover.png){: .screenshot width="297"}
 
 点击 Choose a color，下方出现带阴影的卡片；点击卡片空白处不会关闭，点击某个颜色后关闭并更新右侧文字；点击窗口其他位置或按 Escape 也会关闭。
 

@@ -82,6 +82,8 @@ UI 库随配套工具链一起安装，不需要单独下载。按[快速开始]
 scoop run ui-counter.scoop --release
 ```
 
+![Counter 窗口：整个窗口是一个蓝色按钮，点击三次后显示 Count: 3](images/ui/ui-counter.png){: .screenshot width="800"}
+
 第一次编译要链接图形相关的库，需要几十秒。之后会打开一个标题为 Counter 的窗口，整个窗口是一个按钮，每点一次，文字 `Count: 0` 中的数字加一。关闭窗口后程序退出。
 
 逐段说明：
@@ -108,6 +110,8 @@ scoop run ui-counter.scoop --release
 ```sh
 scoop run ui-counter-layout.scoop --release
 ```
+
+![改写后的 Counter：窗口中央是标题、Clicked 3 times 和 -1、+1、Reset 三个按钮](images/ui/ui-counter-layout.png){: .screenshot width="800"}
 
 窗口中央显示标题 Counter、一行计数文字和三个按钮，背景为主题的页面底色。计数为 0 时，`-1` 按钮呈禁用状态；点一次 `+1` 后变为可用。这次换成了 shadcn 主题：依赖头和 import 改为 `scoop.ui.style.shadcn`，控件代码不用改。
 

@@ -26,6 +26,8 @@ order: 41
 scoop run ui-layout-card.scoop --release
 ```
 
+![名片示例：窗口中央的卡片，左上是 AL 圆形头像，右侧是姓名和副标题，下方是简介与两个按钮](images/ui/ui-layout-card.png){: .screenshot width="800"}
+
 窗口中央出现一张宽 320 的卡片：左上是蓝色圆形头像和居中的缩写 AL，右边是加粗的姓名和一行副标题；下面是一条分隔线、一段会自动换行的简介，以及两个按钮。
 
 三种基础容器的分工：
@@ -147,6 +149,8 @@ fun corner(content: View): View =
 scoop run ui-layout-constraints.scoop --release
 ```
 
+![约束示例：有界宽度下换行的段落、横向滚动的单行文字、自动换行的标签和两列网格](images/ui/ui-layout-constraints.png){: .screenshot width="615"}
+
 窗口从左上角开始显示四段：
 
 1. 第一段的句子放在宽 260 的 frame 中，折成三行。
@@ -174,6 +178,8 @@ scoop run ui-layout-constraints.scoop --release
 ```sh
 scoop run ui-layout-absolute.scoop --release
 ```
+
+![absolute 示例：深蓝色 16:9 封面，右上角 NEW 角标，左下角标题，中央半透明圆点](images/ui/ui-layout-absolute.png){: .screenshot width="800"}
 
 窗口中央是一张 420 宽、16:9 的深蓝色圆角封面：右上角是红底白字的 `NEW` 角标，左下角是白色大标题 Analytical Engine，正中央是一个半透明的小圆。
 
@@ -206,6 +212,8 @@ scoop run ui-layout-absolute.scoop --release
 ```sh
 scoop run ui-layout-text.scoop --release
 ```
+
+![文字示例：H1 标题、导语、各种 SpanStyle、行内代码、键帽和可选择的富文本](images/ui/ui-layout-text.png){: .screenshot width="433"}
 
 窗口自上而下显示：粗大的 H1 标题、一行灰色导语、一行普通文字、一行红色加粗的大字、一段混合样式的构建提示（`2 warnings` 红色加粗，`3.4 s` 斜体）、一段带等宽行内代码的说明、一行灰色小字，然后是一行 `Search ⌘ k or Esc to close`（⌘、k 和 Esc 各显示为一个键帽），最后再显示一次构建提示，这一次可以用鼠标选中。下面逐项说明。
 
