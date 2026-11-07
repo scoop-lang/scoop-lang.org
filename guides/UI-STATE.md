@@ -51,6 +51,8 @@ val edits = this.edits
 scoop run ui-state-binding.scoop --release
 ```
 
+![温度换算卡片：Celsius 20、Fahrenheit 68，各带 - 和 + 按钮，下方是编辑计数和 Reset](images/ui/ui-state-binding.png){: .screenshot width="800"}
+
 窗口中央是一张卡片：Celsius 一行显示 20，Fahrenheit 一行显示 68，下面是 `Celsius edits: 0` 和一个 Reset 按钮。点 Celsius 的 `+`，两行分别变为 25 和 77，编辑计数变为 1；点 Fahrenheit 的 `+`，华氏度增加 9，摄氏度随之增加 5，但编辑计数不变；点 Reset 回到 20 和 68。
 
 **Props：父级的输入。** `component(props, create)` 把一个 Props 值交给子组件。子组件的构造函数接收 `Props<StepperProps>`，在 render 中通过 `props.value` 读取父级**最新一次** render 传入的值。父组件重新 render 时，同一位置的 Stepper 实例会保留，只是 `props.value` 被替换，然后 Stepper 重新 render。Props 只读，子组件不能直接修改它。
@@ -80,6 +82,8 @@ Stepper 的 render 中还有两处要留意：
 ```sh
 scoop run ui-state-store.scoop --release
 ```
+
+![任务列表：勾选第一条任务并标星后，顶部显示 1 of 3 done](images/ui/ui-state-store.png){: .screenshot width="312"}
 
 窗口左上角显示 `0 of 3 done`、三条任务和两个按钮。每条任务前有复选框，后面有一个星标按钮。勾选一条任务后，顶部的统计立即变为 `1 of 3 done`。
 

@@ -52,6 +52,8 @@ order: 47
 scoop run ui-themes-brand.scoop --release
 ```
 
+![品牌主题：紫色的按钮和紫色勾选的复选框](images/ui/ui-themes-brand.png){: .screenshot width="358"}
+
 Windows 写作 `sco run ui-themes-brand.scoop --release`。窗口左上角显示标题，下面一行是紫色的按钮和紫色勾选的复选框；点击按钮，计数增加。
 
 注意 `brandTheme` 里除了 `palette { primary = ... }`，还分别配置了 `surfaces { action { ... } }` 和 `checkbox { appearance { ... } }`。这是主题数据的一条重要规则：**修改某个字段只改那一个字段**。`palette` 是一组语义颜色，预设在创建时用它算出了各部件的颜色；之后单独改 `palette`，已经算好的按钮填充色、复选框选中色并不会跟着变。需要同步改变多处外观时，就像这里一样把相关部件也显式配置上。`StateColors(normal, hovered, pressed, disabled)` 给出部件在四种交互状态下的颜色，`mixThemeColor(from, to, progress)` 可以方便地从一个基础色派生出悬停、按下的颜色。
@@ -103,6 +105,8 @@ val reduced = theme.copy { tokens { motion { preference = MotionPreference.Reduc
 ```sh
 scoop run ui-themes-switcher.scoop --release
 ```
+
+![主题切换示例：切换到 Material 浅色后，按钮、复选框和输入框换成 Material 风格](images/ui/ui-themes-switcher.png){: .screenshot width="420"}
 
 试试这样操作：先点几次 Count 按钮、取消勾选 Remember me、在输入框中改几个字，然后依次点 Material、Fluent、shadcn，再点 Light、Dark。按钮、复选框和输入框的外观立即换成对应风格，计数、勾选和文字都还在。
 
@@ -199,6 +203,8 @@ val card =
 ```sh
 scoop run ui-themes-styles.scoop --release
 ```
+
+![局部样式示例：勾选 Drop shadow 和 Glow 后，卡片文字带阴影和光晕；下方是圆形复选框、红色 Delete 按钮和圆角输入框](images/ui/ui-themes-styles.png){: .screenshot width="413"}
 
 窗口中是一张带阴影的白色卡片，下面是三个圆形复选框、一个红色胶囊形 Delete 按钮、一个普通的 Cancel 按钮和一个圆角输入框。
 

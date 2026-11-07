@@ -47,6 +47,8 @@ order: 49
 scoop run ui-desktop-windows.scoop --release
 ```
 
+![多窗口示例：Document 1 窗口中点击两次 Click 后，共享计数和本窗口计数都是 2](images/ui/ui-desktop-windows.png){: .screenshot width="288"}
+
 启动后出现标题为 `Document 1` 的窗口。点 New Window 或按 Cmd+N（Windows、Linux 上为 Ctrl+N）会再打开 `Document 2`。在任一窗口点 Click，所有窗口的 `Shared clicks` 同时加一，而 `Clicks in this window` 只在被点击的窗口中变化。菜单栏的 Window 菜单中有一项灰色的 `Open windows: 2`，它随窗口数量变化。关闭所有窗口后程序退出。
 
 这个程序的结构是本章的重点：
@@ -112,6 +114,8 @@ if (caps.frame.beginResize || caps.frame.resizeHitRegions) {
 ```sh
 scoop run ui-desktop-native.scoop --release
 ```
+
+![自绘窗框的 Notes 窗口：顶部是自绘标题栏和 Actions 按钮，下面是文本框和 Open…、Close… 按钮](images/ui/ui-desktop-native.png){: .screenshot width="640"}
 
 窗口没有系统标题栏，顶部是自绘的一行：窗口按钮、标题 `Notes` 和 Actions 按钮。可以拖动这一行的空白处移动窗口，双击它最大化。点 Actions 弹出原生菜单，其中有 `Keep on top` 勾选项、`Statistics…` 和 Edit 子菜单；在文本框中右键弹出同一个菜单。`Statistics…` 打开一个小工具窗口，显示字数，并随输入实时变化。点 Open… 弹出系统的打开文件面板，只能选择 `.txt`、`.md` 文件，选择或取消的结果显示在按钮下方。点窗口按钮中的关闭、Close… 或按 Cmd+Q，都会弹出确认窗口；在 macOS 上它以 sheet 的形式从窗口顶部滑出。选择 Quit 退出，选择 Cancel 返回编辑。
 
@@ -247,6 +251,8 @@ val confirm = scope.nativeDialogController<Boolean>(DialogTarget.Owner(scope.nat
 scoop run ui-desktop-tray.scoop --release
 ```
 
+![托盘应用的 Reminders 窗口：显示发送次数、状态和 Send reminder 按钮](images/ui/ui-desktop-tray.png){: .screenshot width="360"}
+
 启动后出现 Reminders 窗口，菜单栏右侧多了一个实心圆点图标，鼠标悬停时提示 `Reminders: 0`。点 Send reminder 后提示中的数字随之增加。关闭窗口，程序不会退出；点托盘图标弹出菜单，选择 `Pause Reminders`，提示变为 `Reminders (paused)`，再选 `Show Window` 会重新打开窗口，窗口中的按钮变为不可用。选择 Quit 退出程序。
 
 要点：
@@ -276,6 +282,8 @@ UI 的所有工作——事件回调、render、State 读写——都在同一�
 ```sh
 scoop run ui-desktop-worker.scoop --release
 ```
+
+![后台任务示例：计算完成后显示 Found 1270607 primes below 20000000.](images/ui/ui-desktop-worker.png){: .screenshot width="480"}
 
 点 Start，文字变为 `Counting primes below 20000000…`，进度条在几秒内走满（在 Apple M 系列芯片上约 3 秒），最后显示 `Found 1270607 primes below 20000000.`。计算期间点 `Clicks: N` 计数照常增加，说明 UI 线程没有被占用。中途点 Cancel 显示 `Cancelled.`；点 Restart 会取消当前计算并从头开始，旧计算的进度不会再出现。计算中关闭窗口，程序会立即退出。
 

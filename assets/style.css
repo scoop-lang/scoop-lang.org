@@ -269,6 +269,10 @@ th { font-size: 13px; color: var(--fg-mute); font-weight: 600; letter-spacing: .
 .table-wrap tr:last-child td { border-bottom: 0; }
 .guide .table-wrap { margin: 18px 0; }
 .guide article > p:first-of-type { font-size: 18px; color: var(--fg-soft); }
+.guide img.screenshot {
+  display: block; height: auto; margin: 18px 0;
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+}
 .guide blockquote {
   margin: 20px 0; padding: 4px 18px;
   border-left: 4px solid var(--accent-2); background: var(--bg-soft);
