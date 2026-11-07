@@ -22,28 +22,46 @@ class InstallerTests(unittest.TestCase):
         self.commands.mkdir()
         self.package = self.root / "package"
         self.package.mkdir()
-        files = {
-            "VERSION": "1.2.3\n",
-            "bin/scoop": '#!/bin/sh\nprintf "scoop 1.2.3 (test)\\n"\n',
-            "src/scoop.core/Cone.toml": '[cone]\nname = "scoop.core"\n',
-            "vendor/library/source.c": "/* Vendored source. */\n",
-            "commands/scoop-example": "example command",
-            "post-install.sh": """#!/bin/sh
+        self.releases = self.root / "releases"
+        packages = {
+            "bin": {
+                "VERSION": "1.2.3\n",
+                "bin/scoop": '#!/bin/sh\nprintf "scoop 1.2.3 (test)\\n"\n',
+                "commands/scoop-example": "example command",
+                "post-install.sh": """#!/bin/sh
 printf '%s\\n' "$*" >> "$HOME/post-install-arguments"
 if [ "${TEST_POST_INSTALL_FAIL:-0}" != 0 ]; then exit 23; fi
 mkdir -p "$HOME/.scoop/lib/test-target" "$HOME/.scoop/docs"
 printf 'compiled library' > "$HOME/.scoop/lib/test-target/scoop.core.slib"
 printf 'API documentation' > "$HOME/.scoop/docs/index.html"
 """,
+            },
+            "sources": {
+                "src/scoop.core/Cone.toml": '[cone]\nname = "scoop.core"\n',
+                "vendor/library/source.c": "/* Vendored source. */\n",
+            },
         }
-        for relative, content in files.items():
-            path = self.package / relative
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(content)
-        (self.package / "bin/scoop").chmod(0o755)
-        self.archive = self.root / "release.tar.xz"
-        with tarfile.open(self.archive, "w:xz") as archive:
-            archive.add(self.package, arcname=".")
+        self.index_lines = ["format 1", "release 2026-11-07", "version 1.2.3"]
+        for platform, host in (
+            ("macos", "aarch64-apple-darwin"),
+            ("linux", "x86_64-unknown-linux-gnu"),
+        ):
+            for kind, files in packages.items():
+                suffix = "sources" if kind == "sources" else f"{kind}-{host}"
+                key = f"2026-11-07/{platform}/scoop-1.2.3-{suffix}.tar.xz"
+                self.index_lines.append(f"package {platform} {key}")
+                package = self.root / "package" / platform / kind
+                for relative, content in files.items():
+                    path = package / relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(content)
+                if kind == "bin":
+                    (package / "bin/scoop").chmod(0o755)
+                archive = self.releases / key
+                archive.parent.mkdir(parents=True, exist_ok=True)
+                with tarfile.open(archive, "w:xz") as tar:
+                    tar.add(package, arcname=".")
+        self.write_index()
         self.write_command(
             "curl",
             """#!/usr/bin/env python3
@@ -54,11 +72,12 @@ with open(os.environ["TEST_CURL_LOG"], "a") as log:
     log.write(json.dumps(arguments) + "\\n")
 if os.environ.get("TEST_DOWNLOAD_FAIL"):
     sys.exit(22)
-if "-w" in arguments:
-    print("https://github.com/windoze/scoop/releases/tag/v1.2.3", end="")
-else:
-    output = arguments[arguments.index("-o") + 1]
-    shutil.copyfile(os.environ["TEST_RELEASE_ARCHIVE"], output)
+url = next(argument for argument in arguments if argument.startswith("https://"))
+prefix = "https://release.scoop-lang.org/"
+source = Path(os.environ["TEST_RELEASES"]) / url[len(prefix):]
+if not url.startswith(prefix) or not source.is_file():
+    sys.exit(22)
+shutil.copyfile(source, arguments[arguments.index("-o") + 1])
 """,
         )
         self.write_command(
@@ -73,7 +92,7 @@ else:
             TMPDIR=str(self.root),
             SHELL="/bin/bash",
             PATH=str(self.commands) + os.pathsep + os.environ["PATH"],
-            TEST_RELEASE_ARCHIVE=str(self.archive),
+            TEST_RELEASES=str(self.releases),
             TEST_CURL_LOG=str(self.root / "curl.jsonl"),
             TEST_OS="Linux",
             TEST_ARCH="x86_64",
@@ -83,6 +102,19 @@ else:
         command = self.commands / name
         command.write_text(content)
         command.chmod(0o755)
+
+    def write_index(self, lines=None):
+        content = "\n".join(self.index_lines if lines is None else lines) + "\n"
+        for name in ("latest.txt", "2026-11-07/index.txt"):
+            path = self.releases / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content)
+
+    def urls(self):
+        return [
+            next(argument for argument in request if argument.startswith("https://"))
+            for request in self.downloads()
+        ]
 
     def install(self, *arguments, success=True):
         result = subprocess.run(
@@ -139,9 +171,14 @@ else:
             check=True,
         )
         self.assertEqual(result.stdout.split(os.pathsep).count(str(install / "bin")), 1)
-        self.assertIn(
-            "https://github.com/windoze/scoop/releases/download/v1.2.3/scoop-1.2.3-x86_64-unknown-linux-gnu.tar.xz",
-            self.downloads()[1],
+        base = "https://release.scoop-lang.org/"
+        self.assertEqual(
+            self.urls()[:3],
+            [
+                base + "latest.txt",
+                base + "2026-11-07/linux/scoop-1.2.3-bin-x86_64-unknown-linux-gnu.tar.xz",
+                base + "2026-11-07/linux/scoop-1.2.3-sources.tar.xz",
+            ],
         )
 
     def test_versioned_macos_install_uses_zdotdir(self):
@@ -151,39 +188,40 @@ else:
             SHELL="/bin/zsh",
             ZDOTDIR=str(self.root / "zsh config"),
         )
-        self.install("--version", "1.2.3")
+        self.install("--release", "2026-11-07")
         self.assertTrue((self.root / "zsh config/.zshrc").is_file())
         self.assertFalse((self.user_home / ".bashrc").exists())
-        requests = self.downloads()
-        self.assertEqual(len(requests), 1)
-        self.assertIn(
-            "https://github.com/windoze/scoop/releases/download/v1.2.3/scoop-1.2.3-aarch64-apple-darwin.tar.xz",
-            requests[0],
+        base = "https://release.scoop-lang.org/2026-11-07/"
+        self.assertEqual(
+            self.urls(),
+            [
+                base + "index.txt",
+                base + "macos/scoop-1.2.3-bin-aarch64-apple-darwin.tar.xz",
+                base + "macos/scoop-1.2.3-sources.tar.xz",
+            ],
         )
 
     def test_rosetta_selects_the_native_macos_package(self):
         self.environment.update(TEST_OS="Darwin", TEST_ARCH="x86_64")
         self.write_command("sysctl", "#!/bin/sh\nprintf '1\\n'\n")
-        self.install("--version", "v1.2.3")
-        self.assertTrue(
-            any("aarch64-apple-darwin.tar.xz" in argument for argument in self.downloads()[0])
-        )
+        self.install()
+        self.assertTrue(any("/macos/" in url for url in self.urls()))
 
     def test_fish_config_and_empty_shell(self):
         self.environment.update(
             SHELL="/usr/bin/fish", XDG_CONFIG_HOME=str(self.root / "fish config")
         )
-        self.install("--version", "v1.2.3")
+        self.install()
         fish = self.root / "fish config/fish/config.fish"
         self.assertIn('fish_add_path --path "$HOME/.scoop/bin"', fish.read_text())
         self.environment["SHELL"] = ""
-        self.install("--version", "v1.2.3")
+        self.install()
         self.assertTrue((self.user_home / ".profile").is_file())
 
     def test_existing_bash_login_configuration_is_kept(self):
         profile = self.user_home / ".bash_profile"
         profile.write_text("# Existing login settings\n")
-        self.install("--version", "v1.2.3")
+        self.install()
         self.assertTrue(profile.read_text().startswith("# Existing login settings\n"))
         self.assertIn(".scoop/bin", profile.read_text())
         self.assertFalse((self.user_home / ".profile").exists())
@@ -193,13 +231,13 @@ else:
         old.parent.mkdir(parents=True)
         old.write_text("old version")
         self.environment["TEST_DOWNLOAD_FAIL"] = "1"
-        self.install("--version", "v1.2.3", success=False)
+        self.install(success=False)
         self.assertEqual(old.read_text(), "old version")
         self.assertFalse((self.user_home / ".bashrc").exists())
 
     def test_post_install_failure_does_not_modify_path_or_claim_success(self):
         self.environment["TEST_POST_INSTALL_FAIL"] = "1"
-        result = self.install("--version", "v1.2.3", success=False)
+        result = self.install(success=False)
         self.assertEqual(result.returncode, 23)
         self.assertFalse((self.user_home / ".bashrc").exists())
         self.assertNotIn("Scoop is installed", result.stdout)
@@ -210,8 +248,44 @@ else:
         self.install(success=False)
         self.assertFalse((self.root / "curl.jsonl").exists())
         self.environment["TEST_ARCH"] = "x86_64"
-        self.install("--version", "v1/invalid", success=False)
+        self.install("--release", "../invalid", success=False)
         self.assertFalse((self.root / "curl.jsonl").exists())
+
+    def test_version_option_is_an_alias_for_release(self):
+        self.install("--version", "2026-11-07")
+        self.assertEqual(
+            self.urls()[0], "https://release.scoop-lang.org/2026-11-07/index.txt"
+        )
+
+    def test_missing_windows_packages_ask_for_a_source_build(self):
+        self.environment.update(TEST_OS="MINGW64_NT-10.0-26300", TEST_ARCH="x86_64")
+        result = self.install(success=False)
+        self.assertIn("packages for windows are not ready yet", result.stderr)
+        self.assertIn("build Scoop from source", result.stderr)
+        self.assertEqual(len(self.downloads()), 1)
+        self.assertFalse((self.user_home / ".scoop").exists())
+
+    def test_missing_platform_packages_ask_for_a_source_build(self):
+        self.write_index([line for line in self.index_lines if " linux " not in line])
+        result = self.install(success=False)
+        self.assertIn("packages for linux are not ready yet", result.stderr)
+        self.assertFalse((self.user_home / ".scoop").exists())
+
+    def test_missing_index_and_unknown_release_fail_before_installing(self):
+        result = self.install("--release", "2000-01-01", success=False)
+        self.assertIn("could not download the release index", result.stderr)
+        (self.releases / "latest.txt").unlink()
+        self.install(success=False)
+        self.assertFalse((self.user_home / ".scoop").exists())
+
+    def test_unsafe_index_entries_are_rejected(self):
+        for entry in ("package linux ../outside.tar.xz", "package linux /etc/passwd"):
+            self.write_index(self.index_lines + [entry])
+            result = self.install(success=False)
+            self.assertIn("invalid package", result.stderr)
+        self.write_index(["format 2"] + self.index_lines[1:])
+        self.assertIn("unsupported release index format", self.install(success=False).stderr)
+        self.assertEqual(len(self.urls()), 3)
 
 
 if __name__ == "__main__":

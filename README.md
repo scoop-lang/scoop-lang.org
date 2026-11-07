@@ -18,6 +18,7 @@ Scoop 编程语言的官方网站源码。纯静态站点，不依赖任何前�
 - `assets/` — 样式、Scoop 语法高亮与页面脚本、logo。
 - `tools/build.py` — 生成官网页面并调用 Jekyll，统一输出到 `dist/`。
 - `install.sh` — macOS Apple Silicon／Linux x86-64 安装脚本，构建时原样复制到 `dist/install.sh`。
+- `tools/publish_release_index.sh` — 为 R2 bucket `scoop-releases` 中的 release 生成并上传下载索引。
 - `tools/tests/test_install.py` — 用本地归档和隔离用户目录验证 `curl | sh` 安装、升级、PATH 配置及失败退出。
 - `tools/check_examples.py` — 用 `scoop` 编译运行官网和指南示例，并与 `.out` 比对。
 - `tools/check_reference.py` — 用 `scoop check` 检查参考文档中的每个 Scoop 代码块。
@@ -56,11 +57,28 @@ API 文档由工具链的 post-install 调用 `scoop doc` 生成，位于 `~/.sc
 
 ```sh
 curl -fsSL https://scoop-lang.org/install.sh | sh
-curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --version v0.1.0
+curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --release 2026-11-07
 curl -fsSL https://scoop-lang.org/install.sh | sh -s -- -- --jobs 2
 ```
 
-脚本从 `windoze/scoop` 的 GitHub Releases 下载 `scoop-<version>-<host>.tar.xz`，默认选择最新稳定版，显式版本也可选择 prerelease。Release tag 使用 `v` 前缀，归档中的版本号不带 `v`。支持 `aarch64-apple-darwin` 和 `x86_64-unknown-linux-gnu`；Windows 使用 Release 中的 `x86_64-pc-windows-gnullvm` 包及随包 `post-install.ps1`，步骤见[安装页](src/pages/docs/install.html)。
+发行包存放在 Cloudflare R2 bucket `scoop-releases`，公开地址为 <https://release.scoop-lang.org>。每个 release 是一个 `YYYY-MM-DD/` 目录，下分 `macos/`、`linux/`、`windows/`。脚本默认读取根目录的 `latest.txt`，`--release <目录名>`（别名 `--version`）读取 `<目录名>/index.txt`，再下载并解压索引中本平台的全部包。索引每行一条记录，字段以空格分隔：
+
+```text
+format 1
+release 2026-11-07
+version 0.0.0-dev
+package macos 2026-11-07/macos/scoop-0.0.0-dev-bin-aarch64-apple-darwin.tar.xz
+```
+
+支持 Apple Silicon macOS 和 x86-64 Linux。索引中没有本平台的包时（目前 Windows 即如此），脚本提示包尚未就绪，需从源码编译。
+
+上传新 release 后，用 `.envrc` 中的 R2 凭据重新生成索引（索引不收录 `llvm-sources` 包）：
+
+```sh
+sh tools/publish_release_index.sh --dry-run   # 预览最新 release 的索引
+sh tools/publish_release_index.sh             # 上传 <release>/index.txt 与 latest.txt
+sh tools/publish_release_index.sh 2026-11-07  # 指定 release；较旧的 release 不覆盖 latest.txt
+```
 
 安装根固定为 `~/.scoop`；解压后执行随包 post-install，成功后幂等地更新 Bash、Zsh（支持 `ZDOTDIR`）、Fish（支持 `XDG_CONFIG_HOME`）或 POSIX shell 的配置。升级替换发行目录，保留 `packages`、`build` 及用户外部命令；未准备的其他目标不保留旧 `.slib`。脚本不会改变调用它的父 shell，当前终端可显式设置 PATH，或打开新终端。
 
