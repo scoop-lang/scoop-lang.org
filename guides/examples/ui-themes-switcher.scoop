@@ -2,6 +2,8 @@
 //! dep: scoop:scoop.ui.component:0.1.0
 //! dep: scoop:scoop.ui.style:0.1.0
 //! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.ui.style.material:0.1.0
+//! dep: scoop:scoop.ui.style.fluent:0.1.0
 //! dep: scoop:scoop.ui.style.shadcn:0.1.0
 //! dep: scoop:scoop.window:0.1.0
 //! dep: scoop:scoop.graphics:0.1.0
@@ -9,14 +11,16 @@ import scoop.graphics.Paint
 import scoop.ui.*
 import scoop.ui.component.*
 import scoop.ui.style.*
+import scoop.ui.style.fluent.fluentTheme
 import scoop.ui.style.macos.macosTheme
+import scoop.ui.style.material.materialTheme
 import scoop.ui.style.shadcn.shadcnTheme
 import scoop.ui.text.TextEditorState
 import scoop.window.Theme as WindowTheme
 import scoop.window.WindowEvent
 
 enum Preset {
-    MacOS, Shadcn
+    MacOS, Material, Fluent, Shadcn
 }
 
 enum ModeChoice {
@@ -57,6 +61,8 @@ class ThemeModel {
         source.current.value =
             when (preset.value) {
                 case MacOS -> macosTheme(resolved)
+                case Material -> materialTheme(resolved)
+                case Fluent -> fluentTheme(resolved)
                 case Shadcn -> shadcnTheme(resolved)
             }
     }
@@ -95,6 +101,8 @@ class ThemeDemo(private val model: ThemeModel, scope: ComponentScope): Component
                 row {
                     spacing = 8.0
                     add(presetChoice(model, "macOS", Preset.MacOS))
+                    add(presetChoice(model, "Material", Preset.Material))
+                    add(presetChoice(model, "Fluent", Preset.Fluent))
                     add(presetChoice(model, "shadcn", Preset.Shadcn))
                 }
                 row {

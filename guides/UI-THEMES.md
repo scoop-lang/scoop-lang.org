@@ -94,7 +94,7 @@ val reduced = theme.copy { tokens { motion { preference = MotionPreference.Reduc
 
 **换主题不会重建界面。** 挂载树、组件实例和它们的 State 都保留，只是读到了新主题的组件重新 render 或重新绘制。按钮计数、复选框勾选、输入框里的文字和光标、当前焦点都不受影响。
 
-下面的程序可以在 macOS 和 shadcn 两套风格之间切换，并选择浅色、深色或跟随系统：
+下面的程序可以在 macOS、Material、Fluent 和 shadcn 四套风格之间切换，并选择浅色、深色或跟随系统：
 
 ```scoop
 {% include_relative examples/ui-themes-switcher.scoop %}
@@ -104,9 +104,9 @@ val reduced = theme.copy { tokens { motion { preference = MotionPreference.Reduc
 scoop run ui-themes-switcher.scoop --release
 ```
 
-试试这样操作：先点几次 Count 按钮、取消勾选 Remember me、在输入框中改几个字，然后点 shadcn、Light、Dark。按钮、复选框和输入框的外观立即换成对应风格，计数、勾选和文字都还在。
+试试这样操作：先点几次 Count 按钮、取消勾选 Remember me、在输入框中改几个字，然后依次点 Material、Fluent、shadcn，再点 Light、Dark。按钮、复选框和输入框的外观立即换成对应风格，计数、勾选和文字都还在。
 
-这个例子把“用户选了什么”与“最终用哪个主题”分开：`preset` 和 `mode` 是两份普通 State，用于高亮当前选项；`ThemeModel.apply()` 把它们组合成一个主题值写入 `source.current`。页面底色读取的是 `model.source.current.value`，所以背景也随主题更新。要加入 Material 和 Fluent，只需在依赖头中加上对应的 Cone，在 `Preset` 中增加两个枚举值，并在 `apply()` 的 `when` 中增加 `case Material -> materialTheme(resolved)` 与 `case Fluent -> fluentTheme(resolved)`。
+这个例子把“用户选了什么”与“最终用哪个主题”分开：`preset` 和 `mode` 是两份普通 State，用于高亮当前选项；`ThemeModel.apply()` 把它们组合成一个主题值写入 `source.current`。页面底色读取的是 `model.source.current.value`，所以背景也随主题更新。每套预设都是独立的 Cone：依赖头中声明了哪几个，`Preset` 和 `apply()` 的 `when` 中就列出哪几个。不需要的风格不必依赖。
 
 ### 14.5 跟随系统明暗
 
