@@ -18,12 +18,12 @@ scoop_add_path() {
 }
 
 scoop_install() {
-    scoop_tag=
+    scoop_release=
     while [ "$#" -gt 0 ]; do
         case "$1" in
-            --version)
-                [ "$#" -ge 2 ] || scoop_error '--version requires a release version'
-                scoop_tag=$2
+            --release|--version)
+                [ "$#" -ge 2 ] || scoop_error "$1 requires a release name"
+                scoop_release=$2
                 shift 2
                 ;;
             --)
@@ -32,11 +32,12 @@ scoop_install() {
                 ;;
             -h|--help)
                 printf '%s\n' \
-                    'Usage: sh install.sh [--version VERSION] [-- POST_INSTALL_OPTIONS...]' \
-                    'Install the latest stable Scoop release into ~/.scoop.' \
+                    'Usage: sh install.sh [--release RELEASE] [-- POST_INSTALL_OPTIONS...]' \
+                    'Install the latest Scoop release into ~/.scoop.' \
+                    'RELEASE names a published release such as 2026-11-07 (--version is an alias).' \
                     'Examples:' \
                     '  curl -fsSL https://scoop-lang.org/install.sh | sh' \
-                    '  sh install.sh --version v1.2.3 -- --jobs 2' \
+                    '  sh install.sh --release 2026-11-07 -- --jobs 2' \
                     '  sh install.sh -- --all-targets'
                 return 0
                 ;;
@@ -51,45 +52,81 @@ scoop_install() {
     scoop_system=$(uname -s)
     scoop_machine=$(uname -m)
     case "$scoop_system/$scoop_machine" in
-        Darwin/arm64|Darwin/aarch64) scoop_host=aarch64-apple-darwin ;;
+        Darwin/arm64|Darwin/aarch64) scoop_platform=macos ;;
         Darwin/x86_64)
             [ "$(sysctl -n hw.optional.arm64 2>/dev/null || true)" = 1 ] || \
                 scoop_error 'the macOS release requires Apple Silicon'
-            scoop_host=aarch64-apple-darwin
+            scoop_platform=macos
             ;;
-        Linux/x86_64|Linux/amd64) scoop_host=x86_64-unknown-linux-gnu ;;
-        MINGW*|MSYS*|CYGWIN*)
-            scoop_error 'on Windows, use the release archive and post-install.ps1; see https://scoop-lang.org/docs/install.html'
-            ;;
+        Linux/x86_64|Linux/amd64) scoop_platform=linux ;;
+        MINGW*|MSYS*|CYGWIN*) scoop_platform=windows ;;
         *) scoop_error "unsupported host: $scoop_system/$scoop_machine" ;;
     esac
 
-    scoop_releases=https://github.com/windoze/scoop/releases
-    if [ -z "$scoop_tag" ]; then
-        scoop_latest=$(curl -fsSLI --retry 3 -o /dev/null -w '%{url_effective}' "$scoop_releases/latest")
-        scoop_tag=${scoop_latest##*/}
+    scoop_base_url=${SCOOP_RELEASE_URL:-https://release.scoop-lang.org}
+    scoop_base_url=${scoop_base_url%/}
+    if [ -z "$scoop_release" ]; then
+        scoop_index_url=$scoop_base_url/latest.txt
+    else
+        case "$scoop_release" in
+            ''|.*|*[!A-Za-z0-9._-]*) scoop_error "invalid release name: $scoop_release" ;;
+        esac
+        scoop_index_url=$scoop_base_url/$scoop_release/index.txt
     fi
-    case "$scoop_tag" in
-        v[0-9]*) ;;
-        [0-9]*) scoop_tag=v$scoop_tag ;;
-        *) scoop_error "invalid release version: $scoop_tag" ;;
-    esac
-    case "$scoop_tag" in
-        *[!A-Za-z0-9.+-]*) scoop_error "invalid release version: $scoop_tag" ;;
-    esac
-    scoop_version=${scoop_tag#v}
-    scoop_archive=scoop-$scoop_version-$scoop_host.tar.xz
+
     scoop_download_dir=$(mktemp -d "${TMPDIR:-$HOME}/scoop-install.XXXXXX")
     trap 'rm -rf "$scoop_download_dir"' 0
     trap 'exit 129' HUP
     trap 'exit 130' INT
     trap 'exit 143' TERM
-    printf 'Downloading Scoop %s for %s...\n' "$scoop_version" "$scoop_host"
-    curl -fSL --retry 3 "$scoop_releases/download/$scoop_tag/$scoop_archive" \
-        -o "$scoop_download_dir/$scoop_archive"
+
+    curl -fsSL --retry 3 "$scoop_index_url" -o "$scoop_download_dir/index.txt" || \
+        scoop_error "could not download the release index $scoop_index_url"
+    scoop_format= scoop_index_release= scoop_version= scoop_packages= scoop_package_count=0
+    while read -r scoop_kind scoop_field scoop_value scoop_rest || [ -n "${scoop_kind:-}" ]; do
+        case "$scoop_kind" in
+            format) scoop_format=$scoop_field ;;
+            release) scoop_index_release=$scoop_field ;;
+            version) scoop_version=$scoop_field ;;
+            package)
+                [ "$scoop_field" = "$scoop_platform" ] || continue
+                case "$scoop_value" in
+                    ''|/*|*..*|*[!A-Za-z0-9._/+-]*) scoop_error "release index lists an invalid package: $scoop_value" ;;
+                esac
+                scoop_packages="${scoop_packages:+$scoop_packages }$scoop_value"
+                scoop_package_count=$((scoop_package_count + 1))
+                ;;
+        esac
+    done < "$scoop_download_dir/index.txt"
+    [ "$scoop_format" = 1 ] || scoop_error "unsupported release index format at $scoop_index_url"
+    case "$scoop_version" in
+        ''|*[!A-Za-z0-9.+-]*) scoop_error "release index has an invalid version: $scoop_version" ;;
+    esac
+
+    if [ -z "$scoop_packages" ]; then
+        scoop_error "Scoop packages for $scoop_platform are not ready yet in release $scoop_index_release.
+Please build Scoop from source: https://github.com/windoze/scoop"
+    fi
+    if [ "$scoop_platform" = windows ]; then
+        printf 'Download these packages, extract them into %%USERPROFILE%%\\.scoop and run post-install.ps1:\n' >&2
+        for scoop_package in $scoop_packages; do
+            printf '  %s/%s\n' "$scoop_base_url" "$scoop_package" >&2
+        done
+        scoop_error 'this script cannot install on Windows; see https://scoop-lang.org/docs/install.html'
+    fi
+
+    printf 'Downloading Scoop %s (release %s) for %s...\n' "$scoop_version" "$scoop_index_release" "$scoop_platform"
     mkdir "$scoop_download_dir/package"
-    tar -xJf "$scoop_download_dir/$scoop_archive" -C "$scoop_download_dir/package"
-    [ -f "$scoop_download_dir/package/post-install.sh" ] || scoop_error 'archive is missing post-install.sh'
+    scoop_package_number=0
+    # Package keys contain no whitespace, so the list is split on spaces.
+    for scoop_package in $scoop_packages; do
+        scoop_package_number=$((scoop_package_number + 1))
+        printf '[%s/%s] %s\n' "$scoop_package_number" "$scoop_package_count" "${scoop_package##*/}"
+        curl -fSL --retry 3 "$scoop_base_url/$scoop_package" -o "$scoop_download_dir/archive.tar.xz"
+        tar -xJf "$scoop_download_dir/archive.tar.xz" -C "$scoop_download_dir/package"
+        rm -f "$scoop_download_dir/archive.tar.xz"
+    done
+    [ -f "$scoop_download_dir/package/post-install.sh" ] || scoop_error 'the release is missing post-install.sh'
 
     scoop_install_root=$HOME/.scoop
     mkdir -p "$scoop_install_root"
