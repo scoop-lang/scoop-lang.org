@@ -1,0 +1,146 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.style.shadcn.shadcnTheme
+import scoop.ui.text.TextEditorState
+import scoop.window.Theme as WindowTheme
+import scoop.window.WindowEvent
+
+enum Preset {
+    MacOS, Shadcn
+}
+
+enum ModeChoice {
+    Light, Dark, System
+}
+
+/** Owns the theme source and turns the two user choices into one Theme value. */
+class ThemeModel {
+    val source = ThemeSource(macosTheme())
+    val preset = state(Preset.MacOS)
+    val mode = state(ModeChoice.System)
+    private var system = ThemeMode.Light
+
+    fun selectPreset(value: Preset) {
+        preset.value = value
+        apply()
+    }
+    fun selectMode(value: ModeChoice) {
+        mode.value = value
+        apply()
+    }
+    fun systemChanged(value: WindowTheme?) {
+        system =
+            when (value) {
+                case Some(WindowTheme.Dark) -> ThemeMode.Dark
+                else -> ThemeMode.Light
+            }
+        apply()
+    }
+    private fun apply() {
+        val resolved =
+            when (mode.value) {
+                case Light -> ThemeMode.Light
+                case Dark -> ThemeMode.Dark
+                case System -> system
+            }
+        // Only the theme value changes; every mounted control keeps its state.
+        source.current.value =
+            when (preset.value) {
+                case MacOS -> macosTheme(resolved)
+                case Shadcn -> shadcnTheme(resolved)
+            }
+    }
+}
+
+class ThemeDemo(private val model: ThemeModel, scope: ComponentScope): Component(scope) {
+    private val count = state(0)
+    private val name = TextEditorState("Scoop")
+
+    public override fun onMount() {
+        val window = scope.nativeWindow
+        model.systemChanged(window.observedTheme)
+        scope.observeWindow(window) {
+            event -> when (event) {
+                case ThemeChanged(value) -> model.systemChanged(value)
+                else -> {}
+            }
+        }
+    }
+
+    public override fun render(): View {
+        val model = this.model
+        val count = this.count
+        val name = this.name
+        val theme = model.source.current.value
+        val nameField = input(name) { placeholder = "Project name" }
+        val content =
+            column {
+                spacing = 12.0
+                label("Theme gallery") {
+                    style {
+                        fontSize = Some(20.0)
+                        weight = Some(700)
+                    }
+                }
+                row {
+                    spacing = 8.0
+                    add(presetChoice(model, "macOS", Preset.MacOS))
+                    add(presetChoice(model, "shadcn", Preset.Shadcn))
+                }
+                row {
+                    spacing = 8.0
+                    add(modeChoice(model, "Light", ModeChoice.Light))
+                    add(modeChoice(model, "Dark", ModeChoice.Dark))
+                    add(modeChoice(model, "Follow system", ModeChoice.System))
+                }
+                row {
+                    spacing = 12.0
+                    alignment = CrossAlignment.Center
+                    button(f"Count: ${count.value}", { count.value += 1 })
+                    checkbox(initialChecked = true)
+                    label("Remember me")
+                }
+                frame(nameField) { width = Some(280.0) }
+            }
+        return frame(content) {
+            padding = Some(Insets.all(20.0))
+            alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            style { background(Some(Paint(theme.tokens.palette.background.background))) }
+        }
+    }
+}
+
+fun presetChoice(model: ThemeModel, text: String, value: Preset): View =
+    choice(text, model.preset.value == value, { model.selectPreset(value) })
+
+fun modeChoice(model: ThemeModel, text: String, value: ModeChoice): View =
+    choice(text, model.mode.value == value, { model.selectMode(value) })
+
+/** The selected choice uses the action surface; the others stay plain. */
+fun choice(text: String, selected: Boolean, action: () -> Unit): View =
+    button(text, action) {
+        style {
+            kind =
+                if (selected)
+                    SurfaceKind.Action
+                else
+                    SurfaceKind.Plain
+        }
+    }
+
+fun main() {
+    val model = ThemeModel()
+    context(model.source) {
+        runUiApplication("Themes", { scope -> ThemeDemo(model, scope) })
+    }
+}

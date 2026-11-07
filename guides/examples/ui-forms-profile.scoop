@@ -1,0 +1,169 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+import scoop.text.contains
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.text.*
+
+/** Application data, validation rules and actions; the UI only presents them. */
+class ProfileForm {
+    val name = TextEditorState()
+    val email = TextEditorState()
+    val bio = TextEditorState()
+    val plan = state<Int?>(Some(0))
+    val newsletter = state(true)
+
+    val nameTarget = FieldTarget()
+    val emailTarget = FieldTarget()
+    val bioTarget = FieldTarget()
+    val newsletterTarget = FieldTarget()
+    val nameFocus = FocusHandle()
+    val emailFocus = FocusHandle()
+
+    // Errors stay hidden until the first save attempt.
+    val attempted = state(false)
+    val saved = state("")
+
+    val nameErrors: Array<String> get() =
+        if (attempted.value && name.text.charLength == 0L)
+            ["Name is required."]
+        else
+            []
+    val emailErrors: Array<String> get() {
+        if (!attempted.value)
+            return []
+        if (email.text.charLength == 0L)
+            return ["Email is required."]
+        if (!email.text.contains("@"))
+            return ["Include an @ sign."]
+        return []
+    }
+
+    fun save() {
+        attempted.value = true
+        if (nameErrors.size > 0L)
+            nameFocus.requestFocus()
+        else
+            if (emailErrors.size > 0L)
+                emailFocus.requestFocus()
+            else
+                saved.value = f"Saved ${name.text} <${email.text}>"
+    }
+    fun reset() {
+        name.replaceAll("")
+        email.replaceAll("")
+        bio.replaceAll("")
+        plan.value = Some(0)
+        newsletter.value = true
+        attempted.value = false
+        saved.value = ""
+    }
+}
+
+class ProfilePage(scope: ComponentScope): Component(scope) {
+    // The theme in effect, used to paint the page background.
+    private val theme = currentThemeSource()
+    private val form = ProfileForm()
+
+    public override fun render(): View {
+        val form = this.form
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val bioLimit = 160L
+        // Build controls outside the builder lambdas: inside them, `input(...)`
+        // would resolve to the builder's own member that adds a child.
+        val nameInput =
+            input(form.name) {
+                this.labelTarget = Some(form.nameTarget)
+                this.focus = FocusOptions(Some(form.nameFocus))
+                this.invalid = form.nameErrors.size > 0L
+            }
+        val emailInput =
+            input(form.email) {
+                this.placeholder = "you@example.com"
+                this.labelTarget = Some(form.emailTarget)
+                this.focus = FocusOptions(Some(form.emailFocus))
+                this.invalid = form.emailErrors.size > 0L
+            }
+        val bioInput =
+            textarea(form.bio) {
+                this.rows = 3L
+                this.labelTarget = Some(form.bioTarget)
+                this.policy = textEditPolicy { this.maxLength = Some(bioLimit) }
+            }
+        val planChoice =
+            radioGroup(form.plan.binding()) {
+                this.item(Choice(ViewKey.Text("personal"), 0, "Personal"))
+                this.item(Choice(ViewKey.Text("team"), 1, "Team"))
+            }
+        val newsletterBox =
+            checkbox(form.newsletter.binding()) { this.labelTarget = Some(form.newsletterTarget) }
+
+        val account =
+            fieldGroup {
+                this.field(nameInput) {
+                    this.label("Display name", form.nameTarget)
+                    this.required = true
+                    this.errors = form.nameErrors
+                }
+                this.field(emailInput) {
+                    this.label("Email", form.emailTarget)
+                    this.required = true
+                    this.description("We only use it for sign-in.")
+                    this.errors = form.emailErrors
+                }
+                this.field(bioInput) {
+                    this.label("Bio", form.bioTarget)
+                    this.description(f"${form.bio.text.charLength} / ${bioLimit} characters")
+                }
+            }
+        val preferences =
+            fieldGroup {
+                this.field(planChoice) { this.title("Plan") }
+                this.field(newsletterBox) {
+                    this.orientation = FieldOrientation.Horizontal
+                    this.controlPlacement = FieldControlPlacement.Start
+                    this.label("Monthly newsletter", form.newsletterTarget)
+                }
+            }
+        val page =
+            scrollArea(
+                column {
+                    this.typography("Profile", TypographyRole.H3)
+                    this.fieldSet(account) { this.legend("Account") }
+                    this.fieldSeparator()
+                    this.fieldSet(preferences) { this.legend("Preferences") }
+                    this.row {
+                        this.button("Save", { form.save() })
+                        this.button("Reset", { form.reset() }) {
+                            this.variant = ButtonVariant.Outline
+                        }
+                        this.spacing = 8.0
+                    }
+                    this.label(form.saved.value)
+                    this.spacing = 16.0
+                    this.padding = Insets.all(20.0)
+                    this.alignment = CrossAlignment.Stretch
+                }
+            )
+        return frame(page) {
+            this.alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            this.style { this.background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Profile", { scope -> ProfilePage(scope) })
+    }
+}

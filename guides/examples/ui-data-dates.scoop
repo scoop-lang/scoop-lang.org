@@ -1,0 +1,94 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.datetime.LocalDate
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.column as makeColumn
+import scoop.ui.style.Insets
+import scoop.ui.style.Theme
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+
+class BookingModel {
+    val today = LocalDate(2026, 11, 6)
+    val day = state<LocalDate?>(Some(today))
+    val due = state<LocalDate?>(None)
+    val stay = state<DateRange?>(Some(DateRange(today, today.plusDays(3L))))
+}
+
+fun describe(value: LocalDate?): String =
+    when (value) {
+        case Some(date) -> date.toString()
+        case None -> "not set"
+    }
+
+fun describeRange(value: DateRange?): String =
+    when (value) {
+        case Some(range) -> f"${range.start} .. ${range.end} (${range.nights} nights)"
+        case None -> "not set"
+    }
+
+fun datesPage(model: BookingModel, theme: Theme): View {
+    val today = model.today
+    val content =
+        makeColumn {
+            row {
+                calendar(model.day.binding(), today) { this.today = Some(today) }
+                calendarRange(model.stay.binding(), today) {
+                    this.today = Some(today)
+                    rules = CalendarRules(minDate = Some(today))
+                }
+                spacing = 24.0
+                alignment = CrossAlignment.Start
+            }
+            row {
+                datePicker(model.due.binding(), today) { placeholder = "Due date" }
+                dateRangePicker(model.stay.binding(), today) {
+                    calendar { monthCount = 2L }
+                    presets =
+                        [
+                            DatePickerPreset(
+                                "Next 7 days",
+                                CalendarValue.Range(Some(DateRange(today, today.plusDays(6L))))
+                            )
+                        ]
+                }
+                spacing = 12.0
+            }
+            typography(
+                f"Day: ${describe(model.day.value)} · Due: ${describe(model.due.value)}",
+                TypographyRole.Muted
+            )
+            typography(f"Stay: ${describeRange(model.stay.value)}", TypographyRole.Muted)
+            spacing = 20.0
+            alignment = CrossAlignment.Start
+        }
+    return page(theme, content)
+}
+
+/** Paints the theme background and places the content at the top-left. */
+fun page(theme: Theme, content: View): View =
+    frame(content) {
+        padding = Some(Insets.all(24.0))
+        alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+        style { background(Some(Paint(theme.tokens.palette.background.background))) }
+    }
+
+class DatesDemo(scope: ComponentScope): Component(scope) {
+    private val model = BookingModel()
+    private val theme = currentThemeSource()
+    public override fun render(): View = datesPage(model, theme.current.value)
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Dates", { scope -> DatesDemo(scope) })
+    }
+}

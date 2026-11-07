@@ -1,0 +1,62 @@
+package guide.examples.shopping
+
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.text.trim
+import scoop.ui.style.currentThemeSource
+
+/** Business state: plain class, testable without any window. */
+class ShoppingList {
+    val items = state<Array<String>>([])
+    val limit = 5L
+
+    val summary: String get() =
+        when (items.value.size) {
+            case 0L -> "Nothing to buy"
+            case 1L -> "1 item"
+            else -> f"${items.value.size} items"
+        }
+
+    /** Adds a trimmed, non-empty, non-duplicate item; returns whether it was added. */
+    fun add(text: String): Boolean {
+        val name = text.trim()
+        if (name == "" || items.value.size >= limit)
+            return false
+        for (existing in items.value)
+            if (existing == name)
+                return false
+        val next = ArrayList<String>()
+        for (existing in items.value)
+            next.add(existing)
+        next.add(name)
+        items.value = next.toArray()
+        return true
+    }
+
+    fun clear() {
+        items.value = []
+    }
+}
+
+class ShoppingView(private val list: ShoppingList, scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val list = this.list
+        return frame(
+            column {
+                spacing = 10.0
+                label(list.summary)
+                for (item in list.items.value)
+                    label("• " + item)
+                row {
+                    spacing = 8.0
+                    button("Add milk", { list.add("milk") })
+                    button("Add bread", { list.add("bread") })
+                    button("Clear", { list.clear() }) { enabled = list.items.value.size > 0L }
+                }
+            }
+        ) { style { background(Some(Paint(pageColor))) } }
+    }
+}

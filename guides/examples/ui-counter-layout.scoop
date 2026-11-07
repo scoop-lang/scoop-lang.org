@@ -1,0 +1,56 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.graphics.text:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.Paint
+import scoop.graphics.text.TextAlignment
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+
+class Counter(scope: ComponentScope): Component(scope) {
+    // Captured once at construction; the mount factory runs inside context(source).
+    private val theme = currentThemeSource()
+    private val count = state(0)
+
+    public override fun render(): View {
+        val count = this.count
+        val content = column {
+            spacing = 16.0
+            alignment = CrossAlignment.Center
+            // Text fills the bounded width, so center the paragraph itself.
+            typography("Counter", TypographyRole.H3) {
+                settings { alignment = TextAlignment.Center }
+            }
+            label(f"Clicked ${count.value} times") {
+                settings { alignment = TextAlignment.Center }
+            }
+            row {
+                spacing = 8.0
+                button("-1", { count.value -= 1 }) {
+                    variant = ButtonVariant.Outline
+                    enabled = count.value > 0
+                }
+                button("+1", { count.value += 1 })
+                button("Reset", { count.value = 0 }) { variant = ButtonVariant.Ghost }
+            }
+        }
+        // Reading theme.current subscribes this component to theme changes.
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        return frame(content) {
+            style { background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Counter", { scope -> Counter(scope) })
+    }
+}

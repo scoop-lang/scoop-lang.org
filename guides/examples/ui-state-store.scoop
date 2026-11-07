@@ -1,0 +1,135 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+
+class Task(val id: Long, val title: String, val done: Boolean)
+
+// Plain business object: holds State, offers operations, knows nothing about views.
+class TaskStore {
+    val tasks =
+        state(
+            [
+                Task(1L, "Write the layout chapter", false),
+                Task(2L, "Review the state chapter", false),
+                Task(3L, "Publish the guide", false)
+            ]
+        )
+    val useKeys = state(true)
+
+    fun setDone(id: Long, done: Boolean) {
+        val current = tasks.value
+        tasks.value =
+            Array<Task>(current.size) {
+                index ->
+                val task = current[index]
+                if (task.id == id) Task(task.id, task.title, done) else task
+            }
+    }
+
+    fun reverse() {
+        val current = tasks.value
+        tasks.value = Array<Task>(current.size) { index -> current[current.size - 1L - index] }
+    }
+}
+
+// Components obtain the store from the language Context installed in main.
+context(store: TaskStore)
+fun currentTaskStore(): TaskStore = store
+
+// One row. `starred` is local to the row instance, not part of the store.
+class TaskRow(private val props: Props<Task>, scope: ComponentScope): Component(scope) {
+    private val store = currentTaskStore()
+    private val starred = state(false)
+
+    public override fun render(): View {
+        val task = props.value
+        val store = this.store
+        val starred = this.starred
+        val done = binding(get = { task.done }, set = { next -> store.setDone(task.id, next) })
+        return row {
+            checkbox(done)
+            label(task.title)
+            button(if (starred.value) "★" else "☆", { starred.value = !starred.value }) {
+                variant = ButtonVariant.Ghost
+            }
+            spacing = 8.0
+            alignment = CrossAlignment.Center
+        }
+    }
+}
+
+class TaskList(scope: ComponentScope): Component(scope) {
+    private val store = currentTaskStore()
+
+    public override fun render(): View {
+        val tasks = store.tasks.value
+        val keyed = store.useKeys.value
+        return column {
+            for (task in tasks) {
+                // With a stable key the row instance (and its star) follows its task.
+                val key = if (keyed) ViewKey.Number(task.id) else ViewKey.Position
+                add(component(task, { p, s -> TaskRow(p, s) }, key))
+            }
+            spacing = 4.0
+        }
+    }
+}
+
+// A second component reading the same store: it updates whenever tasks change.
+class Summary(scope: ComponentScope): Component(scope) {
+    private val store = currentTaskStore()
+
+    public override fun render(): View {
+        var finished = 0
+        for (task in store.tasks.value)
+            if (task.done)
+                finished += 1
+        return label(f"${finished} of ${store.tasks.value.size} done")
+    }
+}
+
+class TasksApp(scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+    private val store = currentTaskStore()
+
+    public override fun render(): View {
+        val store = this.store
+        val keyed = store.useKeys.value
+        val page = this.theme.current.value.tokens.palette.background.background
+        val content =
+            column {
+                add(component({ s -> Summary(s) }))
+                add(component({ s -> TaskList(s) }))
+                row {
+                    button("Reverse", { store.reverse() })
+                    button(if (keyed) "Keys: on" else "Keys: off", {
+                        store.useKeys.value = !store.useKeys.value
+                    }) { variant = ButtonVariant.Outline }
+                    spacing = 8.0
+                }
+                spacing = 16.0
+                padding = Insets.all(24.0)
+            }
+        return frame(content) {
+            alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            style { background(Some(Paint(page))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    val store = TaskStore()
+    context(source) {
+        context(store) {
+            runUiApplication("Tasks", { scope -> TasksApp(scope) })
+        }
+    }
+}

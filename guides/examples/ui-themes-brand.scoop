@@ -1,0 +1,82 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+import scoop.graphics.Color
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+
+/** A macOS preset with a brand color, larger text and flat action buttons. */
+fun brandTheme(mode: ThemeMode): ShapeTheme {
+    val brand = Color(0.45, 0.22, 0.85)
+    // Normal, hovered, pressed and disabled colors of the brand fill.
+    val brandFill =
+        StateColors(
+            brand,
+            mixThemeColor(brand, Color.White, 0.12),
+            mixThemeColor(brand, Color.Black, 0.18),
+            brand.withAlpha(0.4)
+        )
+    return macosTheme(mode) {
+        tokens {
+            palette {
+                primary = ColorPair(brand, Color.White)
+                ring = brand
+            }
+            typography { body { fontSize = 15.0 } }
+        }
+        // Palette tokens do not rewrite parts: update the surfaces that use the brand.
+        surfaces {
+            action {
+                fill = brandFill
+                border = brandFill
+                shadows = []
+            }
+        }
+        checkbox {
+            appearance {
+                selected = brandFill
+                selectedBorder = brandFill
+            }
+        }
+    }
+}
+
+class BrandDemo(scope: ComponentScope): Component(scope) {
+    // Captured while the component is constructed inside context(source).
+    private val theme = currentThemeSource()
+    private val count = state(0)
+
+    public override fun render(): View {
+        val count = this.count
+        val palette = this.theme.current.value.tokens.palette
+        val content =
+            column {
+                spacing = 12.0
+                label("Brand theme")
+                row {
+                    spacing = 12.0
+                    alignment = CrossAlignment.Center
+                    button(f"Clicked ${count.value} times", { count.value += 1 })
+                    checkbox(initialChecked = true)
+                    label("Uses the brand color")
+                }
+            }
+        return frame(content) {
+            padding = Some(Insets.all(20.0))
+            alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            style { background(Some(Paint(palette.background.background))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(brandTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Brand theme", { scope -> BrandDemo(scope) })
+    }
+}

@@ -1,0 +1,111 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.graphics.text:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+import scoop.graphics.Color
+import scoop.graphics.Paint
+import scoop.graphics.text.*
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+import scoop.window.*
+
+val accent = Color(0.85, 0.25, 0.20)
+
+// A complete StyledText: the base style is explicit, spans override parts of it.
+val notice =
+    styledText {
+        style {
+            fontSize = 15.0
+            color = Color(0.15, 0.15, 0.18)
+        }
+        text("Build finished with ")
+        span {
+            style { weight = Some(700); color = Some(accent) }
+            text("2 warnings")
+        }
+        text(" in ")
+        span {
+            style { slant = Some(FontSlant.Italic) }
+            text("3.4 s")
+        }
+        text(".")
+    }
+
+val searchChord =
+    ShortcutChord(
+        ShortcutKey.Logical(LogicalKey.Character("k")),
+        ShortcutModifiers(primary = true)
+    )
+
+class TextDemo(scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+
+    public override fun render(): View {
+        val page = this.theme.current.value.tokens.palette.background.background
+        return frame(
+            column {
+                typography("Text and typography", TypographyRole.H1)
+                typography("Labels, rich text, roles, inline code and keys.", TypographyRole.Lead)
+
+                // label: plain display text with an optional local SpanStyle override.
+                label("A plain label inherits the theme body style.")
+                label("This one overrides size, weight and color.") {
+                    style {
+                        fontSize = Some(18.0)
+                        weight = Some(600)
+                        color = Some(accent)
+                    }
+                }
+
+                // label(StyledText): mixed styles in one paragraph.
+                label(notice)
+
+                // typography: themed roles; the builder form mixes text and inline code.
+                typography {
+                    text("Run ")
+                    code("scoop build --release")
+                    text(" to compile, then ")
+                    span {
+                        style { weight = Some(700) }
+                        text("ship it")
+                    }
+                    text(".")
+                }
+                typography("Typography text is selectable by default.", TypographyRole.Muted)
+
+                // kbd / kbdGroup: key caps; the chord form uses platform labels.
+                row {
+                    label("Search")
+                    kbdGroup(searchChord)
+                    label("or")
+                    kbd("Esc")
+                    label("to close")
+                    spacing = 8.0
+                    alignment = CrossAlignment.Center
+                }
+
+                // selectableStyledText: rich text the user can select and copy.
+                selectableStyledText(notice)
+
+                spacing = 12.0
+                alignment = CrossAlignment.Stretch
+                padding = Insets.all(24.0)
+            }
+        ) {
+            alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            style { background(Some(Paint(page))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Text", { scope -> TextDemo(scope) })
+    }
+}

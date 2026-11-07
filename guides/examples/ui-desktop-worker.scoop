@@ -1,0 +1,209 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.platform:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+import scoop.graphics.Paint
+import scoop.platform.concurrent.Thread
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.window.*
+
+enum Phase {
+    Idle, Running, Cancelled, Done
+}
+
+// UI-side model. Only the UI owner thread reads or writes these states.
+class PrimeModel {
+    val phase = state(Phase.Idle)
+    val percent = state(0.0)
+    val message = state("Press Start to count primes.")
+}
+
+// One run of the computation. The worker thread only touches `cancelled`.
+class PrimeTask(val limit: Long) {
+    val cancelled = AtomicBoolean(false)
+    var thread: Thread? = None
+}
+
+class PrimeWorker(private val proxy: ApplicationProxy, private val model: PrimeModel): Closeable {
+    private var current: PrimeTask? = None
+    private val running = ArrayList<PrimeTask>()
+
+    fun start(limit: Long) {
+        cancel()
+        val task = PrimeTask(limit)
+        current = Some(task)
+        running.add(task)
+        model.phase.value = Phase.Running
+        model.percent.value = 0.0
+        model.message.value = f"Counting primes below ${limit}…"
+        val proxy = this.proxy
+        val worker = this
+        task.thread =
+            Some(
+                Thread.start {
+                    // Runs on another native thread: no State, View or Window access here.
+                    var found = 0L
+                    var n = 2L
+                    val step = limit / 100L
+                    while (n < limit && !task.cancelled.load(MemoryOrder.Acquire)) {
+                        if (isPrime(n))
+                            found += 1L
+                        if (n % step == 0L) {
+                            val percent = n.toDouble() * 100.0 / limit.toDouble()
+                            proxy.post { _ -> worker.progress(task, percent) }
+                        }
+                        n += 1L
+                    }
+                    val count = found
+                    proxy.post { _ -> worker.finish(task, count) }
+                }
+            )
+    }
+
+    // The two callbacks below run on the UI owner thread, posted by the worker.
+    private fun progress(task: PrimeTask, percent: Double) {
+        if (isCurrent(task))
+            model.percent.value = percent
+    }
+
+    private fun finish(task: PrimeTask, count: Long) {
+        task.thread?.join()
+        task.thread = None
+        removeRunning(task)
+        if (!isCurrent(task))
+            return
+        current = None
+        if (task.cancelled.load(MemoryOrder.Acquire)) {
+            model.phase.value = Phase.Cancelled
+            model.message.value = "Cancelled."
+        } else {
+            model.phase.value = Phase.Done
+            model.percent.value = 100.0
+            model.message.value = f"Found ${count} primes below ${task.limit}."
+        }
+    }
+
+    private fun removeRunning(task: PrimeTask) {
+        var index = 0L
+        while (index < running.size) {
+            if (running[index] === task) {
+                running.removeAt(index)
+                return
+            }
+            index += 1L
+        }
+    }
+
+    private fun isCurrent(task: PrimeTask): Boolean =
+        when (current) {
+            case Some(value) -> value === task
+            case None -> false
+        }
+
+    fun cancel() {
+        when (current) {
+            case Some(task) -> {
+                task.cancelled.store(true, MemoryOrder.Release)
+                model.phase.value = Phase.Cancelled
+                model.message.value = "Cancelling…"
+            }
+            case None -> {}
+        }
+        current = None
+    }
+
+    // Called after the event loop has returned: stop and wait for every thread.
+    public override fun close() {
+        for (task in running)
+            task.cancelled.store(true, MemoryOrder.Release)
+        for (task in running)
+            task.thread?.join()
+        running.clear()
+    }
+}
+
+fun isPrime(n: Long): Boolean {
+    if (n < 2L)
+        return false
+    var divisor = 2L
+    while (divisor * divisor <= n) {
+        if (n % divisor == 0L)
+            return false
+        divisor += 1L
+    }
+    return true
+}
+
+class PrimeView(
+    private val model: PrimeModel,
+    private val worker: PrimeWorker,
+    scope: ComponentScope
+): Component(scope) {
+    private val clicks = state(0)
+    private val theme = currentThemeSource()
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val model = this.model
+        val worker = this.worker
+        val clicks = this.clicks
+        val running = model.phase.value == Phase.Running
+        return frame(
+            column {
+                spacing = 12.0
+                label(model.message.value)
+                progress(model.percent.value)
+                row {
+                    spacing = 8.0
+                    button(
+                        if (running)
+                            "Restart"
+                        else
+                            "Start",
+                        { worker.start(20000000L) }
+                    )
+                    button("Cancel", { worker.cancel() }) { enabled = running }
+                    // Stays responsive while the worker is busy.
+                    button(f"Clicks: ${clicks.value}", { clicks.value += 1 })
+                }
+            }
+        ) {
+            width = Some(420.0)
+            style { background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val model = PrimeModel()
+    val application = Application(applicationOptions { lastWindowPolicy = LastWindowPolicy.Exit })
+    PrimeWorker(application.proxy(), model).use {
+        worker -> context(ThemeSource(macosTheme(ThemeMode.Light))) {
+            UiHost {
+                host,
+                active,
+                event -> when (event) {
+                    case Resumed -> host.attach(
+                        active.createWindow(
+                            windowAttributes {
+                                title = "Primes"
+                                size = LogicalSize(480.0, 220.0)
+                            }
+                        ),
+                        { scope -> PrimeView(model, worker, scope) }
+                    )
+                    case Window(_, WindowEvent.CloseRequested) -> active.requestExit()
+                    case ExitRequested(_) -> active.requestExit()
+                    else -> {}
+                }
+            }.use { host -> application.run(host) }
+        }
+    }
+}

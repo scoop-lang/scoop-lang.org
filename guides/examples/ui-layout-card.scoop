@@ -1,0 +1,77 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.graphics.text:0.1.0
+import scoop.graphics.Color
+import scoop.graphics.Paint
+import scoop.graphics.text.TextAlignment
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+
+// A 48x48 colored square with centered initials, built from stack + frame.
+fun initials(text: String): View =
+    stack {
+        frame(empty()) {
+            width = Some(48.0)
+            height = Some(48.0)
+            style {
+                background(Some(Paint(Color(0.30, 0.45, 0.90))))
+                corners(Corners.all(24.0))
+            }
+        }
+        label(text) {
+            style { color = Some(Color.White); weight = Some(700) }
+            // A bounded label is as wide as its parent allows; center the line inside it.
+            settings { alignment = TextAlignment.Center }
+        }
+    }
+
+class ProfileCard(scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+
+    public override fun render(): View {
+        val card =
+            column {
+                row {
+                    add(initials("AL"))
+                    column {
+                        label("Ada Lovelace") { style { fontSize = Some(20.0); weight = Some(700) } }
+                        label("Analyst · London")
+                        spacing = 2.0
+                    }
+                    spacing = 12.0
+                    alignment = CrossAlignment.Center
+                }
+                separator()
+                label("Writes about engines, numbers and the poetry of science.")
+                row {
+                    button("Follow", { println("follow") })
+                    button("Message", { println("message") })
+                    spacing = 8.0
+                }
+                spacing = 12.0
+                alignment = CrossAlignment.Stretch
+            }
+        val page = this.theme.current.value.tokens.palette.background.background
+        // The root receives tight window constraints; this outer frame fills the
+        // window, paints the page color and centers the 320-wide card inside it.
+        return frame(
+            frame(card) {
+                width = Some(320.0)
+                padding = Some(Insets.all(20.0))
+                surface = Some(SurfaceKind.Elevated)
+            }
+        ) { style { background(Some(Paint(page))) } }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Profile card", { scope -> ProfileCard(scope) })
+    }
+}

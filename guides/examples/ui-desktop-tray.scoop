@@ -1,0 +1,151 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.component.tray:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+//! dep: scoop:scoop.tray:0.1.0
+import scoop.tray.TrayActivationKind
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.tray.*
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.window.*
+
+class TrayApp {
+    val paused = state(false)
+    val reminders = state(0)
+    private var host: UiHost? = None
+    private var active: ActiveApplication? = None
+    private var window: Window? = None
+
+    fun event(host: UiHost, application: ActiveApplication, event: ApplicationEvent) {
+        when (event) {
+            case Resumed -> {
+                this.host = Some(host)
+                active = Some(application)
+                host.attachApplication(application) { scope -> TrayRoot(this, scope) }
+                showWindow()
+            }
+            // Closing the window only hides the app in the tray.
+            case Window(_, WindowEvent.CloseRequested) -> window?.requestDestroy()
+            case Window(_, WindowEvent.Destroyed) -> window = None
+            case ExitRequested(_) -> application.requestExit()
+            else -> {}
+        }
+    }
+
+    fun showWindow() {
+        when (window) {
+            case Some(existing) -> existing.requestFocus()
+            case None -> {
+                val created =
+                    active!!.createWindow(
+                        windowAttributes {
+                            title = "Reminders"
+                            size = LogicalSize(360.0, 200.0)
+                        }
+                    )
+                window = Some(created)
+                host!!.attach(created, { scope -> ReminderView(this, scope) })
+            }
+        }
+    }
+}
+
+// A filled circle drawn at 32×32 pixels for a 16×16 point icon; template images follow the menu bar's light/dark color on macOS.
+fun dotIcon(): DesktopImage {
+    val size = 32
+    val pixels =
+        Array<UInt8>(size.toLong() * size.toLong() * 4L) {
+            index ->
+            val pixel = index / 4L
+            val x = (pixel % size.toLong()).toDouble() - 15.5
+            val y = (pixel / size.toLong()).toDouble() - 15.5
+            val inside = x * x + y * y <= 12.0 * 12.0
+            if (index % 4L == 3L && inside)
+                255.toUByte()
+            else
+                0.toUByte()
+        }
+    return DesktopImage(
+        LogicalSize(16.0, 16.0),
+        [DesktopImageRepresentation(PhysicalSize(size, size), pixels)],
+        template = true
+    )
+}
+
+class TrayRoot(private val app: TrayApp, scope: ApplicationScope): ApplicationComponent(scope) {
+    private val icon = dotIcon()
+    public override fun render(): ApplicationContent {
+        val app = this.app
+        val application = scope.application
+        val menu =
+            nativeMenu {
+                item(ViewKey.Text("show"), "Show Window", { _ -> app.showWindow() })
+                checkboxItem(ViewKey.Text("pause"), "Pause Reminders", app.paused.binding())
+                separator(ViewKey.Text("quit-separator"))
+                item(ViewKey.Text("quit"), "Quit", { _ -> application.requestExit() })
+            }
+        return ApplicationContent(
+            [
+                nativeTrayIcon(icon, ViewKey.Text("tray")) {
+                    tooltip =
+                        Some(
+                            if (app.paused.value)
+                                "Reminders (paused)"
+                            else
+                                f"Reminders: ${app.reminders.value}"
+                        )
+                    this.menu = Some(menu)
+                    onActivated =
+                        {
+                            event -> if (event.kind == TrayActivationKind.Primary)
+                                app.showWindow()
+                        }
+                }
+            ]
+        )
+    }
+}
+
+class ReminderView(private val app: TrayApp, scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val app = this.app
+        return frame(
+            column {
+                spacing = 12.0
+                label(f"Reminders sent: ${app.reminders.value}")
+                label(
+                    if (app.paused.value)
+                        "Paused from the tray menu"
+                    else
+                        "Active"
+                )
+                button("Send reminder", { app.reminders.value += 1 }) {
+                    enabled = !app.paused.value
+                }
+                label("Close this window: the app keeps running in the tray.")
+            }
+        ) { style { background(Some(Paint(pageColor))) } }
+    }
+}
+
+fun main() {
+    val app = TrayApp()
+    context(ThemeSource(macosTheme(ThemeMode.Light))) {
+        UiHost(handler = { host, application, event -> app.event(host, application, event) }).use {
+            // KeepRunning is the default: the tray outlives the last window.
+            host -> Application(
+                applicationOptions { lastWindowPolicy = LastWindowPolicy.KeepRunning }
+            ).run(host)
+        }
+    }
+}

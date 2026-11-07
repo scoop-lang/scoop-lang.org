@@ -1,0 +1,183 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.window.*
+
+// Business state shared by every window and by the application menu.
+class Workspace {
+    val clicks = state(0)
+    val windowCount = state(0)
+    private val windows = ArrayList<Window>()
+    private var nextNumber = 1
+    private var host: UiHost? = None
+    private var active: ActiveApplication? = None
+
+    fun event(host: UiHost, application: ActiveApplication, event: ApplicationEvent) {
+        when (event) {
+            case Resumed -> {
+                this.host = Some(host)
+                active = Some(application)
+                host.attachApplication(application) { scope -> AppMenu(this, scope) }
+                openWindow()
+            }
+            // The close button only asks; this app agrees and destroys that window.
+            case Window(id, WindowEvent.CloseRequested) -> closeWindow(id)
+            case Window(id, WindowEvent.Destroyed) -> forget(id)
+            // Cmd+Q (the Quit role) arrives here.
+            case ExitRequested(_) -> application.requestExit()
+            else -> {}
+        }
+    }
+
+    fun openWindow() {
+        val number = nextNumber
+        nextNumber += 1
+        val window =
+            active!!.createWindow(
+                windowAttributes {
+                    title = f"Document ${number}"
+                    size = LogicalSize(420.0, 260.0)
+                }
+            )
+        windows.add(window)
+        windowCount.value = windows.size.toInt()
+        host!!.attach(window, { scope -> DocumentView(this, number, scope) })
+    }
+
+    fun closeWindow(id: WindowId) {
+        for (window in windows)
+            if (window.id == id)
+                window.requestDestroy()
+    }
+
+    private fun forget(id: WindowId) {
+        var index = 0L
+        while (index < windows.size) {
+            if (windows[index].id == id) {
+                windows.removeAt(index)
+                break
+            }
+            index += 1L
+        }
+        windowCount.value = windows.size.toInt()
+    }
+}
+
+// The application root: no window, no layout, only application-wide attachments.
+class AppMenu(private val workspace: Workspace, scope: ApplicationScope): ApplicationComponent(
+    scope
+) {
+    public override fun render(): ApplicationContent {
+        val workspace = this.workspace
+        val menu =
+            nativeMenu {
+                submenu(
+                    ViewKey.Text("file"),
+                    "File",
+                    nativeMenu {
+                        item(ViewKey.Text("new"), "New Window", { _ -> workspace.openWindow() }) {
+                            shortcut = Some(primaryKey("n"))
+                        }
+                        separator(ViewKey.Text("quit-separator"))
+                        role(ViewKey.Text("quit"), "Quit", MenuRole.Quit) {
+                            shortcut = Some(primaryKey("q"))
+                        }
+                    }
+                )
+                submenu(
+                    ViewKey.Text("window"),
+                    "Window",
+                    nativeMenu {
+                        role(ViewKey.Text("minimize"), "Minimize", MenuRole.Minimize)
+                        item(
+                            ViewKey.Text("count"),
+                            f"Open windows: ${workspace.windowCount.value}",
+                            { _ -> }
+                        ) { enabled = false }
+                    }
+                )
+            }
+        return ApplicationContent([nativeApplicationMenuBar(menu, ViewKey.Text("menu"))])
+    }
+}
+
+fun primaryKey(character: String): ShortcutChord =
+    ShortcutChord(
+        ShortcutKey.Logical(LogicalKey.Character(character)),
+        ShortcutModifiers(primary = true)
+    )
+
+// One window root. `local` belongs to this window; `clicks` is shared.
+class DocumentView(
+    private val workspace: Workspace,
+    private val number: Int,
+    scope: ComponentScope
+): Component(scope) {
+    private val local = state(0)
+    private val theme = currentThemeSource()
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val workspace = this.workspace
+        val local = this.local
+        val number = this.number
+        return frame(
+            column {
+                spacing = 12.0
+                label(f"Document ${number}")
+                label(f"Shared clicks: ${workspace.clicks.value}")
+                label(f"Clicks in this window: ${local.value}")
+                row {
+                    spacing = 8.0
+                    button(
+                        "Click",
+                        {
+                            workspace.clicks.value += 1
+                            local.value += 1
+                        }
+                    )
+                    button("New Window", { workspace.openWindow() })
+                    button("Fail", { throw IllegalStateException(Some("demo failure")) })
+                }
+            }
+        ) { style { background(Some(Paint(pageColor))) } }
+    }
+}
+
+fun describe(error: Throwable): String =
+    if (error is Exception)
+        error.message ?: "no message"
+    else
+        "unknown failure"
+
+fun main() {
+    val workspace = Workspace()
+    val themes = ThemeSource(macosTheme(ThemeMode.Light))
+    context(themes) {
+        UiHost(
+            // A failing window root is cleaned up first, then reported here.
+            // Returning normally keeps the other windows running.
+            onRootError =
+                {
+                    id, error ->
+                    println("Window failed: " + describe(error))
+                    workspace.closeWindow(id)
+                },
+            onApplicationError = { error -> println("Menu root failed: " + describe(error)) },
+            handler = { host, application, event -> workspace.event(host, application, event) }
+        ).use {
+            host -> Application(
+                applicationOptions { lastWindowPolicy = LastWindowPolicy.Exit }
+            ).run(host)
+        }
+    }
+}

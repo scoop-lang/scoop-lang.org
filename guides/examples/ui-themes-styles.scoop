@@ -1,0 +1,129 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+import scoop.graphics.*
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.text.TextEditorState
+
+val danger = Color(0.86, 0.18, 0.16)
+
+/** A reusable destructive button: red fill, no border, darker when pressed. */
+val dangerButton =
+    buttonStyle {
+        surface {
+            style {
+                background(Some(Paint(danger)))
+                border(None)
+                corners(Corners.all(14.0))
+            }
+        }
+        text { color = Some(Color.White) }
+        states {
+            hovered { background(Some(Paint(mixThemeColor(danger, Color.White, 0.15)))) }
+            pressed { background(Some(Paint(mixThemeColor(danger, Color.Black, 0.25)))) }
+        }
+    }
+
+class StyleDemo(scope: ComponentScope): Component(scope) {
+    // Captured while the component is constructed inside context(source).
+    private val theme = currentThemeSource()
+    private val shadow = state(false)
+    private val glow = state(false)
+    private val blur = state(false)
+    private val removed = state(0)
+    private val note = TextEditorState()
+
+    public override fun render(): View {
+        val removed = this.removed
+        val shadow = this.shadow
+        val glow = this.glow
+        val blur = this.blur
+        val palette = this.theme.current.value.tokens.palette
+
+        // Content effects run in array order on the card's actual pixels.
+        val effects = ArrayList<ContentEffect>()
+        if (shadow.value)
+            effects.add(
+                ContentEffect.DropShadow(Point(3.0, 3.0), 2.0, 2.0, Color.Black.withAlpha(0.5))
+            )
+        if (glow.value)
+            effects.add(ContentEffect.Glow(4.0, 4.0, palette.primary.background.withAlpha(0.8)))
+        if (blur.value)
+            effects.add(ContentEffect.Blur(1.5, 1.5))
+        val effectArray = effects.toArray()
+
+        val badge = label("Styled card")
+        val card =
+            styled(frame(badge) { padding = Some(Insets.all(24.0)) }) {
+                style {
+                    background = Some(Paint(palette.card.background))
+                    border = Some(Border.all(1.0, palette.border))
+                    corners = Corners.all(12.0)
+                    boxShadows = [BoxShadow(Point(0.0, 4.0), 6.0, 6.0, Color.Black.withAlpha(0.2))]
+                    contentEffects = effectArray
+                }
+            }
+        val noteField =
+            input(note) {
+                placeholder = "Rounded input"
+                style {
+                    caretColor = Some(danger)
+                    surface { style { corners(Corners.all(14.0)) } }
+                }
+            }
+        val content =
+            column {
+                spacing = 16.0
+                frame(card) { width = Some(360.0) }
+                row {
+                    spacing = 16.0
+                    alignment = CrossAlignment.Center
+                    add(option(shadow.binding(), "Drop shadow"))
+                    add(option(glow.binding(), "Glow"))
+                    add(option(blur.binding(), "Blur"))
+                }
+                row {
+                    spacing = 12.0
+                    alignment = CrossAlignment.Center
+                    button(f"Delete (${removed.value})", { removed.value += 1 }) {
+                        style = dangerButton
+                    }
+                    button("Cancel", {})
+                }
+                frame(noteField) { width = Some(260.0) }
+            }
+        return frame(content) {
+            padding = Some(Insets.all(24.0))
+            alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            style { background(Some(Paint(palette.background.background))) }
+        }
+    }
+}
+
+/** A larger, round checkbox next to its caption. */
+fun option(value: Binding<Boolean>, text: String): View =
+    row {
+        spacing = 6.0
+        alignment = CrossAlignment.Center
+        checkbox(value) {
+            style {
+                marker {
+                    size = Some(18.0)
+                    style { corners(Corners.all(9.0)) }
+                }
+            }
+        }
+        label(text)
+    }
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Styles", { scope -> StyleDemo(scope) })
+    }
+}

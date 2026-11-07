@@ -1,0 +1,144 @@
+package guide.examples.shopping
+
+import scoop.graphics.Point
+import scoop.platform.time.MonotonicTimeSource
+import scoop.surface.FrameSubmission
+import scoop.test.*
+import scoop.time.Duration
+import scoop.ui.*
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.window.*
+
+@Test
+private class ShoppingWindowTests {
+    // A process can create only one Application, so keep native-window checks in one test.
+    @Test
+    fun `a hidden window follows shared state and a shown window presents a frame`() {
+        val probe = WindowProbe()
+        context(ThemeSource(macosTheme(ThemeMode.Light))) {
+            UiHost { host, active, event -> probe.event(host, active, event) }.use {
+                host -> Application().run(host)
+            }
+        }
+        assertEquals(3, probe.step)
+        assertEquals(1, probe.unmounts)
+    }
+}
+
+private class WindowProbe {
+    val list = ShoppingList()
+    var step = 0
+    var renders = 0
+    var rendered = ""
+    var acceptedFrames = 0
+    var unmounts = 0
+    private var window: Window? = None
+
+    fun event(host: UiHost, active: ActiveApplication, event: ApplicationEvent) {
+        when (event) {
+            case Resumed -> {
+                val created =
+                    active.createWindow(
+                        windowAttributes {
+                            title = "Shopping test"
+                            size = LogicalSize(320.0, 240.0)
+                            visible = false
+                        }
+                    )
+                window = Some(created)
+                // Fail instead of hanging if a step never arrives.
+                created.createDeadline { fail(Some(f"window test stalled at step ${step}")) }
+                .schedule(MonotonicTimeSource.markNow() + Duration.seconds(10L))
+                when (host.attach(created, { scope -> SummaryProbe(this, scope) })) {
+                    case Some(_) -> {}
+                    case None -> fail(Some("mounting failed"))
+                }
+                next(active)
+            }
+            else -> {}
+        }
+    }
+
+    // Each step runs as a separate owner-thread callback, after earlier UI updates.
+    fun next(active: ActiveApplication) {
+        assertTrue(active.proxy().post { application -> advance(application) })
+    }
+
+    private fun advance(active: ActiveApplication) {
+        when (step) {
+            case 0 -> {
+                // Mounting rendered once; a hidden window draws nothing.
+                assertEquals(1, renders)
+                assertEquals("Nothing to buy", rendered)
+                assertEquals(0, acceptedFrames)
+                list.add("milk")
+                step = 1
+                next(active)
+            }
+            case 1 -> {
+                // The state change re-rendered the root without waiting for a frame.
+                assertEquals(2, renders)
+                assertEquals("1 item", rendered)
+                assertEquals(0, acceptedFrames)
+                step = 2
+                // Showing and focusing the window lets the system start drawing it.
+                window!!.setVisible(true)
+                window!!.requestFocus()
+            }
+            else -> fail(Some(f"unexpected step ${step}"))
+        }
+    }
+
+    // Called by FrameProbe after the compositor accepted a real frame.
+    fun frameAccepted(active: ActiveApplication) {
+        acceptedFrames += 1
+        if (step == 2) {
+            step = 3
+            active.requestExit()
+        }
+    }
+}
+
+// Test-only root: records what it read, then renders the real view inside a frame probe.
+private class SummaryProbe(private val probe: WindowProbe, scope: ComponentScope): Component(
+    scope
+) {
+    public override fun render(): View {
+        val probe = this.probe
+        probe.renders += 1
+        probe.rendered = probe.list.summary
+        return element(
+            { mount -> FrameProbe(probe, mount) },
+            [component({ mount -> ShoppingView(probe.list, mount) })]
+        )
+    }
+    public override fun onUnmount() {
+        probe.unmounts += 1
+    }
+}
+
+// A pass-through element that reports completed frames.
+private class FrameProbe(private val probe: WindowProbe, scope: ComponentScope): Element<Unit>(
+    scope
+) {
+    public override fun measure(context: MeasureContext, constraints: Constraints): LayoutResult<
+        Unit
+    > {
+        val size = context.measureChild(0L, constraints)
+        context.placeChild(0L, Point(0.0, 0.0))
+        return LayoutResult(size, Unit)
+    }
+    public override fun scene(context: SceneContext, measured: Unit) {
+        context.children()
+        val probe = this.probe
+        val active = scope.application
+        context.onFrameComplete {
+            frame -> when (frame.submission) {
+                case Accepted -> probe.frameAccepted(active)
+                else -> {}
+            }
+        }
+    }
+}

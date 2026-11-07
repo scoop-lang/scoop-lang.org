@@ -1,0 +1,108 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.button as makeButton
+import scoop.ui.component.column as makeColumn
+import scoop.ui.style.Insets
+import scoop.ui.style.Theme
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+import scoop.window.LogicalKey
+import scoop.window.ShortcutChord
+import scoop.window.ShortcutKey
+import scoop.window.ShortcutModifiers
+
+class MenuModel {
+    val open = state(false)
+    val statusBar = state(true)
+    val appearance = state("System")
+    val result = state("Choose a command")
+}
+
+fun fileMenu(model: MenuModel): MenuContent =
+    menu {
+        label(ViewKey.Text("title"), "Project")
+        item(ViewKey.Text("open"), "Open…", { model.result.value = "Open" }) {
+            shortcut =
+                Some(
+                    ShortcutChord(
+                        ShortcutKey.Logical(LogicalKey.Character("o")),
+                        ShortcutModifiers(primary = true)
+                    )
+                )
+        }
+        submenu(
+            ViewKey.Text("share"),
+            "Share",
+            menu {
+                item(ViewKey.Text("link"), "Copy link", { model.result.value = "Link copied" })
+                item(ViewKey.Text("mail"), "Email…", { model.result.value = "Email" })
+            }
+        )
+        separator(ViewKey.Text("sep-1"))
+        checkboxItem(ViewKey.Text("status"), "Show status bar", model.statusBar.binding())
+        label(ViewKey.Text("appearance"), "Appearance")
+        for (name in ["System", "Light", "Dark"])
+            radioItem(ViewKey.Text(name), name, name, model.appearance.binding())
+        separator(ViewKey.Text("sep-2"))
+        item(ViewKey.Text("delete"), "Delete", { model.result.value = "Deleted" }) {
+            destructive = true
+        }
+    }
+
+fun menuPage(model: MenuModel, theme: Theme): View {
+    val canvas =
+        makeButton("Right-click here", { model.result.value = "Normal click" }) {
+            variant = ButtonVariant.Outline
+            style { surface { padding = Some(Insets.all(32.0)) } }
+        }
+    val content =
+        makeColumn {
+            row {
+                dropdownMenu(model.open.binding(), fileMenu(model)) {
+                    trigger("File")
+                    width = 220.0
+                }
+                contextMenu(canvas, fileMenu(model))
+                spacing = 16.0
+                alignment = CrossAlignment.Center
+            }
+            typography(model.result.value, TypographyRole.P)
+            typography(
+                f"Status bar: ${model.statusBar.value} · Appearance: ${model.appearance.value}",
+                TypographyRole.Muted
+            )
+            spacing = 16.0
+            alignment = CrossAlignment.Start
+        }
+    return page(theme, content)
+}
+
+/** Paints the theme background and places the content at the top-left. */
+fun page(theme: Theme, content: View): View =
+    frame(content) {
+        padding = Some(Insets.all(24.0))
+        alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+        style { background(Some(Paint(theme.tokens.palette.background.background))) }
+    }
+
+class MenuDemo(scope: ComponentScope): Component(scope) {
+    private val model = MenuModel()
+    private val theme = currentThemeSource()
+    public override fun render(): View = menuPage(model, theme.current.value)
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Menus", { scope -> MenuDemo(scope) })
+    }
+}

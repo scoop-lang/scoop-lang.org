@@ -1,0 +1,91 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.graphics.text:0.1.0
+import scoop.graphics.*
+import scoop.graphics.text.*
+import scoop.ui.*
+import scoop.ui.component.button
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.text.*
+
+val counterKey = InlineKey.Text("counter")
+
+class NoteDemo(scope: ComponentScope): Component(scope) {
+    private val count = state(0)
+
+    public override fun render(): View {
+        val count = this.count
+        // A real Button sits inside the text, aligned to the baseline like a word.
+        val note =
+            inlineText {
+                style {
+                    fontSize = 18.0
+                    color = Color(0.12, 0.12, 0.14)
+                }
+                text("Self-drawn paragraphs can host live controls: ")
+                // Buttons fill the width they are offered, so give this one a fixed size.
+                inline(counterKey, button(f"${count.value}", { count.value += 1 }), "[counter]") {
+                    size = Some(Size(48.0, 26.0))
+                }
+                text(" — the button keeps its state while the text around it reflows.")
+            }
+        return element(
+            note,
+            { props, mount -> Note(props, mount) },
+            inlineChildren(note.content, note.inlines)
+        )
+    }
+}
+
+class Note(private val props: Props<InlineText>, scope: ComponentScope): Element<
+    ParagraphMeasurement
+>(scope) {
+    private var host: ParagraphHost? = None
+
+    public override fun onMount() {
+        host = Some(scope.resource { ParagraphHost() })
+    }
+
+    public override fun measure(context: MeasureContext, constraints: Constraints): LayoutResult<
+        ParagraphMeasurement
+    > {
+        val margin = 24.0
+        val width = (constraints.maxWidth ?: 480.0) - margin * 2.0
+        // The host measures and places the inline children, then lays out the text.
+        val measured =
+            host!!.measure(
+                context,
+                Constraints(maxWidth = Some(width)),
+                scope.defaultFonts,
+                props.value.content,
+                None,
+                props.value.inlines
+            )
+        val text = measured.metrics.size
+        return LayoutResult(
+            LayoutMetrics(
+                constraints.constrain(Size(text.width + margin * 2.0, text.height + margin * 2.0))
+            ),
+            measured,
+            { measured.close() }
+        )
+    }
+
+    public override fun scene(context: SceneContext, measured: ParagraphMeasurement) {
+        context.draw { paint -> paint.canvas.clear(Color(0.97, 0.97, 0.98)) }
+        context.translate(24.0, 24.0)
+        host!!.scene(context, measured)
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Inline views", { scope -> NoteDemo(scope) })
+    }
+}

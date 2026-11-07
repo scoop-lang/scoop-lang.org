@@ -1,0 +1,22 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+import scoop.ui.*
+import scoop.ui.component.button
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.macos.macosTheme
+
+class Counter(scope: ComponentScope): Component(scope) {
+    private var count: Int by state(0)
+    public override fun render(): View =
+        button(f"Count: ${count}", { count += 1 })
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Counter", { scope -> Counter(scope) })
+    }
+}

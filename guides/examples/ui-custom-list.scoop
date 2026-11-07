@@ -1,0 +1,125 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.surface:0.1.0
+import scoop.graphics.*
+import scoop.surface.*
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.macos.macosTheme
+
+val rowHeight = 32.0
+
+/** A snapshot of the data: stable keys plus a way to build one row on demand. */
+class RowSource(private val total: Long): ItemSource {
+    public override val count: Long get() = total
+    public override fun keyAt(index: Long): ViewKey = ViewKey.Number(index)
+    public override fun indexOfKey(key: ViewKey): Long? {
+        when (key) {
+            case Number(value) -> {
+                if (value >= 0L && value < total)
+                    return Some(value)
+            }
+            else -> {}
+        }
+        return None
+    }
+    public override fun build(index: Long): View =
+        frame(label(f"Row ${index + 1L}")) {
+            padding = Some(Insets(12.0, 0.0, 12.0, 0.0))
+            alignment = Alignment(AxisAlignment.Start, AxisAlignment.Center)
+        }
+}
+
+class ListDemo(scope: ComponentScope): Component(scope) {
+    private val scroll = ScrollState()
+    private val source = RowSource(10000L)
+
+    public override fun render(): View =
+        lazyElement(source, scroll, { props, mount -> FixedRows(props, mount) })
+}
+
+/** A vertical list with fixed row height that only builds the rows it can see. */
+class FixedRows(private val props: Props<ScrollState>, scope: ComponentScope): LazyElement<
+    ScrollLayout
+>(scope) {
+    private var viewport: ScrollViewport? = None
+    private var area: InputArea? = None
+
+    public override fun onMount() {
+        val view = scope.scrollViewport(props.value)
+        viewport = Some(view)
+        val region = scope.createArea()
+        area = Some(region)
+        // Wheel input that no row consumed ends up in this default action.
+        scope.resource {
+            region.scope.addDefaultAction {
+                current,
+                event -> when (event) {
+                    case Pointer(InputPointerEvent.Wheel(_, _, _, _)) -> {
+                        current.consumeScroll(rowHeight) {
+                            amount ->
+                            val used =
+                                props.value.scrollBy(Point(0.0, -amount.y), ScrollOrigin.User)
+                            Point(0.0, -used.y)
+                        }
+                    }
+                    else -> {}
+                }
+            }
+        }
+        scope.routeChildren(area!!)
+    }
+
+    public override fun measure(
+        context: LazyMeasureContext,
+        constraints: Constraints
+    ): LayoutResult<ScrollLayout> {
+        val size =
+            constraints.constrain(
+                Size(constraints.maxWidth ?: 320.0, constraints.maxHeight ?: 480.0)
+            )
+        val content = Size(size.width, context.itemCount.toDouble() * rowHeight)
+        val layout = viewport!!.layout(size, content)
+        val top = layout.snapshot.offset.y
+        val first = (top / rowHeight).toLong()
+        var last = ((top + size.height) / rowHeight).toLong()
+        if (last >= context.itemCount)
+            last = context.itemCount - 1L
+        val row = Constraints.tight(Size(size.width, rowHeight))
+        // Visible rows first, then rows the framework asks us to keep (focus, text sessions...).
+        var index = first
+        while (index <= last) {
+            context.measureItem(index, row)
+            context.placeItem(index, Point(0.0, index.toDouble() * rowHeight))
+            index += 1L
+        }
+        for (pinned in context.pinnedItems) {
+            if (pinned < first || pinned > last) {
+                context.measureItem(pinned, row)
+                context.placeItem(pinned, Point(0.0, pinned.toDouble() * rowHeight))
+            }
+        }
+        return LayoutResult(LayoutMetrics(size), layout)
+    }
+
+    public override fun scene(context: SceneContext, layout: ScrollLayout) {
+        val bounds = Rect(0.0, 0.0, context.size.width, context.size.height)
+        context.place(area!!, bounds)
+        context.draw { paint -> paint.canvas.clear(Color(0.97, 0.97, 0.98)) }
+        // present() clips to the viewport and shifts content by the scroll offset.
+        viewport!!.present(context, layout, Some { content -> content.children() })
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Ten thousand rows", { scope -> ListDemo(scope) })
+    }
+}

@@ -1,0 +1,83 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+
+val sentence =
+    "Constraints flow down, sizes flow up: a label wraps only when its parent gives it a finite width."
+
+fun heading(text: String): View = label(text) { style { weight = Some(700) } }
+
+// Top-level helpers return View values; inside a builder, `label(...)` would be the
+// builder member that appends a child and returns Unit.
+fun boundedText(): View =
+    frame(label(sentence)) {
+        width = Some(260.0)
+        alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+    }
+
+fun unboundedText(): View = scrollArea(label(sentence)) { axes = ScrollAxes.Horizontal }
+
+fun tags(): View =
+    frame(
+        wrap {
+            for (name in ["layout", "text", "state", "forms", "focus", "overlays", "themes"])
+                badge(name)
+            spacing = 6.0
+            lineSpacing = 6.0
+        }
+    ) {
+        width = Some(260.0)
+        alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+    }
+
+fun facts(): View =
+    grid {
+        columns = [GridTrack.Fixed(90.0), GridTrack.Fraction(1.0)]
+        rows = [GridTrack.Auto, GridTrack.Auto]
+        columnGap = 12.0
+        rowGap = 6.0
+        item(label("Name")) { column = 0L; row = 0L }
+        item(label("Scoop")) { column = 1L; row = 0L }
+        item(label("Backend")) { column = 0L; row = 1L }
+        item(label("LLVM, native code")) { column = 1L; row = 1L }
+    }
+
+class ConstraintsDemo(scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+
+    public override fun render(): View {
+        val page = this.theme.current.value.tokens.palette.background.background
+        return frame(
+            column {
+                add(heading("1. Bounded width: frame width = 260"))
+                add(boundedText())
+                add(heading("2. Unbounded width: horizontal scroll area"))
+                item(unboundedText()) { align = Some(CrossAlignment.Stretch) }
+                add(heading("3. wrap: items flow onto new lines"))
+                add(tags())
+                add(heading("4. grid: fixed and fractional tracks"))
+                item(facts()) { align = Some(CrossAlignment.Stretch) }
+                spacing = 10.0
+                alignment = CrossAlignment.Start
+                padding = Insets.all(20.0)
+            }
+        ) {
+            alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            style { background(Some(Paint(page))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Constraints", { scope -> ConstraintsDemo(scope) })
+    }
+}

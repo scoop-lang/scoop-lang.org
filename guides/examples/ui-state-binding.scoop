@@ -1,0 +1,88 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.graphics.text:0.1.0
+import scoop.graphics.Paint
+import scoop.graphics.text.TextAlignment
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+
+// Parent input for one Stepper: a caption and a Binding to someone else's value.
+class StepperProps(val caption: String, val value: Binding<Int>, val step: Int)
+
+class Stepper(private val props: Props<StepperProps>, scope: ComponentScope): Component(scope) {
+    public override fun render(): View {
+        // Copy what the builder lambdas need into locals first.
+        val input = props.value
+        val value = input.value
+        // Outside the builder, label(...) is the top-level factory returning a View.
+        val caption = frame(label(input.caption)) { width = Some(110.0) }
+        val shown =
+            frame(label(f"${value.value}") { settings { alignment = TextAlignment.Center } }) {
+                width = Some(56.0)
+            }
+        return row {
+            add(caption)
+            button("-", { value.value -= input.step })
+            add(shown)
+            button("+", { value.value += input.step })
+            spacing = 8.0
+            alignment = CrossAlignment.Center
+        }
+    }
+}
+
+class Converter(scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+    // The single source of truth, owned by this component.
+    private val celsius = state(20)
+    // A delegated State: read and write it like an ordinary property.
+    private var edits: Int by state(0)
+
+    public override fun render(): View {
+        val celsius = this.celsius
+        val edits = this.edits
+        // A derived Binding: reads and writes go through celsius, no second copy.
+        val fahrenheit =
+            binding(
+                get = { celsius.value * 9 / 5 + 32 },
+                set = { next -> celsius.value = (next - 32) * 5 / 9 }
+            )
+        val counted =
+            binding(
+                get = { celsius.value },
+                set = {
+                    next ->
+                    celsius.value = next
+                    this.edits += 1
+                }
+            )
+        val card =
+            column {
+                add(component(StepperProps("Celsius", counted, 5), { p, s -> Stepper(p, s) }))
+                add(component(StepperProps("Fahrenheit", fahrenheit, 9), { p, s -> Stepper(p, s) }))
+                label(f"Celsius edits: ${edits}")
+                button("Reset", { celsius.value = 20 })
+                spacing = 12.0
+            }
+        val page = this.theme.current.value.tokens.palette.background.background
+        return frame(
+            frame(card) {
+                width = Some(380.0)
+                padding = Some(Insets.all(20.0))
+                surface = Some(SurfaceKind.Elevated)
+            }
+        ) { style { background(Some(Paint(page))) } }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Binding", { scope -> Converter(scope) })
+    }
+}

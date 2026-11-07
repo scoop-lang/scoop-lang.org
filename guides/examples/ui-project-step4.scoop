@@ -1,0 +1,306 @@
+//! dep: scoop:scoop.charset:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.charset.unicodeCasefold
+import scoop.graphics.Paint
+import scoop.text.contains
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+import scoop.ui.text.TextEditorState
+
+// One payment record. The id is stable and becomes the table row key.
+class Payment(val id: Long, val email: String, val amount: Int, val status: String)
+
+fun samplePayment(index: Long): Payment =
+    Payment(
+        index,
+        ["ada@example.com", "lin@example.com", "mika@example.com", "noor@example.org"][index % 4L],
+        (125L + index % 9L * 75L).toInt(),
+        ["Success", "Processing", "Success", "Pending", "Success"][index % 5L]
+    )
+
+// Wrap every record with its stable key; the table never guesses identity.
+fun paymentRows(records: Array<Payment>): TableRows<Payment> =
+    TableRows(
+        Array<TableRecord<Payment>>(records.size) {
+            at -> TableRecord(ViewKey.Number(records[at].id), records[at])
+        }
+    )
+
+fun paymentColumns(onDetails: (Payment) -> Unit, onDelete: (Payment) -> Unit): Array<
+    TableColumn<Payment>
+> =
+    [
+        TableColumn(
+            "status",
+            "Status",
+            { row -> badge(row.status) { this.variant = ButtonVariant.Secondary } },
+            TableColumnSize(GridTrack.Auto, minimum = 112.0, samples = ["Processing"]),
+            compare = Some { a, b -> a.status.compareTo(b.status).toInt() }
+        ),
+        TableColumn(
+            "email",
+            "Email",
+            { row -> label(row.email) },
+            TableColumnSize(GridTrack.Fraction(1.0), minimum = 220.0),
+            compare = Some { a, b -> a.email.compareTo(b.email).toInt() },
+            filter =
+                Some { row, text -> unicodeCasefold(row.email).contains(unicodeCasefold(text)) }
+        ),
+        TableColumn(
+            "amount",
+            "Amount",
+            { row -> label(f"USD ${row.amount}") },
+            TableColumnSize(GridTrack.Fixed(120.0), minimum = 100.0),
+            alignment = AxisAlignment.End,
+            compare = Some { a, b -> a.amount - b.amount }
+        ),
+        TableColumn(
+            "actions",
+            "",
+            { row -> component({ scope -> PaymentActions(row, onDetails, onDelete, scope) }) },
+            TableColumnSize(GridTrack.Fixed(56.0), minimum = 48.0),
+            hideable = false,
+            resizable = false
+        )
+    ]
+
+// Each row's menu keeps its own open state; the actions go back to the store.
+class PaymentActions(
+    private val row: Payment,
+    private val onDetails: (Payment) -> Unit,
+    private val onDelete: (Payment) -> Unit,
+    scope: ComponentScope
+): Component(scope) {
+    private val open = state(false)
+    public override fun render(): View {
+        val row = this.row
+        val onDetails = this.onDetails
+        val onDelete = this.onDelete
+        return dropdownMenu(
+            open.binding(),
+            menu {
+                this.label(ViewKey.Text("title"), f"Payment ${row.id + 1L}")
+                this.item(ViewKey.Text("details"), "View details", { onDetails(row) })
+                this.separator(ViewKey.Text("separator"))
+                this.item(ViewKey.Text("delete"), "Delete payment", { onDelete(row) }) {
+                    this.destructive = true
+                }
+            }
+        ) {
+            this.trigger("…") {
+                this.variant = ButtonVariant.Ghost
+                this.size = ButtonSize.IconSm
+            }
+        }
+    }
+}
+
+// Totals shown above the table; recomputed from the records on every change.
+class PaymentSummary(val count: Long, val total: Int, val pending: Long)
+
+fun summarize(records: Array<Payment>): PaymentSummary {
+    var total = 0
+    var pending = 0L
+    for (record in records) {
+        total += record.amount
+        if (record.status == "Pending")
+            pending += 1L
+    }
+    return PaymentSummary(records.size, total, pending)
+}
+
+fun statusChart(records: Array<Payment>): ChartData {
+    val names = ["Success", "Processing", "Pending"]
+    return ChartData(
+        Array<ChartDatum>(names.size) { at -> ChartDatum(ChartDatumKey(names[at]), names[at]) },
+        [
+            ChartSeries(
+                ChartSeriesKey("payments"),
+                "Payments",
+                Array<Double?>(names.size) {
+                    at ->
+                    var count = 0.0
+                    for (record in records)
+                        if (record.status == names[at])
+                            count += 1.0
+                    Some(count)
+                }
+            )
+        ]
+    )
+}
+
+// The application owns the data and every UI state that depends on it.
+class PaymentStore {
+    val records = state(Array<Payment>(24L) { at -> samplePayment(at) })
+    val filter = TextEditorState()
+    val status = state("Use a row menu to view or delete a payment.")
+    val confirming = state(false)
+    val pending = state<Payment?>(None)
+    val notifications = ToastState()
+    val chart = ChartModel(statusChart(records.value))
+    val table =
+        DataTableState(
+            TableData.Local(paymentRows(records.value)),
+            paymentColumns({ row -> showDetails(row) }, { row -> askDelete(row) }),
+            selectable = { row -> row.status != "Processing" }
+        )
+    init {
+        table.setPageSize(5L)
+    }
+
+    val summary: PaymentSummary get() = summarize(records.value)
+
+    fun applyFilter() {
+        table.setFilter("email", filter.committedText)
+    }
+    fun showDetails(row: Payment) {
+        status.value = f"Payment ${row.id + 1L}: ${row.email}, USD ${row.amount}, ${row.status}."
+    }
+    fun askDelete(row: Payment) {
+        pending.value = Some(row)
+        confirming.value = true
+    }
+    // One place pushes a new record list to every view that depends on it.
+    private fun replaceRecords(next: Array<Payment>) {
+        records.value = next
+        table.replaceData(TableData.Local(paymentRows(next)))
+        chart.replaceData(statusChart(next))
+    }
+    fun confirmDelete() {
+        val row = pending.value ?: return
+        confirming.value = false
+        pending.value = None
+        val current = records.value
+        val next = ArrayList<Payment>()
+        var position = -1L
+        for (at in 0L ..< current.size) {
+            if (current[at].id == row.id)
+                position = at
+            else
+                next.add(current[at])
+        }
+        if (position < 0L)
+            return
+        replaceRecords(next.toArray())
+        status.value = f"Payment ${row.id + 1L} deleted."
+        val store = this
+        val originalPosition = position
+        notifications.show("Payment deleted") {
+            this.kind = ToastKind.Success
+            this.description(f"${row.email} · USD ${row.amount}")
+            this.action("Undo", { store.restore(row, originalPosition) })
+        }
+    }
+    // Put the same record object back where it was, unless it is already there.
+    fun restore(row: Payment, position: Long) {
+        val current = records.value
+        for (record in current)
+            if (record.id == row.id)
+                return
+        val at =
+            if (position < current.size)
+                position
+            else
+                current.size
+        replaceRecords(
+            Array<Payment>(current.size + 1L) {
+                index -> if (index < at)
+                    current[index]
+                else if (index == at)
+                    row
+                else
+                    current[index - 1L]
+            }
+        )
+        status.value = f"Payment ${row.id + 1L} restored."
+    }
+    // Derived from the table's selection; nothing is copied into a second list.
+    val selectedAmount: Int get() {
+        var total = 0
+        for (record in records.value)
+            if (table.isSelected(ViewKey.Number(record.id)))
+                total += record.amount
+        return total
+    }
+}
+
+fun statCard(title: String, value: String): View =
+    card(
+        column {
+            this.typography(title, TypographyRole.Muted)
+            this.typography(value, TypographyRole.H3)
+            this.spacing = 4.0
+        }
+    ) { this.size = CardSize.Sm }
+
+class PaymentsApp(private val store: PaymentStore, scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+    public override fun render(): View {
+        val store = this.store
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val summary = store.summary
+        val filterInput =
+            input(store.filter) {
+                this.placeholder = "Filter emails…"
+                this.onEdited = { _ -> store.applyFilter() }
+            }
+        val warning = label("You can restore this payment from the notification.")
+        val payments = statCard("Payments", f"${summary.count}")
+        val volume = statCard("Total volume", f"USD ${summary.total}")
+        val waiting = statCard("Pending", f"${summary.pending}")
+        val content = column {
+            this.typography("Payments", TypographyRole.H2)
+            this.row {
+                this.item(payments) { this.grow = 1.0 }
+                this.item(volume) { this.grow = 1.0 }
+                this.item(waiting) { this.grow = 1.0 }
+                this.spacing = 12.0
+            }
+            this.chart(store.chart) {
+                this.kind = ChartKind.Bar
+                this.height = Some(140.0)
+                this.legend = false
+            }
+            this.dataTable(store.table) {
+                this.bodyHeight = 280.0
+                this.pageSizes = [5L, 10L, 20L]
+                this.toolbar(filterInput)
+            }
+            this.typography(f"Selected amount: USD ${store.selectedAmount}", TypographyRole.Muted)
+            this.typography(store.status.value, TypographyRole.Muted)
+            this.alertDialog(store.confirming.binding(), warning) {
+                this.title("Delete this payment?")
+                this.description(store.pending.value?.email ?: "")
+                this.cancel("Keep payment")
+                this.action("Delete payment", { store.confirmDelete() }) {
+                    this.variant = ButtonVariant.Destructive
+                }
+            }
+            this.toaster(store.notifications)
+            this.spacing = 16.0
+            this.padding = Insets.all(24.0)
+            this.alignment = CrossAlignment.Stretch
+        }
+        // The page is taller than the default window, so the root scrolls.
+        return frame(scrollArea(content)) {
+            this.style { this.background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val store = PaymentStore()
+    val source = ThemeSource(shadcnTheme())
+    context(source) {
+        runUiApplication("Payments", { scope -> PaymentsApp(store, scope) })
+    }
+}

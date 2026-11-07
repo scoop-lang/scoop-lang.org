@@ -1,0 +1,132 @@
+//! dep: scoop:scoop.surface:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+import scoop.surface.ShortcutScope
+import scoop.surface.shortcutBinding
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.text.TextEditorState
+import scoop.window.LogicalKey
+import scoop.window.ShortcutChord
+import scoop.window.ShortcutKey
+import scoop.window.ShortcutModifiers
+
+fun primaryChord(character: String): ShortcutChord =
+    ShortcutChord(
+        ShortcutKey.Logical(LogicalKey.Character(character)),
+        ShortcutModifiers(primary = true)
+    )
+
+class FocusDemo(scope: ComponentScope): Component(scope) {
+    // The theme in effect, used to paint the page background.
+    private val theme = currentThemeSource()
+    private val search = TextEditorState()
+    private val note = TextEditorState()
+    private val searchFocus = FocusHandle()
+    private val tools = Array<FocusHandle>(3L) { _ -> FocusHandle() }
+    private val tool = state("none")
+    private val count = state(0)
+
+    public override fun onMount() {
+        // Arrow keys move between the toolbar buttons; Tab enters the group once.
+        val items = Array<NavigationItem>(tools.size) { index -> NavigationItem(tools[index]) }
+        scope.keyNavigation(
+            navigationOptions {
+                this.addAll(items)
+                this.layout = NavigationLayout.Horizontal
+                this.loop = true
+            }
+        )
+        // Window-local shortcuts, released together with this component.
+        val searchFocus = this.searchFocus
+        val count = this.count
+        scope.resource {
+            ShortcutScope(
+                scope.input,
+                [
+                    shortcutBinding(
+                        primaryChord("k"),
+                        {
+                            searchFocus.requestFocus();
+                            Unit
+                        }
+                    ),
+                    shortcutBinding(primaryChord("i"), { count.value += 1 })
+                ]
+            )
+        }
+    }
+
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val search = this.search
+        val note = this.note
+        val searchFocus = this.searchFocus
+        val tools = this.tools
+        val tool = this.tool
+        val count = this.count
+        val names = ["Bold", "Italic", "Underline"]
+        val content =
+            column {
+                this.row {
+                    for (index in 0L ..< 3L)
+                        this.button(names[index], { tool.value = names[index] }) {
+                            this.variant = ButtonVariant.Outline
+                            this.focus = FocusOptions(Some(tools[index]))
+                        }
+                    this.spacing = 8.0
+                }
+                this.label(f"Last tool: ${tool.value}")
+                this.row {
+                    this.input(search) {
+                        this.placeholder = "Search"
+                        // order -1 sorts before every default (0) target: first Tab stop.
+                        this.focus = FocusOptions(Some(searchFocus), order = -1)
+                    }
+                    this.kbdGroup(primaryChord("k"))
+                    this.spacing = 8.0
+                    this.alignment = CrossAlignment.Center
+                }
+                this.input(note) { this.placeholder = "Note" }
+                this.row {
+                    this.button(
+                        "Focus search",
+                        {
+                            searchFocus.requestFocus();
+                            Unit
+                        }
+                    )
+                    this.button("Not in Tab order", { count.value += 1 }) {
+                        this.variant = ButtonVariant.Ghost
+                        this.focus = FocusOptions(tabStop = false)
+                    }
+                    this.spacing = 8.0
+                }
+                this.label(f"Primary+I pressed ${count.value} times")
+                this.spacing = 12.0
+                this.padding = Insets.all(20.0)
+                this.alignment = CrossAlignment.Stretch
+            }
+        return frame(content) {
+            this.alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            this.style { this.background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Focus", { scope -> FocusDemo(scope) })
+    }
+}

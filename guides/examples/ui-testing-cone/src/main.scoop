@@ -1,0 +1,13 @@
+package guide.examples.shopping
+
+import scoop.ui.*
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.macos.macosTheme
+
+fun main() {
+    val list = ShoppingList()
+    context(ThemeSource(macosTheme(ThemeMode.Light))) {
+        runUiApplication("Shopping", { scope -> ShoppingView(list, scope) })
+    }
+}

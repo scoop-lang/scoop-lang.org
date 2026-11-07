@@ -1,0 +1,157 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.text.TextEditorState
+
+class Preferences {
+    val topics = [state(true), state(false), state(false)]
+    val topicTargets = [FieldTarget(), FieldTarget(), FieldTarget(), FieldTarget()]
+    val darkMode = state(false)
+    val darkTarget = FieldTarget()
+    val bold = state(false)
+    val density = state<Int?>(Some(1))
+    val volume = state<Array<Double>>([40.0])
+    val price = state<Array<Double>>([20.0, 80.0])
+    val country = state<String?>(None)
+    val language = state<String?>(None)
+    val tags = state<Array<String>>(["Scoop"])
+    val languageQuery = TextEditorState()
+    val tagQuery = TextEditorState()
+    val languages =
+        [
+            Choice(ViewKey.Text("scoop"), "Scoop", "Scoop"),
+            Choice(ViewKey.Text("kotlin"), "Kotlin", "Kotlin"),
+            Choice(ViewKey.Text("rust"), "Rust", "Rust"),
+            Choice(ViewKey.Text("swift"), "Swift", "Swift")
+        ]
+
+    /** A derived binding: reads summarize the children, writes update all of them. */
+    fun allTopics(): Binding<CheckState> =
+        binding(
+            {
+                var selected = 0
+                for (topic in topics)
+                    if (topic.value)
+                        selected += 1
+                if (selected == 0)
+                    CheckState.Unchecked
+                else
+                    if (selected == topics.size.toInt())
+                        CheckState.Checked
+                    else
+                        CheckState.Indeterminate
+            },
+            {
+                next -> for (topic in topics)
+                    topic.value = next == CheckState.Checked
+            }
+        )
+}
+
+class ChoiceDemo(scope: ComponentScope): Component(scope) {
+    // The theme in effect, used to paint the page background.
+    private val theme = currentThemeSource()
+    private val model = Preferences()
+
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val model = this.model
+        val titles = ["Releases", "Security", "Weekly digest"]
+        val content =
+            column {
+                this.typography("Notifications", TypographyRole.H4)
+                this.row {
+                    this.checkbox(model.allTopics()) {
+                        this.labelTarget = Some(model.topicTargets[0L])
+                    }
+                    this.fieldLabel("All topics", model.topicTargets[0L])
+                    this.spacing = 8.0
+                    this.alignment = CrossAlignment.Center
+                }
+                for (index in 0L ..< 3L)
+                    this.row {
+                        this.checkbox(model.topics[index].binding()) {
+                            this.labelTarget = Some(model.topicTargets[index + 1L])
+                        }
+                        this.fieldLabel(titles[index], model.topicTargets[index + 1L])
+                        this.spacing = 8.0
+                        this.alignment = CrossAlignment.Center
+                        this.padding = Insets(24.0, 0.0, 0.0, 0.0)
+                    }
+                this.row {
+                    this.switchControl(model.darkMode.binding()) {
+                        this.labelTarget = Some(model.darkTarget)
+                    }
+                    this.fieldLabel("Dark mode", model.darkTarget)
+                    this.toggle("Bold", model.bold.binding())
+                    this.spacing = 12.0
+                    this.alignment = CrossAlignment.Center
+                }
+                this.typography("Density", TypographyRole.H4)
+                this.radioGroup(model.density.binding()) {
+                    this.axis = FlexAxis.Horizontal
+                    this.item(Choice(ViewKey.Number(0L), 0, "Compact"))
+                    this.item(Choice(ViewKey.Number(1L), 1, "Default"))
+                    this.item(Choice(ViewKey.Number(2L), 2, "Roomy"))
+                }
+                this.label(f"Volume: ${model.volume.value[0L].toInt()}")
+                this.slider(model.volume.binding(), RangeSpec(0.0, 100.0, Some(1.0)))
+                this.label(
+                    f"Price: ${model.price.value[0L].toInt()} – ${model.price.value[1L].toInt()}"
+                )
+                this.slider(
+                    model.price.binding(),
+                    RangeSpec(0.0, 100.0, Some(5.0), minimumGap = 10.0)
+                )
+                this.row {
+                    this.select(model.country.binding()) {
+                        this.placeholder = "Country"
+                        this.width = Some(180.0)
+                        this.item(Choice(ViewKey.Text("cn"), "cn", "China"))
+                        this.item(Choice(ViewKey.Text("de"), "de", "Germany"))
+                        this.item(Choice(ViewKey.Text("jp"), "jp", "Japan"))
+                    }
+                    this.combobox(model.language.binding(), model.languages, model.languageQuery) {
+                        this.placeholder = "Language"
+                        this.showClear = true
+                        this.width = 200.0
+                    }
+                    this.spacing = 12.0
+                }
+                this.combobox(model.tags.binding(), model.languages, model.tagQuery) {
+                    this.placeholder = "Add languages"
+                    this.width = 420.0
+                    this.valueText = Some({ value -> value })
+                }
+                this.label(
+                    f"country=${model.country.value ?: "-"} language=${
+                        model.language.value ?: "-"
+                    } tags=${model.tags.value.size}"
+                )
+                this.spacing = 12.0
+                this.padding = Insets.all(20.0)
+                this.alignment = CrossAlignment.Stretch
+            }
+        return frame(content) {
+            this.alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            this.style { this.background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Choices", { scope -> ChoiceDemo(scope) })
+    }
+}

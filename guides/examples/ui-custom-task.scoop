@@ -1,0 +1,165 @@
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.surface:0.1.0
+import scoop.graphics.*
+import scoop.surface.InputArea
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.macos.macosTheme
+
+class TaskList(scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+    private val first = state(false)
+    private val second = state(true)
+
+    public override fun render(): View {
+        val first = this.first
+        val second = this.second
+        val current = this.theme.current.value
+        var finished = 0
+        if (first.value)
+            finished += 1
+        if (second.value)
+            finished += 1
+        val done = finished
+        val content =
+            column {
+                spacing = 6.0
+                add(taskRow(current, "Write the outline", first))
+                add(taskRow(current, "Review the examples", second))
+                row {
+                    spacing = 12.0
+                    alignment = CrossAlignment.Center
+                    label(f"${done} of 2 done")
+                    button(
+                        "Reset",
+                        {
+                            first.value = false
+                            second.value = false
+                        }
+                    )
+                }
+            }
+        return frame(content) {
+            padding = Some(Insets.all(20.0))
+            alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            style { background(Some(Paint(current.tokens.palette.background.background))) }
+        }
+    }
+}
+
+/** The theme travels in Props, so a theme switch updates every row. */
+class TaskInput(val theme: Theme, val done: Boolean, val toggle: () -> Unit)
+
+fun taskRow(theme: Theme, title: String, done: State<Boolean>): View =
+    element(
+        TaskInput(theme, done.value, { done.value = !done.value }),
+        { props, mount -> TaskToggle(props, mount) },
+        [label(title)]
+    )
+
+/** Layout result: where the checkbox marker goes inside the row. */
+struct TaskLayout(val marker: Rect)
+
+class TaskToggle(private val props: Props<TaskInput>, scope: ComponentScope): Element<TaskLayout>(
+    scope
+) {
+    private var area: InputArea? = None
+    private var press: Press? = None
+    private var painters: ThemePainterCache? = None
+    private var decoration: StylePainter? = None
+
+    public override fun onMount() {
+        painters = Some(scope.resource { ThemePainterCache() })
+        decoration = Some(scope.resource { StylePainter() })
+        val region = scope.createArea(focusable = true)
+        area = Some(region)
+        // Joins Tab order together with the ordinary controls around it.
+        scope.focusTarget(region)
+        // Click, Space and Enter activation, with hover/pressed/focus state.
+        press = Some(scope.press(region) { props.value.toggle() })
+    }
+
+    public override fun update(): UiInvalidation {
+        painters!!.get(props.value.theme)
+        return UiInvalidation.Layout
+    }
+
+    public override fun measure(context: MeasureContext, constraints: Constraints): LayoutResult<
+        TaskLayout
+    > {
+        val theme = props.value.theme
+        val side = theme.checkboxMetrics(direction = context.layoutDirection).suggestedSize.width
+        val padding = 8.0
+        val gap = 8.0
+        val text = context.measureChild(0L, Constraints(maxWidth = Some(280.0)))
+        val height =
+            if (text.size.height > side)
+                text.size.height
+            else
+                side
+        context.placeChild(
+            0L,
+            Point(padding + side + gap, padding + (height - text.size.height) / 2.0)
+        )
+        val size =
+            constraints.constrain(
+                Size(padding * 2.0 + side + gap + text.size.width, height + padding * 2.0)
+            )
+        return LayoutResult(
+            LayoutMetrics(size),
+            TaskLayout(Rect(padding, padding + (height - side) / 2.0, side, side))
+        )
+    }
+
+    public override fun scene(context: SceneContext, layout: TaskLayout) {
+        val input = props.value
+        val region = area!!
+        // Reading the Press state here schedules a new frame when it changes.
+        val state = press!!.interaction
+        val visual =
+            CheckboxVisual(
+                if (input.done)
+                    CheckMark.On
+                else
+                    CheckMark.Off,
+                InteractionVisual(
+                    hovered = state.hovered,
+                    pressed = state.pressed,
+                    focusVisible = state.focusVisible
+                )
+            )
+        val geometry =
+            input.theme.checkboxGeometry(layout.marker, visual, direction = context.layoutDirection)
+        val palette = input.theme.tokens.palette
+        // A public Style draws the row background; the hover state just picks another color.
+        val rowStyle =
+            style {
+                background =
+                    if (state.hovered)
+                        Some(Paint(palette.accent.background))
+                    else
+                        None
+                corners = Corners.all(input.theme.tokens.corners.medium)
+            }
+        context.place(region, Rect(0.0, 0.0, context.size.width, context.size.height))
+        decoration!!.scene(context, rowStyle) {
+            content ->
+            content.draw {
+                paint -> painters!!.get(input.theme).drawCheckbox(paint.canvas, geometry, visual)
+            }
+            content.children()
+        }
+    }
+}
+
+fun main() {
+    val source = ThemeSource(macosTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Tasks", { scope -> TaskList(scope) })
+    }
+}

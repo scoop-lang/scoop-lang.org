@@ -1,0 +1,92 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+
+// One payment record. The id is stable and becomes the table row key.
+class Payment(val id: Long, val email: String, val amount: Int, val status: String)
+
+fun samplePayment(index: Long): Payment =
+    Payment(
+        index,
+        ["ada@example.com", "lin@example.com", "mika@example.com", "noor@example.org"][index % 4L],
+        (125L + index % 9L * 75L).toInt(),
+        ["Success", "Processing", "Success", "Pending", "Success"][index % 5L]
+    )
+
+// Wrap every record with its stable key; the table never guesses identity.
+fun paymentRows(records: Array<Payment>): TableRows<Payment> =
+    TableRows(
+        Array<TableRecord<Payment>>(records.size) {
+            at -> TableRecord(ViewKey.Number(records[at].id), records[at])
+        }
+    )
+
+fun paymentColumns(): Array<TableColumn<Payment>> =
+    [
+        TableColumn(
+            "status",
+            "Status",
+            { row -> badge(row.status) { this.variant = ButtonVariant.Secondary } },
+            TableColumnSize(GridTrack.Auto, minimum = 112.0, samples = ["Processing"]),
+            compare = Some { a, b -> a.status.compareTo(b.status).toInt() }
+        ),
+        TableColumn(
+            "email",
+            "Email",
+            { row -> label(row.email) },
+            TableColumnSize(GridTrack.Fraction(1.0), minimum = 220.0),
+            compare = Some { a, b -> a.email.compareTo(b.email).toInt() }
+        ),
+        TableColumn(
+            "amount",
+            "Amount",
+            { row -> label(f"USD ${row.amount}") },
+            TableColumnSize(GridTrack.Fixed(120.0), minimum = 100.0),
+            alignment = AxisAlignment.End,
+            compare = Some { a, b -> a.amount - b.amount }
+        )
+    ]
+
+// The application owns the data and the table state; components only read them.
+class PaymentStore {
+    var records = Array<Payment>(24L) { at -> samplePayment(at) }
+    val table = DataTableState(TableData.Local(paymentRows(records)), paymentColumns())
+}
+
+class PaymentsApp(private val store: PaymentStore, scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+    public override fun render(): View {
+        val store = this.store
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val content = column {
+            this.typography("Payments", TypographyRole.H2)
+            this.typography("Click a column header to sort.", TypographyRole.Muted)
+            this.dataTable(store.table) { this.bodyHeight = 300.0 }
+            this.spacing = 16.0
+            this.alignment = CrossAlignment.Stretch
+        }
+        // The root frame paints the theme background and keeps content at the top.
+        return frame(content) {
+            this.padding = Some(Insets.all(24.0))
+            this.alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+            this.style { this.background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val store = PaymentStore()
+    val source = ThemeSource(shadcnTheme())
+    context(source) {
+        runUiApplication("Payments", { scope -> PaymentsApp(store, scope) })
+    }
+}

@@ -1,0 +1,268 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.macos:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.label as labelView
+import scoop.ui.component.textarea as textareaView
+import scoop.ui.style.Insets
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.macos.macosTheme
+import scoop.ui.text.TextEditorState
+import scoop.window.*
+
+class NotesApp {
+    var editor: EditorView? = None
+
+    fun event(host: UiHost, application: ActiveApplication, event: ApplicationEvent) {
+        when (event) {
+            case Resumed -> {
+                host.attachApplication(application) { scope -> NotesMenu(scope) }
+                val window =
+                    application.createWindow(
+                        windowAttributes {
+                            title = "Notes"
+                            size = LogicalSize(640.0, 440.0)
+                            frame = WindowFrame.Client
+                        }
+                    )
+                host.attach(window, { scope -> EditorView(this, scope) })
+            }
+            // Both the close button and windowControls() end up here.
+            case Window(_, WindowEvent.CloseRequested) -> editor?.confirmClose()
+            case ExitRequested(_) -> editor?.confirmClose()
+            else -> {}
+        }
+    }
+}
+
+fun editMenu(): NativeMenuContent =
+    nativeMenu {
+        role(ViewKey.Text("undo"), "Undo", MenuRole.Undo) { shortcut = Some(primaryKey("z")) }
+        role(ViewKey.Text("redo"), "Redo", MenuRole.Redo)
+        separator(ViewKey.Text("history"))
+        role(ViewKey.Text("cut"), "Cut", MenuRole.Cut) { shortcut = Some(primaryKey("x")) }
+        role(ViewKey.Text("copy"), "Copy", MenuRole.Copy) { shortcut = Some(primaryKey("c")) }
+        role(ViewKey.Text("paste"), "Paste", MenuRole.Paste) { shortcut = Some(primaryKey("v")) }
+        role(ViewKey.Text("all"), "Select All", MenuRole.SelectAll) {
+            shortcut = Some(primaryKey("a"))
+        }
+    }
+
+fun primaryKey(character: String): ShortcutChord =
+    ShortcutChord(
+        ShortcutKey.Logical(LogicalKey.Character(character)),
+        ShortcutModifiers(primary = true)
+    )
+
+// The application menu: the first submenu becomes the macOS application menu.
+class NotesMenu(scope: ApplicationScope): ApplicationComponent(scope) {
+    public override fun render(): ApplicationContent =
+        ApplicationContent(
+            [
+                nativeApplicationMenuBar(
+                    nativeMenu {
+                        submenu(
+                            ViewKey.Text("app"),
+                            "Notes",
+                            nativeMenu {
+                                role(ViewKey.Text("quit"), "Quit Notes", MenuRole.Quit) {
+                                    shortcut = Some(primaryKey("q"))
+                                }
+                            }
+                        )
+                        submenu(ViewKey.Text("edit"), "Edit", editMenu())
+                    },
+                    ViewKey.Text("menu")
+                )
+            ]
+        )
+}
+
+class EditorView(private val app: NotesApp, scope: ComponentScope): Component(scope) {
+    val text = TextEditorState("Right-click here for a native context menu.")
+    val pinned = state(false)
+    val status = state("Ready")
+    val tool = scope.nativeToolWindowController()
+    val confirm = scope.nativeDialogController<Boolean>(DialogTarget.Owner(scope.nativeWindow))
+    // Capabilities describe the current backend; unsupported requests throw.
+    val frameCaps = scope.application.desktopCapabilities().frame
+    private val theme = currentThemeSource()
+    init {
+        app.editor = Some(this)
+    }
+
+    fun confirmClose() {
+        val window = scope.nativeWindow
+        val application = scope.application
+        val status = this.status
+        confirm.open(
+            { reply, mount -> ConfirmClose(reply, mount) },
+            {
+                result -> when (result) {
+                    case Accepted(yes) -> if (yes)
+                        application.requestExit()
+                    case Cancelled(_) -> status.value = "Close cancelled"
+                    case Failed(error) -> status.value = error.message ?: "Dialog failed"
+                }
+            },
+            attributes =
+                windowAttributes {
+                    title = "Close Notes?"
+                    size = LogicalSize(360.0, 160.0)
+                }
+        )
+    }
+
+    fun showStats() {
+        val text = this.text
+        tool.open(
+            { mount -> StatsView(text, mount) },
+            attributes =
+                windowAttributes {
+                    title = "Statistics"
+                    size = LogicalSize(260.0, 140.0)
+                },
+            appearance = NativeToolAppearance.PreferTool
+        )
+    }
+
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val view = this
+        val window = scope.nativeWindow
+        val pinned = this.pinned
+        val status = this.status
+        val actions =
+            nativeMenu {
+                checkboxItem(
+                    ViewKey.Text("pin"),
+                    "Keep on top",
+                    pinned.binding(),
+                    {
+                        on -> window.setWindowLevel(
+                            if (on)
+                                WindowLevel.AlwaysOnTop
+                            else
+                                WindowLevel.Normal
+                        )
+                    }
+                )
+                item(ViewKey.Text("stats"), "Statistics…", { _ -> view.showStats() }) {
+                    enabled = !view.tool.isOpen
+                }
+                separator(ViewKey.Text("edit-separator"))
+                submenu(ViewKey.Text("edit"), "Edit", editMenu())
+            }
+        // A custom title bar: drag blank space to move, double-click to maximize.
+        val titleBar =
+            windowDragRegion(
+                frame(
+                    row {
+                        spacing = 10.0
+                        alignment = CrossAlignment.Center
+                        add(windowControls())
+                        label("Notes")
+                        add(nativeMenuButton("Actions", actions))
+                    }
+                ) { padding = Some(Insets(12.0, 6.0, 12.0, 6.0)) }
+            )
+        val body =
+            frame(
+                column {
+                    spacing = 12.0
+                    add(nativeContextMenu(textareaView(view.text) { rows = 8L }, actions))
+                    row {
+                        spacing = 8.0
+                        add(
+                            nativeOpenFileButton(
+                                "Open…",
+                                DialogTarget.Owner(window),
+                                {
+                                    result -> when (result) {
+                                        case Accepted(path) -> status.value =
+                                            "Picked " + path.display()
+                                        case Cancelled(_) -> status.value = "Open cancelled"
+                                        case Failed(error) -> status.value =
+                                            error.message ?: "Open failed"
+                                    }
+                                }
+                            ) {
+                                options =
+                                    OpenFileOptions(types = FileTypes.Extensions(["txt", "md"]))
+                            }
+                        )
+                        button("Close…", { window.requestClose() })
+                    }
+                    label(status.value)
+                    if (view.frameCaps.resizeHitRegions || view.frameCaps.beginResize)
+                        add(
+                            windowResizeRegion(
+                                WindowResizeEdge.BottomRight,
+                                labelView("Drag to resize ↘")
+                            )
+                        )
+                }
+            ) {
+                padding = Some(Insets.all(16.0))
+                style { background(Some(Paint(pageColor))) }
+            }
+        return windowChrome(body) {
+            frame = WindowFrame.Client
+            this.titleBar = Some(titleBar)
+            titleBarHeight = 44.0
+        }
+    }
+}
+
+class StatsView(private val text: TextEditorState, scope: ComponentScope): Component(scope) {
+    private val theme = currentThemeSource()
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        // Reading the editor state here re-renders this window when the text changes.
+        val content = text.committedText
+        return frame(label(f"${content.charLength} characters")) {
+            style { background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+class ConfirmClose(
+    private val reply: NativeDialogResponse<Boolean>,
+    scope: ComponentScope
+): Component(scope) {
+    private val theme = currentThemeSource()
+    public override fun render(): View {
+        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val reply = this.reply
+        return frame(
+            column {
+                spacing = 12.0
+                label("Quit Notes? Unsaved text will be lost.")
+                row {
+                    spacing = 8.0
+                    button("Quit", { reply.accept(true) })
+                    button("Cancel", { reply.cancel() })
+                }
+            }
+        ) {
+            padding = Some(Insets.all(20.0))
+            style { background(Some(Paint(pageColor))) }
+        }
+    }
+}
+
+fun main() {
+    val app = NotesApp()
+    context(ThemeSource(macosTheme(ThemeMode.Light))) {
+        UiHost(handler = { host, application, event -> app.event(host, application, event) }).use {
+            host -> Application().run(host)
+        }
+    }
+}

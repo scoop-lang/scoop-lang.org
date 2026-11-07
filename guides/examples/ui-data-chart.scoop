@@ -1,0 +1,131 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.avatar as makeAvatar
+import scoop.ui.component.bubble as makeBubble
+import scoop.ui.component.column as makeColumn
+import scoop.ui.component.typography as makeText
+import scoop.ui.style.Insets
+import scoop.ui.style.Theme
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+
+fun visitorData(): ChartData {
+    val months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+    return ChartData(
+        Array<ChartDatum>(months.size) { at -> ChartDatum(ChartDatumKey(months[at]), months[at]) },
+        [
+            ChartSeries(
+                ChartSeriesKey("desktop"),
+                "Desktop",
+                [Some(186.0), Some(305.0), Some(237.0), Some(73.0), Some(209.0), Some(214.0)]
+            ),
+            ChartSeries(
+                ChartSeriesKey("mobile"),
+                "Mobile",
+                [Some(80.0), Some(200.0), Some(120.0), Some(190.0), Some(130.0), Some(140.0)]
+            )
+        ]
+    )
+}
+
+class ReportModel {
+    val kind = state(ChartKind.Bar)
+    val visitors = ChartModel(visitorData())
+}
+
+fun kindName(kind: ChartKind): String =
+    when (kind) {
+        case Bar -> "Bar"
+        case Line -> "Line"
+        case Area -> "Area"
+        else -> "Other"
+    }
+
+fun conversation(): View =
+    makeColumn {
+        marker("Today at 10:24") { variant = MarkerVariant.Separator }
+        message(
+            makeBubble("Can you summarize last month's traffic?") { align = MessageAlignment.End }
+        ) { align = MessageAlignment.End }
+        trace(
+            "Read the analytics report",
+            makeText("Loaded 6 months of data.", TypographyRole.Muted)
+        ) { status = TraceStatus.Complete }
+        traceLine("Drafting the summary") { status = TraceStatus.Running }
+        message(
+            makeBubble("Desktop visits peaked in February.") { variant = BubbleVariant.Secondary }
+        ) {
+            avatar = Some(makeAvatar("AI"))
+            header("Assistant")
+            footer("Just now")
+        }
+        spacing = 12.0
+        alignment = CrossAlignment.Stretch
+    }
+
+fun reportPage(model: ReportModel, theme: Theme): View {
+    val left =
+        makeColumn {
+            row {
+                for (kind in [ChartKind.Bar, ChartKind.Line, ChartKind.Area])
+                    button(kindName(kind), { model.kind.value = kind }) {
+                        variant =
+                            if (model.kind.value == kind)
+                                ButtonVariant.Default
+                            else
+                                ButtonVariant.Outline
+                    }
+                spacing = 8.0
+            }
+            chart(model.visitors) {
+                kind = model.kind.value
+                curve = ChartCurve.Monotone
+                height = Some(260.0)
+            }
+            spacing = 16.0
+            alignment = CrossAlignment.Stretch
+        }
+    val content =
+        row {
+            item(left) {
+                grow = 1.0
+                basis = FlexBasis.Fixed(0.0)
+            }
+            item(conversation()) {
+                grow = 1.0
+                basis = FlexBasis.Fixed(0.0)
+            }
+            spacing = 32.0
+            alignment = CrossAlignment.Start
+        }
+    return page(theme, content)
+}
+
+/** Paints the theme background and places the content at the top-left. */
+fun page(theme: Theme, content: View): View =
+    frame(content) {
+        padding = Some(Insets.all(24.0))
+        alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+        style { background(Some(Paint(theme.tokens.palette.background.background))) }
+    }
+
+class ReportDemo(scope: ComponentScope): Component(scope) {
+    private val model = ReportModel()
+    private val theme = currentThemeSource()
+    public override fun render(): View = reportPage(model, theme.current.value)
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Report", { scope -> ReportDemo(scope) })
+    }
+}

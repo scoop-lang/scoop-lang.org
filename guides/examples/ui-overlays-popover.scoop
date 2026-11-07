@@ -1,0 +1,116 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.button as makeButton
+import scoop.ui.component.column as makeColumn
+import scoop.ui.component.input as makeInput
+import scoop.ui.component.typography as makeText
+import scoop.ui.style.Insets
+import scoop.ui.style.Theme
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+import scoop.ui.text.TextEditorState
+
+class PopoverModel {
+    val open = state(false)
+    val mode = state(OverlayMode.NonModal)
+    val locked = state(false)
+    val saved = state("No name saved yet")
+    val name = TextEditorState("Ada")
+    val nameFocus = FocusHandle()
+    val handle = OverlayHandle()
+}
+
+fun modeName(mode: OverlayMode): String =
+    when (mode) {
+        case NonModal -> "NonModal"
+        case FocusContained -> "FocusContained"
+        case Modal -> "Modal"
+    }
+
+fun popoverPage(model: PopoverModel, theme: Theme): View {
+    val save = makeButton("Save", { model.saved.value = f"Saved: ${model.name.text}" })
+    val profile =
+        makeColumn {
+            typography("Ada Lovelace", TypographyRole.Large)
+            typography("Wrote the first published program.", TypographyRole.Muted)
+            spacing = 4.0
+        }
+    val form =
+        makeColumn {
+            add(makeInput(model.name) { focus = FocusOptions(Some(model.nameFocus)) })
+            button("Done", { model.handle.requestClose() })
+            button(
+                if (model.locked.value)
+                    "Unlock closing"
+                else
+                    "Lock closing",
+                { model.locked.value = !model.locked.value }
+            ) { variant = ButtonVariant.Ghost }
+            spacing = 8.0
+            alignment = CrossAlignment.Stretch
+        }
+    val content =
+        makeColumn {
+            row {
+                tooltip(save, "Save the current name")
+                hoverCard(makeText("@ada", TypographyRole.P), profile)
+                spacing = 16.0
+                alignment = CrossAlignment.Center
+            }
+            row {
+                for (mode in [OverlayMode.NonModal, OverlayMode.FocusContained, OverlayMode.Modal])
+                    button(modeName(mode), { model.mode.value = mode }) {
+                        variant =
+                            if (model.mode.value == mode)
+                                ButtonVariant.Default
+                            else
+                                ButtonVariant.Outline
+                    }
+                spacing = 8.0
+            }
+            row {
+                popover(model.open.binding(), form) {
+                    trigger("Edit name")
+                    title("Display name")
+                    description("Changes apply when you press Save.")
+                    mode = model.mode.value
+                    focus = OverlayFocusOptions(Some(model.nameFocus))
+                    handle = Some(model.handle)
+                    onCloseRequest = { _ -> !model.locked.value }
+                }
+            }
+            typography(f"${model.saved.value} · open = ${model.open.value}", TypographyRole.Muted)
+            spacing = 16.0
+            alignment = CrossAlignment.Start
+        }
+    return page(theme, content)
+}
+
+/** Paints the theme background and places the content at the top-left. */
+fun page(theme: Theme, content: View): View =
+    frame(content) {
+        padding = Some(Insets.all(24.0))
+        alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+        style { background(Some(Paint(theme.tokens.palette.background.background))) }
+    }
+
+class PopoverDemo(scope: ComponentScope): Component(scope) {
+    private val model = PopoverModel()
+    private val theme = currentThemeSource()
+    public override fun render(): View = popoverPage(model, theme.current.value)
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Popovers", { scope -> PopoverDemo(scope) })
+    }
+}

@@ -1,0 +1,86 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.column as makeColumn
+import scoop.ui.component.input as makeInput
+import scoop.ui.component.typography as makeText
+import scoop.ui.style.Insets
+import scoop.ui.style.Theme
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+import scoop.ui.text.TextEditorState
+
+class NavModel {
+    val page = state("Overview")
+    val menuOpen = state<ViewKey?>(None)
+    val tab = state<Int?>(Some(0))
+    val notes = TextEditorState("Drafts survive switching tabs.")
+
+    fun navigate(target: String) {
+        page.value = target
+        menuOpen.value = None
+    }
+}
+
+fun guidesPanel(model: NavModel): View =
+    makeColumn {
+        navigationMenuLink("Getting started", { model.navigate("Getting started") })
+        navigationMenuLink("Language guide", { model.navigate("Language guide") })
+        navigationMenuLink("UI tutorial", { model.navigate("UI tutorial") })
+        spacing = 4.0
+        alignment = CrossAlignment.Stretch
+    }
+
+fun navPage(model: NavModel, theme: Theme): View {
+    val overview = makeText(f"You are reading: ${model.page.value}", TypographyRole.P)
+    val notes = makeInput(model.notes)
+    val content =
+        makeColumn {
+            navigationMenu(Some(model.menuOpen.binding())) {
+                link(ViewKey.Text("home"), "Home", { model.navigate("Overview") })
+                item(ViewKey.Text("guides"), "Guides", guidesPanel(model))
+            }
+            breadcrumb {
+                item("Home", { model.navigate("Overview") })
+                item("Guides", { model.navigate("Guides") })
+                current(model.page.value)
+            }
+            tabs(model.tab.binding()) {
+                variant = TabsVariant.Line
+                retention = ContentRetention.KeepMounted
+                item(Choice(ViewKey.Text("overview"), 0, "Overview"), overview)
+                item(Choice(ViewKey.Text("notes"), 1, "Notes"), notes)
+            }
+            spacing = 20.0
+            alignment = CrossAlignment.Stretch
+        }
+    return page(theme, content)
+}
+
+/** Paints the theme background and places the content at the top-left. */
+fun page(theme: Theme, content: View): View =
+    frame(content) {
+        padding = Some(Insets.all(24.0))
+        alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+        style { background(Some(Paint(theme.tokens.palette.background.background))) }
+    }
+
+class NavDemo(scope: ComponentScope): Component(scope) {
+    private val model = NavModel()
+    private val theme = currentThemeSource()
+    public override fun render(): View = navPage(model, theme.current.value)
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Navigation", { scope -> NavDemo(scope) })
+    }
+}
