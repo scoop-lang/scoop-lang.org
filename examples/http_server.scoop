@@ -17,11 +17,10 @@ private struct GreetingOutput(val message: String) {
 }
 
 fun main() {
-    val loop: EventLoop = PlatformEventLoop()
+    val loop = eventLoop()
     loop.run suspend {
-        scope -> HttpServer.listen(scope) {
-            routes ->
-            routes.get(
+        HttpServer.listen(this) {
+            get(
                 "/greet",
                 suspend {
                     ctx ->
@@ -29,7 +28,7 @@ fun main() {
                     json(GreetingOutput("Hello, " + query.name + "!"))
                 }
             )
-            routes.post(
+            post(
                 "/greet",
                 suspend {
                     ctx ->

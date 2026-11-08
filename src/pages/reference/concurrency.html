@@ -65,9 +65,9 @@ fun main() {
 <p>核心库在原语之上提供结构化的任务树：</p>
 <div class="table-wrap"><table>
   <tr><th>声明</th><th>作用</th></tr>
-  <tr><td><code>suspend fun &lt;T&gt; coroutineScope(block: suspend (CoroutineScope) -&gt; T): T</code></td><td>建立子作用域；等待正文与所有子任务完成后才返回</td></tr>
-  <tr><td><code>scope.launch(block: suspend () -&gt; Unit): Job</code></td><td>启动不返回值的子任务</td></tr>
-  <tr><td><code>scope.async&lt;T&gt;(block: suspend () -&gt; T): Deferred&lt;T&gt;</code></td><td>启动返回值的子任务</td></tr>
+  <tr><td><code>suspend fun &lt;T&gt; coroutineScope(block: suspend CoroutineScope.() -&gt; T): T</code></td><td>建立子作用域，正文以该作用域为接收者，可以直接调用 <code>launch</code>/<code>async</code>；等待正文与所有子任务完成后才返回</td></tr>
+  <tr><td><code>scope.launch(block: suspend CoroutineScope.() -&gt; Unit): Job</code></td><td>启动不返回值的子任务</td></tr>
+  <tr><td><code>scope.async&lt;T&gt;(block: suspend CoroutineScope.() -&gt; T): Deferred&lt;T&gt;</code></td><td>启动返回值的子任务</td></tr>
   <tr><td><code>job.join()</code> / <code>deferred.await()</code></td><td>等待任务结束 / 取得结果或重新抛出其异常；可以多次调用</td></tr>
   <tr><td><code>job.cancel()</code>、<code>isCancelled</code>、<code>isCompleted</code></td><td>请求取消与查询状态</td></tr>
   <tr><td><code>ensureActive()</code>、<code>currentJobOrNone()</code></td><td>在当前任务已取消时抛出 <code>CancellationException</code>；取得当前 <code>Job</code></td></tr>
@@ -75,21 +75,21 @@ fun main() {
   <tr><td><code>nonCancellableScope(block)</code></td><td>在取消之后仍需完成的异步清理</td></tr>
   <tr><td><code>suspendCancellableCoroutine(registration)</code></td><td>能被所属任务取消的挂起点</td></tr>
 </table></div>
-<p>使用这些 API 需要一个驱动协程的事件循环。<code>scoop.asyncio</code> 的 <code>PlatformEventLoop.run</code> 是同步的根入口：它建立根作用域，运行到根正文和全部子任务完成后返回。</p>
+<p>使用这些 API 需要一个驱动协程的事件循环。<code>scoop.asyncio</code> 用 <code>eventLoop()</code> 创建 <code>PlatformEventLoop</code>（可传入配置 lambda 选择阻塞线程池），它的 <code>run</code> 是同步的根入口：它建立根作用域并以它为接收者运行正文，到根正文和全部子任务完成后返回。</p>
 <pre><code class="language-scoop">//! dep: scoop:scoop.asyncio:0.1.0
 
 import scoop.asyncio.*
 import scoop.time.Duration
 
 fun main() {
-    val loop: EventLoop = PlatformEventLoop()
-    loop.run suspend { scope -&gt;
-        val total = coroutineScope&lt;Int&gt; suspend { inner -&gt;
-            val a = inner.async&lt;Int&gt; suspend {
+    val loop = eventLoop()
+    loop.run suspend {
+        val total = coroutineScope&lt;Int&gt; suspend {
+            val a = async&lt;Int&gt; suspend {
                 loop.sleep(Duration.milliseconds(10L))
                 1
             }
-            val b = inner.async&lt;Int&gt; suspend { 2 }
+            val b = async&lt;Int&gt; suspend { 2 }
             a.await() + b.await()
         }
         println(total)                                   // 3
@@ -111,9 +111,9 @@ import scoop.asyncio.*
 import scoop.time.Duration
 
 fun main() {
-    val loop: EventLoop = PlatformEventLoop()
-    loop.run suspend { scope -&gt;
-        val worker = scope.launch suspend {
+    val loop = eventLoop()
+    loop.run suspend {
+        val worker = launch suspend {
             try {
                 while (true) {
                     loop.sleep(Duration.milliseconds(5L))   // 可取消的挂起点
@@ -128,8 +128,8 @@ fun main() {
         println(f"cancelled=${worker.isCancelled}")
 
         try {
-            coroutineScope&lt;Unit&gt; suspend { s -&gt;
-                s.launch suspend { throw IllegalStateException(Some("child failed")) }
+            coroutineScope&lt;Unit&gt; suspend {
+                launch suspend { throw IllegalStateException(Some("child failed")) }
                 loop.sleep(Duration.milliseconds(50L))
             }
         } catch (e: IllegalStateException) {
