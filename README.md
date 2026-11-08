@@ -70,7 +70,9 @@ version 0.0.0-dev
 package macos 2026-11-07/macos/scoop-0.0.0-dev-bin-aarch64-apple-darwin.tar.xz
 ```
 
-支持 Apple Silicon macOS 和 x86-64 Linux。索引中没有本平台的包时（目前 Windows 即如此），脚本提示包尚未就绪，需从源码编译。
+每个平台目录包含该宿主的 `bin`、全局的 `sources`、各目标的 `lib-base`／`lib-gui`，Windows 另有两个 MinGW 目标的 `native` 包；系统库已预编译在 lib 包中，post-install 只生成 API 文档。
+
+脚本支持 Apple Silicon macOS 和 x86-64 Linux。在 Windows（MSYS／Git Bash）上运行时只列出索引中的下载地址，需按安装页手动解压并运行 `post-install.ps1`；索引中没有本平台的包时，脚本提示包尚未就绪，需从源码编译。
 
 上传新 release 后，用 `.envrc` 中的 R2 凭据重新生成索引（索引不收录 `llvm-sources` 包）：
 
@@ -149,7 +151,7 @@ python3 tools/check_reference.py types ffi    # 指定页面
 
 ### 发布用的 API 文档
 
-CI 使用仓库内的 `data/api-docs.tar.xz`，不依赖 runner 上预装 Scoop。压缩包顶层就是 `scoop doc` 生成的站点，包含 `index.html`、`assets/` 和 `c/`，不套额外的目录。当前快照更新于 2026-10-31，基于 Scoop `0.0.0-dev`（revision `35e26383d3ec3d57898978907b628b3a8daaa5b1`），使用 `codex/doc-html-style` 分支的文档样式生成，覆盖 `aarch64-apple-darwin` 的 27 个系统库；API 内容中的条件声明与该目标平台一致。
+CI 使用仓库内的 `data/api-docs.tar.xz`，不依赖 runner 上预装 Scoop。压缩包顶层就是 `scoop doc` 生成的站点，包含 `index.html`、`assets/` 和 `c/`，不套额外的目录。当前快照更新于 2026-11-09，由 release `2026-11-09`（Scoop `0.0.0-dev.20261109`，revision `10a20c6c78c9b754357bb02d964dd69d26be1bf9`）的 post-install 生成，安装了 lib-base 与 lib-gui 包，覆盖 `aarch64-apple-darwin` 的 44 个系统库；API 内容中的条件声明与该目标平台一致。
 
 更新工具链、生成并检查新的 API 文档后，在网站仓库根目录执行：
 
