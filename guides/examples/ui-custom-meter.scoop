@@ -63,7 +63,7 @@ class Meter(private val props: Props<MeterInput>, scope: ComponentScope): Elemen
         if (current.phase != RoutedPhase.Target)
             return
         when (event) {
-            case Pointer(InputPointerEvent.Button(_, MouseButton.Left, button, _)) -> {
+            case Pointer(InputPointerEvent.Button(_, MouseButton.Left, val button, _)) -> {
                 dragging = button == ElementState.Pressed
                 if (dragging)
                     pick(current.localPosition!!)

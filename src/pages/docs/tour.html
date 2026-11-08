@@ -36,6 +36,7 @@
 {{example enums}}
 <ul>
   <li>在 <code>case</code> 中，变体名可以省略 <code>Shape.</code> 前缀，由 subject 的类型解析；</li>
+  <li>模式中的绑定必须显式写 <code>val</code>，例如 <code>Circle(val r)</code>、<code>Rect { val width, val height }</code>；不带 <code>val</code> 的裸名称只匹配 enum 变体；</li>
   <li>含 <code>case</code> 的 <code>when</code> 必须<strong>穷尽</strong>，否则编译器会报错并给出一个未覆盖的示例；带 guard 的分支不计入覆盖；</li>
   <li><code>enum Status: Int { … }</code> 声明<strong>整型枚举</strong>：每个变体有显式数值，可以按值上转为 <code>Int</code>，但整数不能隐式转回枚举；</li>
   <li>变体不是类型，不能用于 <code>is</code> 检查或作为变量类型，提取载荷一律通过 <code>when</code>。</li>
@@ -49,7 +50,7 @@
   <li><code>a ?: b</code>：取 <code>Some</code> 的载荷，否则求值 <code>b</code>（可以是 <code>return</code> 或 <code>throw</code>）；</li>
   <li><code>a!!</code>：取载荷，<code>None</code> 时抛出 <code>UnwrapException</code>；</li>
   <li>可空是逐层的：<code>T??</code> 是 <code>Option&lt;Option&lt;T&gt;&gt;</code>，<code>Some(None)</code> 与 <code>None</code> 可以区分；安全调用<strong>不会展平</strong>结果；</li>
-  <li><code>Option</code> 是普通 enum，可以直接在 <code>when</code> 里深度匹配，例如 <code>case Some(User { email: Some(addr), .. })</code>。</li>
+  <li><code>Option</code> 是普通 enum，可以直接在 <code>when</code> 里深度匹配，例如 <code>case Some(User { email: Some(val addr), .. })</code>。</li>
 </ul>
 
 <h2 id="classes">类、接口与对象</h2>

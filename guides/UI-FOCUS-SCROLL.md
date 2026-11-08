@@ -169,7 +169,7 @@ class NumberRows(private val picked: State<Long>): ItemSource {
     public override fun keyAt(index: Long): ViewKey = ViewKey.Number(index)
     public override fun indexOfKey(key: ViewKey): Long? =
         when (key) {
-            case Number(index) -> if (index >= 0L && index < count)
+            case Number(val index) -> if (index >= 0L && index < count)
                 Some(index)
             else
                 None
@@ -211,7 +211,7 @@ class Notes(private val editors: Array<TextEditorState>): ItemSource {
     public override fun keyAt(index: Long): ViewKey = ViewKey.Number(index)
     public override fun indexOfKey(key: ViewKey): Long? =
         when (key) {
-            case Number(index) -> if (index >= 0L && index < count) Some(index) else None
+            case Number(val index) -> if (index >= 0L && index < count) Some(index) else None
             else -> None
         }
     public override fun build(index: Long): View = textarea(editors[index]) { this.rows = 2L }

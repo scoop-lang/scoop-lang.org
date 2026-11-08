@@ -76,8 +76,8 @@ fun main() {
     }
 
     fun area(): Double = when (this) {
-        case Circle(r) -&gt; 3.14159 * r * r
-        case Rect { width, height } -&gt; width * height
+        case Circle(val r) -&gt; 3.14159 * r * r
+        case Rect { val width, val height } -&gt; width * height
     }
 }
 
@@ -214,7 +214,8 @@ fun main() {
   <li><code>..</code> 在位置模式中至多出现一次，可以位于开头、中间或结尾，表示忽略任意多个元素；在字段模式中只能位于末尾。</li>
   <li>普通 class 与接口可以通过 <code>operator fun component1()</code>、<code>component2()</code>……支持位置解构（不能使用 <code>..</code>），见<a href="operators.html#components">运算符</a>。struct 与 tuple 的解构是内建的，不查找 <code>componentN</code>。</li>
   <li>被解构的值只求值一次；<code>var</code> 解构声明中只有叶子名称是可变的。</li>
-  <li>在解构模式中，单独的标识符<strong>总是</strong>新绑定，即使它与某个 enum 变体同名。</li>
+  <li>在解构模式中，单独的标识符<strong>总是</strong>新绑定，叶位置不再写 <code>val</code>；这与 <code>when</code> 的 case 模式相反，后者的绑定必须写成 <code>val name</code>，见<a href="patterns.html#bindings">绑定与裸标识符</a>。</li>
+  <li>新绑定与该位置实际可用的 enum 变体同名时（例如 <code>val None = 1</code> 遮蔽了 <code>Option.None</code>），编译器给出警告，声明仍然合法。</li>
 </ul>
 <pre data-check="error"><code class="language-scoop">fun main() {
     val maybe: Int? = Some(1)

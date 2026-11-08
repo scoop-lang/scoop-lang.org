@@ -104,13 +104,13 @@ class PrimeWorker(private val proxy: ApplicationProxy, private val model: PrimeM
 
     private fun isCurrent(task: PrimeTask): Boolean =
         when (current) {
-            case Some(value) -> value === task
+            case Some(val value) -> value === task
             case None -> false
         }
 
     fun cancel() {
         when (current) {
-            case Some(task) -> {
+            case Some(val task) -> {
                 task.cancelled.store(true, MemoryOrder.Release)
                 model.phase.value = Phase.Cancelled
                 model.message.value = "Cancelling…"

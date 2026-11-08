@@ -138,7 +138,7 @@ private fun handle(current: RoutedEventContext, event: InputEvent) {
     if (current.phase != RoutedPhase.Target)
         return
     when (event) {
-        case Pointer(InputPointerEvent.Button(_, MouseButton.Left, button, _)) -> {
+        case Pointer(InputPointerEvent.Button(_, MouseButton.Left, val button, _)) -> {
             dragging = button == ElementState.Pressed
             if (dragging)
                 pick(current.localPosition!!)

@@ -77,11 +77,11 @@ fun main() {
     val info = typeInfo&lt;Point&gt;()
     println(info.type.displayName)                     // Point
     when (val shape = info.describe().shape) {
-        case TypeShape.Struct(details) -&gt; {
+        case TypeShape.Struct(val details) -&gt; {
             for (field in details.fields) {
                 when (field.name) {
-                    case MemberName.Named(name) -&gt; println(name)
-                    case MemberName.Positional(index) -&gt; println(index)
+                    case MemberName.Named(val name) -&gt; println(name)
+                    case MemberName.Positional(val index) -&gt; println(index)
                 }
             }
         }

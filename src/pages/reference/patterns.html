@@ -72,17 +72,17 @@ fun main() {
 }</code></pre>
 
 <h2 id="case-patterns">case 模式</h2>
-<p>以 <code>case</code> 开头的分支使用模式语义，模式可以引入新的绑定。一个分支只有一个模式，不支持用逗号并列多个模式；同一个 <code>when</code> 中可以混用普通分支与 <code>case</code> 分支。</p>
+<p>以 <code>case</code> 开头的分支使用模式语义，模式可以用 <code>val name</code> 引入新的绑定。一个分支只有一个模式，不支持用逗号并列多个模式；同一个 <code>when</code> 中可以混用普通分支与 <code>case</code> 分支。</p>
 <div class="table-wrap"><table>
   <tr><th>模式</th><th>匹配</th></tr>
-  <tr><td><code>name</code></td><td>任意值，并绑定为 <code>name</code>（subject 为 enum 时先按变体名解释，见下文）</td></tr>
+  <tr><td><code>val name</code></td><td>任意值，并绑定为不可变的 <code>name</code></td></tr>
   <tr><td><code>_</code></td><td>任意值，不绑定</td></tr>
   <tr><td>字面量：<code>0</code>、<code>-1</code>、<code>2.5</code>、<code>'a'</code>、<code>"text"</code>、<code>true</code>、<code>()</code></td><td>与字面量相等的值</td></tr>
-  <tr><td><code>V</code>、<code>E.V</code></td><td>enum 的单元变体</td></tr>
+  <tr><td><code>V</code>、<code>E.V</code></td><td>enum 的单元变体（裸名称只按变体解释，见下文）</td></tr>
   <tr><td><code>V(p1, p2, …)</code></td><td>enum 的位置载荷变体，子模式匹配各载荷</td></tr>
-  <tr><td><code>V { f1, f2: p, .. }</code></td><td>enum 的命名字段变体</td></tr>
+  <tr><td><code>V { val f1, f2: p, .. }</code></td><td>enum 的命名字段变体；<code>val f1</code> 是 <code>f1: val f1</code> 的简写</td></tr>
   <tr><td><code>(p1, p2, …)</code></td><td>tuple，或按字段顺序匹配 struct</td></tr>
-  <tr><td><code>S { f1, f2: p, .. }</code>、<code>{ f1, .. }</code></td><td>按字段名匹配 struct，类型前缀可以省略</td></tr>
+  <tr><td><code>S { val f1, f2: p, .. }</code>、<code>{ val f1, .. }</code></td><td>按字段名匹配 struct，类型前缀可以省略</td></tr>
 </table></div>
 <p>子模式可以任意嵌套，并可以使用 <code>..</code> 忽略其余元素或字段，规则与<a href="values.html#destructuring">解构</a>相同。负数字面量可以直接作为模式；其他常量表达式（包括 <code>const val</code>）不是模式。</p>
 <pre><code class="language-scoop">enum Shape {
@@ -94,23 +94,23 @@ fun main() {
 struct Point(val x: Int, val y: Int)
 
 fun area(shape: Shape): Double = when (shape) {
-    case Circle(r) if r &lt; 0.0 -&gt; 0.0
-    case Circle(r) -&gt; 3.14159 * r * r
-    case Rect { width, height } -&gt; width * height
+    case Circle(val r) if r &lt; 0.0 -&gt; 0.0
+    case Circle(val r) -&gt; 3.14159 * r * r
+    case Rect { val width, val height } -&gt; width * height
     case Empty -&gt; 0.0
 }
 
 fun locate(p: Point): String = when (p) {
     case Point { x: 0, y: 0 } -&gt; "origin"
     case { x: 0, .. } -&gt; "on the y axis"
-    case (x, 0) -&gt; f"on the x axis at ${x}"
-    case (x, y) -&gt; f"(${x}, ${y})"
+    case (val x, 0) -&gt; f"on the x axis at ${x}"
+    case (val x, val y) -&gt; f"(${x}, ${y})"
 }
 
 fun describe(pair: (Int, Shape)): String = when (pair) {
     case (0, _) -&gt; "first"
-    case (n, Circle(r)) if r &gt; 10.0 -&gt; f"#${n}: big circle"
-    case (n, _) -&gt; f"#${n}"
+    case (val n, Circle(val r)) if r &gt; 10.0 -&gt; f"#${n}: big circle"
+    case (val n, _) -&gt; f"#${n}"
 }
 
 fun main() {
@@ -119,18 +119,21 @@ fun main() {
     println(describe((2, Shape.Circle(20.0))))
 }</code></pre>
 
-<h3 id="bare-identifiers">模式中的裸标识符</h3>
-<p>模式中的裸标识符<strong>不会引用</strong>已有的变量或常量，而是声明新的绑定。只有以下例外：</p>
+<h3 id="bindings">绑定与裸标识符</h3>
+<p>case 模式中的每个绑定都必须显式写成 <code>val name</code>，例如 <code>case val whole</code>、<code>case Some(val value)</code>、<code>case (val first, _)</code>。规则在 tuple、struct 与变体载荷的任意嵌套深度都相同：</p>
 <ul>
-  <li><code>Unit</code> 与 <code>()</code> 总是 <code>Unit</code> 字面量；</li>
-  <li>subject（或对应的子值）是 enum 时，先在该 enum 中查找同名变体：命中单元变体就匹配该变体；命中带载荷的变体时报错，要求写出载荷形状 <code>V(…)</code>；完全没有命中时才成为匹配一切的绑定，并给出警告以提示可能的拼写错误。</li>
+  <li><code>val name</code> 匹配该位置的任意值，并建立不可重新赋值的局部变量。<code>val</code> 只修饰紧随其后的一个名称，不能写 <code>var</code>、类型标注或 <code>val (a, b)</code> 这样的整组解构；忽略某个值直接写 <code>_</code>，不写 <code>val _</code>。</li>
+  <li>字段简写 <code>val f1</code> 等价于 <code>f1: val f1</code>，重命名写 <code>f2: val renamed</code>；不带 <code>val</code> 的裸 <code>f1</code> 等价于 <code>f1: f1</code>，不建立绑定。</li>
+  <li>裸标识符<strong>只匹配 enum 变体</strong>，既不引用已有的变量或常量，也绝不隐式成为绑定：按该位置 subject 的 enum 类型查找同名变体，命中单元变体就匹配该变体；命中带载荷的变体时报错，要求写出载荷形状 <code>V(…)</code>；没有命中或该位置不是 enum 时是编译错误，并提示绑定应写成 <code>val name</code>。因此拼错的变体名不会悄悄变成兜底分支。</li>
+  <li><code>Unit</code> 与 <code>()</code> 总是 <code>Unit</code> 字面量。</li>
+  <li><code>val name</code> 遮蔽该位置实际可用的同名变体时（例如 <code>case val None</code>），编译器给出警告，绑定仍然合法。</li>
 </ul>
-<p>因此要与已有的常量比较，请使用普通分支或 guard：</p>
+<p>要与已有的常量比较，请使用普通分支或 guard：</p>
 <pre><code class="language-scoop">val LIMIT = 3
 
 fun check(n: Int): String = when (n) {
     LIMIT -&gt; "at limit"                  // 普通分支：n == LIMIT
-    case x if x &gt; LIMIT -&gt; "over"        // case x 是新绑定，用 guard 比较
+    case val x if x &gt; LIMIT -&gt; "over"    // val x 是新绑定，用 guard 比较
     case _ -&gt; "under"
 }
 
@@ -139,7 +142,7 @@ fun main() {
 }</code></pre>
 <div class="callout warn">
   <strong>常见错误</strong>
-  <p>写成 <code>case LIMIT -&gt; …</code> 时，<code>LIMIT</code> 是一个匹配任何值的新绑定，后续分支永远不会执行。</p>
+  <p><code>case LIMIT -&gt; …</code> 不会与常量 <code>LIMIT</code> 比较：裸名称只能是 enum 变体，这里 subject 是 <code>Int</code>，因此是编译错误。写成 <code>case val LIMIT</code> 则是匹配任何值的新绑定，后续分支永远不会执行。</p>
 </div>
 
 <h3 id="enum-prefix">变体前缀</h3>
@@ -194,7 +197,7 @@ fun main() {
     println(flags((false, true)))
 }</code></pre>
 <pre data-check="error"><code class="language-scoop">fun f(n: Int): Int = when (n) {     // 编译错误：non-exhaustive when: missing pattern -2147483648
-    case x if x &gt; 0 -&gt; 1               // guard 分支不计入覆盖
+    case val x if x &gt; 0 -&gt; 1           // guard 分支不计入覆盖
     case 0 -&gt; 0
 }</code></pre>
 

@@ -5,16 +5,16 @@ enum Shape {
 }
 
 fun area(shape: Shape): Double = when (shape) {
-    case Circle(r) -> 3.14159 * r * r
-    case Rect { width, height } -> width * height
+    case Circle(val r) -> 3.14159 * r * r
+    case Rect { val width, val height } -> width * height
     case Empty -> 0.0
 }
 
 fun describe(value: (Int, Shape)): String = when (value) {
     case (0, _) -> "zero-th"
-    case (n, Circle(r)) if r > 10.0 -> f"#${n}: big circle"
-    case (n, Circle(_)) -> f"#${n}: circle"
-    case (n, _) -> f"#${n}: other"
+    case (val n, Circle(val r)) if r > 10.0 -> f"#${n}: big circle"
+    case (val n, Circle(_)) -> f"#${n}: circle"
+    case (val n, _) -> f"#${n}: other"
 }
 
 enum Status: Int {
