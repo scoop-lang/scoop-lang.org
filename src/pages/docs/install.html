@@ -25,6 +25,15 @@
 curl -fsSL https://scoop-lang.org/install.sh | sh -s -- -- --jobs 2</code></pre>
 <p>再次运行可升级到所选版本。工具、系统库、源码、native 库、runtime 和文档目录会被替换；下载缓存、安装构建缓存和用户外部命令保留。升级后需要其他目标的文档时重新执行 post-install。若准备失败，修正报错后重跑 <code>sh ~/.scoop/post-install.sh</code> 即可。</p>
 
+<h3 id="windows-install">Windows 一键安装</h3>
+<p>在 PowerShell（Windows PowerShell 5.1 或 PowerShell 7）中运行：</p>
+<pre><code class="language-powershell">irm https://scoop-lang.org/install.ps1 | iex</code></pre>
+<p>脚本读取同一份索引，下载 <code>windows</code> 的全部组件包，用系统自带的 <code>tar.exe</code> 解压到 <code>%USERPROFILE%\.scoop</code>，为默认的 MSVC UCRT 目标生成 API 文档，再把 <code>%USERPROFILE%\.scoop\bin</code> 加入用户 PATH。当前 PowerShell 窗口可以直接使用 <code>sco</code>，其他终端需重新打开。要求 x64 Windows，且系统 <code>tar.exe</code> 支持 xz（<code>tar --version</code> 的输出包含 <code>liblzma</code>）；否则请按下文手动安装。在 cmd 中可运行 <code>powershell -ExecutionPolicy Bypass -c "irm https://scoop-lang.org/install.ps1 | iex"</code>。</p>
+<p>指定 release、跳过 PATH 修改或传入 post-install 选项时，把脚本作为脚本块调用：</p>
+<pre><code class="language-powershell">&amp; ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -Release 2026-11-09
+&amp; ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -NoModifyPath -- --all-targets</code></pre>
+<p>升级规则与 macOS／Linux 相同。若准备失败，修正报错后重跑 <code>&amp; "$HOME/.scoop/post-install.ps1"</code>。</p>
+
 <h3 id="manual-install">手动安装</h3>
 <ol class="steps">
   <li><strong>解压工具包</strong>
@@ -47,7 +56,7 @@ $ for f in scoop-*.tar.xz; do tar -xJf "$f" -C ~/.scoop; done</code></pre>
   <li><strong>加入 PATH</strong>
 <pre><code class="language-sh"># ~/.zshrc 或 ~/.bashrc
 export PATH="$HOME/.scoop/bin:$PATH"</code></pre>
-    <p>Windows 暂不支持一键安装脚本。在 PowerShell 中把各归档解压到 <code>%USERPROFILE%\.scoop</code>，运行 post-install（默认目标为 MSVC UCRT），并把 <code>%USERPROFILE%\.scoop\bin</code> 加入用户 PATH：</p>
+    <p>Windows 手动安装时，在 PowerShell 中把各归档解压到 <code>%USERPROFILE%\.scoop</code>，运行 post-install（默认目标为 MSVC UCRT），并把 <code>%USERPROFILE%\.scoop\bin</code> 加入用户 PATH：</p>
 <pre><code class="language-powershell">New-Item -ItemType Directory -Force "$HOME/.scoop"
 Get-ChildItem scoop-*.tar.xz | ForEach-Object { tar -xJf $_.FullName -C "$HOME/.scoop" }
 &amp; "$HOME/.scoop/post-install.ps1"

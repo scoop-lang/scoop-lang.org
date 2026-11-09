@@ -11,6 +11,7 @@ from pathlib import Path
 INSTALLER = Path(__file__).resolve().parents[2] / "install.sh"
 
 
+@unittest.skipIf(os.name == "nt", "install.sh targets macOS and Linux; see test_install_ps1.py")
 class InstallerTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="scoop installer ")
@@ -257,12 +258,11 @@ shutil.copyfile(source, arguments[arguments.index("-o") + 1])
             self.urls()[0], "https://release.scoop-lang.org/2026-11-07/index.txt"
         )
 
-    def test_missing_windows_packages_ask_for_a_source_build(self):
+    def test_windows_shells_point_to_the_powershell_installer(self):
         self.environment.update(TEST_OS="MINGW64_NT-10.0-26300", TEST_ARCH="x86_64")
         result = self.install(success=False)
-        self.assertIn("packages for windows are not ready yet", result.stderr)
-        self.assertIn("build Scoop from source", result.stderr)
-        self.assertEqual(len(self.downloads()), 1)
+        self.assertIn("install.ps1", result.stderr)
+        self.assertFalse((self.root / "curl.jsonl").exists())
         self.assertFalse((self.user_home / ".scoop").exists())
 
     def test_missing_platform_packages_ask_for_a_source_build(self):

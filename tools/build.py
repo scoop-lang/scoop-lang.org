@@ -220,6 +220,7 @@ def main() -> int:
         build_page(page, layout, out_dir)
     shutil.copytree(ASSETS, out_dir / "assets")
     shutil.copy2(ROOT / "install.sh", out_dir / "install.sh")
+    shutil.copy2(ROOT / "install.ps1", out_dir / "install.ps1")
     shutil.copytree(EXAMPLES, out_dir / "examples", ignore=shutil.ignore_patterns("*.out"))
 
     result = subprocess.run(
