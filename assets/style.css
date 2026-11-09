@@ -172,6 +172,22 @@ a.card:hover { text-decoration: none; transform: translateY(-2px); border-color:
   .showcase .tab span { display: none; }
 }
 
+/* ---------- desktop UI ---------- */
+.ui-intro { display: grid; grid-template-columns: 1fr 1.1fr; gap: 48px; align-items: center; margin-bottom: 40px; }
+.ui-intro .checks { list-style: none; margin: 0 0 18px; padding: 0; }
+.ui-intro .checks li { position: relative; padding-left: 28px; margin: 0 0 12px; color: var(--fg-soft); }
+.ui-intro .checks li::before { content: "✓"; position: absolute; left: 4px; top: 0; color: var(--accent); font-weight: 700; }
+.ui-intro .checks strong { color: var(--fg); }
+.ui-intro .platforms { font-size: 14px; color: var(--fg-mute); margin: 0 0 22px; }
+.ui-intro .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.shot { margin: 0; }
+.shot img {
+  display: block; width: 100%; height: auto; background: #fff;
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.shot figcaption { margin-top: 10px; font-size: 13px; color: var(--fg-mute); text-align: center; }
+@media (max-width: 900px) { .ui-intro { grid-template-columns: 1fr; gap: 32px; } }
+
 /* ---------- code ---------- */
 code {
   font-family: var(--mono); font-size: .88em;

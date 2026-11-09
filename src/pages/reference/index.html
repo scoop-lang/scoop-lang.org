@@ -22,7 +22,7 @@
   <tr><td><a href="annotations.html">注解与编译期能力</a></td><td>自定义注解、类型使用注解、文档注释、静态类型描述、编解码合成、源码位置、编译期输入</td></tr>
   <tr><td><a href="ffi.html">原生互操作</a></td><td><code>@Extern</code>、<code>@Unsafe</code>、<code>@NoGC</code>、<code>@GCLeaf</code>、<code>Ptr</code>/<code>FunPtr</code>、C 布局、errno、native 源码与 Scoop ABI</td></tr>
   <tr><td><a href="core.html">核心库 scoop.core</a></td><td>默认导入的类型与函数：字符串、数组与列表、迭代、输出、资源、协程、原子类型等</td></tr>
-  <tr><td><a href="stdlib.html">库 Cone 一览</a></td><td>随工具链发布的库 Cone：集合与文本、平台与异步 I/O、HTTP、TLS、JSON、正则、命令行与终端</td></tr>
+  <tr><td><a href="stdlib.html">库 Cone 一览</a></td><td>随工具链发布的库 Cone：集合与文本、平台与异步 I/O、HTTP、TLS、JSON、正则、命令行与终端、图形与桌面 UI</td></tr>
   <tr><td><a href="testing.html">测试库 scoop.test</a></td><td>测试声明、断言、生命周期与 <code>scoop test</code></td></tr>
 </table></div>
 
@@ -48,5 +48,5 @@ Hello, Scoop!</code></pre>
 <p>多文件项目使用带 <code>Cone.toml</code> 的 Cone 目录，用 <code>scoop new</code> 创建，详见<a href="modules.html#manifest">Cone 清单</a>与<a href="../guides/index.html">用户指南</a>。</p>
 
 <h2 id="sources">规范与版本</h2>
-<p>本参考依据 Scoop 仓库 <a href="https://github.com/windoze/scoop/tree/main/docs/specs"><code>docs/specs/</code></a> 中的语言、运行时与库规范，并以工具链 <code>scoop 0.0.0-dev</code>（revision <code>ae13036d9</code>）的实际行为校对；Windows 目标相关的内容依据 revision <code>b0de03700</code> 的规范与 Windows 实施记录。规范面向实现者，包含 ABI、产物格式与编译器内部契约等细节；本参考面向使用者，省略这些内容并保留会影响程序含义的规则。二者不一致时以规范为准，并欢迎在 <a href="https://github.com/windoze/scoop">GitHub</a> 上报告。</p>
+<p>本参考依据 Scoop 仓库 <a href="https://github.com/windoze/scoop/tree/main/docs/specs"><code>docs/specs/</code></a> 中的语言、运行时与库规范，并以 release 2026-11-09 的工具链 <code>scoop 0.0.0-dev.20261109</code>（revision <code>10a20c6c7</code>）的实际行为校对；Windows 目标相关的内容依据 revision <code>b0de03700</code> 的规范与 Windows 实施记录。规范面向实现者，包含 ABI、产物格式与编译器内部契约等细节；本参考面向使用者，省略这些内容并保留会影响程序含义的规则。二者不一致时以规范为准，并欢迎在 <a href="https://github.com/windoze/scoop">GitHub</a> 上报告。</p>
 <p>Scoop 尚未发布正式版本，语言与库仍可能调整。当前支持的目标为 macOS（<code>aarch64-apple-darwin</code>）、Linux（<code>x86_64-unknown-linux-gnu</code>、<code>x86_64-unknown-linux-musl</code>）与 Windows x64（<code>x86_64-pc-windows-msvc-ucrt</code>、<code>x86_64-w64-windows-llvm-mingw-ucrt</code>、<code>x86_64-w64-windows-llvm-mingw-msvcrt</code>），各目标的区别见<a href="modules.html#targets">构建目标</a>，安装方式见<a href="../docs/install.html">快速开始</a>。</p>

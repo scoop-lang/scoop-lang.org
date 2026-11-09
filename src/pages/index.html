@@ -1,4 +1,4 @@
-<!-- title: Scoop; nav: home; description: Scoop 是一门静态类型、编译到原生代码的编程语言：Kotlin 风格的语法，真正的值类型，单态化泛型，LLVM 后端与精确移动 GC。 -->
+<!-- title: Scoop; nav: home; description: Scoop 是一门静态类型、编译到原生代码的编程语言：Kotlin 风格的语法，真正的值类型，单态化泛型，LLVM 后端与精确移动 GC，并自带声明式原生桌面 UI。 -->
 <div class="notice" role="note">
   <p>这里是 <strong>Scoop 编程语言</strong>的官网。如果你在找 Windows 命令行包管理器 Scoop，请访问 <a href="https://scoop.sh/">scoop.sh</a>。</p>
   <p lang="en">This is the home of the <strong>Scoop programming language</strong>. Looking for the Scoop package manager for Windows? Visit <a href="https://scoop.sh/">scoop.sh</a>.</p>
@@ -8,7 +8,7 @@
   <div>
     <span class="eyebrow">开发预览 · 0.x</span>
     <h1>熟悉的语法，<br><span class="grad">原生的性能。</span></h1>
-    <p class="lead">Scoop 是一门静态类型、编译到原生代码的编程语言。它以 Kotlin 的核心语法为基础，加入真正的值类型（<code>struct</code> / <code>enum</code> / tuple）与模式匹配，泛型采用单态化，经 LLVM 生成机器码，并由带分代 Immix GC 的 C 运行时托管内存。</p>
+    <p class="lead">Scoop 是一门静态类型、编译到原生代码的编程语言。它以 Kotlin 的核心语法为基础，加入真正的值类型（<code>struct</code> / <code>enum</code> / tuple）与模式匹配，泛型采用单态化，经 LLVM 生成机器码，并由带分代 Immix GC 的 C 运行时托管内存。工具链自带声明式的原生桌面 UI 框架，同一份代码运行在 macOS、Linux 与 Windows 上。</p>
     <div class="actions">
       <a class="btn btn-primary" href="docs/install.html">快速开始 →</a>
       <a class="btn btn-ghost" href="docs/tour.html">语言导览</a>
@@ -43,6 +43,7 @@
       <button class="tab" type="button"><strong>Option</strong><span>没有 null 的空安全</span></button>
       <button class="tab" type="button"><strong>JSON</strong><span>类型化 codec</span></button>
       <button class="tab" type="button"><strong>异步 HTTP 服务</strong><span>结构化并发 + 平台事件循环</span></button>
+      <button class="tab" type="button"><strong>桌面 UI</strong><span>组件、状态与主题</span></button>
       <button class="tab" type="button"><strong>测试</strong><span>scoop test</span></button>
     </div>
     <div>
@@ -59,6 +60,9 @@ $ scoop run --release http_server.scoop
 # Terminal 2
 $ curl 'http://127.0.0.1:8080/greet?name=Scoop'
 {"message":"Hello, Scoop!"}</code></pre></div>
+      <div class="panel">{{example ui-counter-layout nooutput}}
+<pre><code class="language-sh">$ scoop run --release ui-counter-layout.scoop
+# 打开一个窗口：标题 Counter、点击次数和 -1 / +1 / Reset 三个按钮</code></pre></div>
       <div class="panel">
 <div class="codeblock"><div class="filename">tests/calculator.scoop</div><pre><code class="language-scoop">package examples.testing
 
@@ -88,9 +92,41 @@ assertions
   </div>
 </section>
 
+
 <section class="section band">
+  <h2>原生桌面 UI</h2>
+  <p class="sub">随工具链发布的声明式 UI 框架：保留身份的组件、细粒度状态与四套主题，界面由 Skia 自绘，窗口、菜单与托盘使用系统原生实现。</p>
+  <div class="ui-intro">
+    <div>
+      <ul class="checks">
+        <li><strong>组件即 class</strong>：<code>render()</code> 返回不可变的 View，成员 <code>State</code> 被写入时只重绘依赖它的组件，模型与 SwiftUI、Jetpack Compose 相近。</li>
+        <li><strong>开箱的控件库</strong>：按钮、输入框、选择器、表单校验、滚动与虚拟列表、Popover、Dialog、菜单、Toast、Tabs、表格、日历与图表。</li>
+        <li><strong>四套主题预设</strong>：macOS、Material、Fluent 与 shadcn，支持浅色、深色与跟随系统，可定制 tokens 与局部样式。</li>
+        <li><strong>完整的桌面集成</strong>：多窗口、原生菜单与窗框、文件对话框、Dock／任务栏、系统托盘，后台任务与 UI 线程协同。</li>
+        <li><strong>可测试、可分发</strong>：状态测试与窗口测试由 <code>scoop test</code> 运行，<code>scoop bundle</code> 打包为 macOS app、deb／rpm／AppImage 或 NSIS／MSI。</li>
+      </ul>
+      <p class="platforms">macOS（Metal）· Linux GNU（Wayland / X11，EGL）· Windows（D3D12）</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="guides/ui.html">UI 教程 →</a>
+        <a class="btn btn-ghost" href="guides/ui-project.html">综合项目</a>
+      </div>
+    </div>
+    <figure class="shot">
+      <img src="guides/images/ui/ui-project-step4.png" width="800" height="600" loading="lazy" alt="用 Scoop UI 编写的 Payments 应用：统计卡片、柱状图、可筛选的表格，以及带撤销按钮的删除提示">
+      <figcaption>UI 教程综合项目：带统计、图表、筛选表格与撤销提示的数据应用</figcaption>
+    </figure>
+  </div>
+  <div class="grid grid-4 ui-topics">
+    <a class="card" href="guides/ui-layout.html"><span class="tag">布局与状态</span><h3>从 Counter 开始</h3><p>row／column／stack、约束与排版；State、Binding 与 Store 管理数据流。</p></a>
+    <a class="card" href="guides/ui-forms.html"><span class="tag">交互</span><h3>表单、焦点与弹层</h3><p>文本输入与校验、Tab 与快捷键、Popover、Dialog、菜单与侧栏导航。</p></a>
+    <a class="card" href="guides/ui-themes.html"><span class="tag">外观</span><h3>主题与自绘</h3><p>切换和定制主题；用 Element 与 Canvas 自己绘制控件、弹层和容器。</p></a>
+    <a class="card" href="guides/ui-desktop.html"><span class="tag">桌面</span><h3>多窗口与原生能力</h3><p>应用根、多窗口、原生菜单与窗框、托盘、后台任务和 UI 测试。</p></a>
+  </div>
+</section>
+
+<section class="section">
   <h2>开箱即用的工具链</h2>
-  <p class="sub">一个 <code>scoop</code> 命令覆盖新建、包管理、构建、运行、测试、格式化、检查与文档生成。</p>
+  <p class="sub">一个 <code>scoop</code> 命令覆盖新建、包管理、构建、运行、测试、格式化、检查、文档生成与应用打包。</p>
   <div class="grid grid-4">
     <div class="card"><span class="tag">scoop new</span><h3>新建 Cone</h3><p>生成可执行或库模板，附带示例测试。</p></div>
     <div class="card"><span class="tag">scoop pm</span><h3>依赖与工作区</h3><p>解析版本要求，获取 Git 与 registry 源码，用 <code>Cone.lock</code> 固定选择。</p></div>
@@ -101,31 +137,35 @@ assertions
     <div class="card"><span class="tag">scoop fmt / check</span><h3>格式化与检查</h3><p>统一源码格式，完成前端检查；支持检查测试源码。</p></div>
     <div class="card"><span class="tag">scoop example</span><h3>离线示例</h3><p>按主题或关键词查找完整程序、运行步骤与预期结果。</p></div>
     <div class="card"><span class="tag">LLDB / VS Code</span><h3>原生调试</h3><p>断点、变量、源码行与异常物理栈；可调试应用和 Cone 测试。</p></div>
-    <div class="card"><span class="tag">scoop-lsp</span><h3>语言服务</h3><p>诊断、补全、跳转、引用、重命名与快速修复。</p></div>
-    <div class="card"><span class="tag">VS Code</span><h3>编辑器扩展</h3><p>Tree-sitter 高亮、折叠、缩进，内置 LSP 客户端。</p></div>
+    <div class="card"><span class="tag">scoop bundle</span><h3>应用打包</h3><p>生成 macOS app、deb／rpm／AppImage 与 NSIS／MSI 安装包，统一部署资源和原生库。</p></div>
+    <div class="card"><span class="tag">scoop-lsp / VS Code</span><h3>语言服务</h3><p>诊断、补全、跳转、重命名与快速修复；VS Code 扩展提供 Tree-sitter 高亮。</p></div>
     <div class="card"><span class="tag">.slib</span><h3>增量与缓存</h3><p>预编译库产物，输入未变化时直接复用。</p></div>
   </div>
 </section>
 
-<section class="section">
+<section class="section band">
   <h2>功能完整的标准库</h2>
-  <p class="sub">二十多个随工具链发布的预编译库 Cone，从集合、文本到 TLS、HTTP/2 与终端交互。</p>
+  <p class="sub">四十多个随工具链发布的预编译库 Cone，从集合、文本、TLS 与 HTTP/2 到 2D 绘图与桌面 UI。</p>
   <div class="grid grid-4">
     <a class="card" href="reference/stdlib.html#core"><span class="tag">scoop.core / std</span><h3>核心与基础库</h3><p>集合、文本、字节、日期时间、UUID。</p></a>
-    <a class="card" href="reference/stdlib.html#platform"><span class="tag">scoop.asyncio</span><h3>异步 I/O</h3><p><code>PlatformEventLoop</code> 在 macOS 使用 libdispatch，在 Linux 使用 io_uring，在 Windows 使用 IOCP。</p></a>
+    <a class="card" href="reference/stdlib.html#platform"><span class="tag">scoop.asyncio</span><h3>异步 I/O</h3><p><code>eventLoop()</code> 在 macOS 使用 libdispatch，在 Linux 使用 io_uring，在 Windows 使用 IOCP；<code>scoop.concurrent</code> 提供多线程执行器与 channel。</p></a>
     <a class="card" href="reference/stdlib.html#net"><span class="tag">scoop.http.*</span><h3>HTTP 客户端与服务端</h3><p>HTTP/1.1、HTTP/2、SSE、WebSocket。</p></a>
     <a class="card" href="reference/stdlib.html#data"><span class="tag">scoop.json</span><h3>数据与编码</h3><p>JSON、正则、URL、字符集、压缩。</p></a>
     <a class="card" href="reference/stdlib.html#net"><span class="tag">scoop.tls / crypto</span><h3>安全</h3><p>基于 OpenSSL 的 TLS、摘要与 HMAC。</p></a>
     <a class="card" href="reference/stdlib.html#core"><span class="tag">scoop.math</span><h3>数学</h3><p>标量数学、BigInteger、BigDecimal。</p></a>
     <a class="card" href="reference/stdlib.html#tools"><span class="tag">scoop.cli / log</span><h3>应用开发</h3><p>声明式命令行解析、日志 facade。</p></a>
     <a class="card" href="reference/stdlib.html#tools"><span class="tag">scoop.terminal</span><h3>终端</h3><p>ANSI 样式、按键事件、readline。</p></a>
+    <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.ui.*</span><h3>声明式 UI</h3><p>组件与状态框架、基础控件库，macOS／Material／Fluent／shadcn 主题。</p></a>
+    <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.graphics</span><h3>2D 图形</h3><p>基于 Skia 的绘图、SVG 与段落排版，可离屏渲染。</p></a>
+    <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.window</span><h3>窗口与呈现</h3><p>原生窗口、事件与菜单，帧调度、动画与区域输入。</p></a>
+    <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.desktop / tray</span><h3>桌面集成</h3><p>Dock 与任务栏状态、Jump List、系统托盘、Lucide 图标。</p></a>
   </div>
 </section>
 
 <section class="section">
   <div class="cta">
     <h2>动手试试</h2>
-    <p>解压工具链、把 <code>~/.scoop/bin</code> 加入 PATH，就可以运行第一个程序。</p>
+    <p>一行命令安装工具链：macOS／Linux 运行 <code>curl -fsSL https://scoop-lang.org/install.sh | sh</code>，Windows 在 PowerShell 中运行 <code>irm https://scoop-lang.org/install.ps1 | iex</code>。</p>
     <a class="btn btn-primary" href="docs/install.html">安装 Scoop →</a>
   </div>
 </section>
