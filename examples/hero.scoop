@@ -6,9 +6,9 @@ enum Shape {
 }
 
 fun describe(shape: Shape): String = when (shape) {
-    case Circle(Point(0, 0), r) -> f"circle at origin, r=${r}"
-    case Circle(center, _) -> f"circle at ${center.x},${center.y}"
-    case Line(from, to) -> f"line of dx=${to.x - from.x}"
+    case Circle(Point(0, 0), val r) -> f"circle at origin, r=${r}"
+    case Circle(val center, _) -> f"circle at ${center.x},${center.y}"
+    case Line(val from, val to) -> f"line of dx=${to.x - from.x}"
 }
 
 fun main() {

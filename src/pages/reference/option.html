@@ -19,9 +19,9 @@
 <h2 id="operators">空安全运算符</h2>
 <div class="table-wrap"><table>
   <tr><th>表达式</th><th>等价写法</th><th>结果类型</th></tr>
-  <tr><td><code>a?.b</code></td><td><code>when (a) { case Some(v) -&gt; Some(v.b); case None -&gt; None }</code></td><td><code>B?</code></td></tr>
-  <tr><td><code>a?.f(args)</code></td><td><code>when (a) { case Some(v) -&gt; Some(v.f(args)); case None -&gt; None }</code></td><td><code>R?</code></td></tr>
-  <tr><td><code>a ?: b</code></td><td><code>when (a) { case Some(v) -&gt; v; case None -&gt; b }</code></td><td><code>T</code> 与 <code>b</code> 的共同类型</td></tr>
+  <tr><td><code>a?.b</code></td><td><code>when (a) { case Some(val v) -&gt; Some(v.b); case None -&gt; None }</code></td><td><code>B?</code></td></tr>
+  <tr><td><code>a?.f(args)</code></td><td><code>when (a) { case Some(val v) -&gt; Some(v.f(args)); case None -&gt; None }</code></td><td><code>R?</code></td></tr>
+  <tr><td><code>a ?: b</code></td><td><code>when (a) { case Some(val v) -&gt; v; case None -&gt; b }</code></td><td><code>T</code> 与 <code>b</code> 的共同类型</td></tr>
   <tr><td><code>a!!</code></td><td><code>Some(v)</code> 时为 <code>v</code>，<code>None</code> 时抛出 <code>UnwrapException</code></td><td><code>T</code></td></tr>
   <tr><td><code>e as? T</code></td><td>转换成功为 <code>Some(值)</code>，失败为 <code>None</code></td><td><code>T?</code></td></tr>
 </table></div>
@@ -86,8 +86,8 @@ fun main() {
 struct User(val name: String, val email: String?)
 
 fun contact(user: User?): String = when (user) {
-    case Some(User { email: Some(address), .. }) -&gt; address
-    case Some(User { name, .. }) -&gt; f"${name} (no email)"
+    case Some(User { email: Some(val address), .. }) -&gt; address
+    case Some(User { val name, .. }) -&gt; f"${name} (no email)"
     case None -&gt; "unknown"
 }
 
@@ -116,7 +116,7 @@ fun main() {
 fun main() {
     for (key in ["present", "empty", "missing"]) {
         val text = when (lookup(key)) {
-            case Some(Some(v)) -&gt; f"value ${v}"
+            case Some(Some(val v)) -&gt; f"value ${v}"
             case Some(None) -&gt; "explicitly empty"
             case None -&gt; "no such key"
         }

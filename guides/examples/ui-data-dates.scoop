@@ -24,13 +24,13 @@ class BookingModel {
 
 fun describe(value: LocalDate?): String =
     when (value) {
-        case Some(date) -> date.toString()
+        case Some(val date) -> date.toString()
         case None -> "not set"
     }
 
 fun describeRange(value: DateRange?): String =
     when (value) {
-        case Some(range) -> f"${range.start} .. ${range.end} (${range.nights} nights)"
+        case Some(val range) -> f"${range.start} .. ${range.end} (${range.nights} nights)"
         case None -> "not set"
     }
 

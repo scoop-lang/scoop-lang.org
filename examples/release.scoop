@@ -9,7 +9,7 @@ final class NativeOwner public constructor(private var handle: Option<Ptr<Unit>>
         val owned = handle
         handle = None
         when (owned) {
-            case Some(value) -> @Unsafe
+            case Some(val value) -> @Unsafe
             {
                 nativeFree(value)
             }
@@ -19,7 +19,7 @@ final class NativeOwner public constructor(private var handle: Option<Ptr<Unit>>
 
     release {
         when (handle) {
-            case Some(value) -> @Unsafe
+            case Some(val value) -> @Unsafe
             {
                 nativeFree(value)
             }

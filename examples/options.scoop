@@ -13,7 +13,7 @@ fun main() {
     val email: String?? = find(users, "ada")?.email
     println(email == Some(Some("ada@example.com")))
     val domain: String = when (val e = find(users, "lin")) {
-        case Some(User { email: Some(addr), .. }) -> addr
+        case Some(User { email: Some(val addr), .. }) -> addr
         case Some(_) -> "no email"
         case None -> "no user"
     }

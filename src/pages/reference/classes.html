@@ -341,7 +341,7 @@ fun main() {
 <pre><code class="language-scoop">class Lazy&lt;T&gt;(val compute: () -&gt; T) {
     var cached: T? = None
     operator fun getValue(thisRef: Unit): T = when (val c = cached) {
-        case Some(v) -&gt; v
+        case Some(val v) -&gt; v
         case None -&gt; {
             val v = compute()
             cached = Some(v)
@@ -427,14 +427,14 @@ final class NativeBuffer private constructor(private var handle: Option&lt;Ptr&l
         val owned = handle
         handle = None                       // 先置为惰性状态，再释放
         when (owned) {
-            case Some(p) -&gt; @Unsafe { nativeFree(p) }
+            case Some(val p) -&gt; @Unsafe { nativeFree(p) }
             case None -&gt; {}
         }
     }
 
     release {
         when (handle) {
-            case Some(p) -&gt; @Unsafe { nativeFree(p) }
+            case Some(val p) -&gt; @Unsafe { nativeFree(p) }
             case None -&gt; {}
         }
     }

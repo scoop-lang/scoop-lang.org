@@ -34,10 +34,10 @@ scoop_install() {
                 printf '%s\n' \
                     'Usage: sh install.sh [--release RELEASE] [-- POST_INSTALL_OPTIONS...]' \
                     'Install the latest Scoop release into ~/.scoop.' \
-                    'RELEASE names a published release such as 2026-11-07 (--version is an alias).' \
+                    'RELEASE names a published release such as 2026-11-09 (--version is an alias).' \
                     'Examples:' \
                     '  curl -fsSL https://scoop-lang.org/install.sh | sh' \
-                    '  sh install.sh --release 2026-11-07 -- --jobs 2' \
+                    '  sh install.sh --release 2026-11-09 -- --jobs 2' \
                     '  sh install.sh -- --all-targets'
                 return 0
                 ;;
@@ -136,7 +136,8 @@ Please build Scoop from source: https://github.com/windoze/scoop"
         rm -rf "${scoop_install_root:?}/${scoop_component:?}"
     done
     cp -Rp "$scoop_download_dir/package/." "$scoop_install_root/"
-    printf 'Building system libraries and API documentation...\n'
+    # The lib packages carry prebuilt system libraries; post-install only writes the API docs.
+    printf 'Generating API documentation...\n'
     if sh "$scoop_install_root/post-install.sh" "$@"; then
         "$scoop_install_root/bin/scoop" --version
     else

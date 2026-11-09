@@ -31,8 +31,8 @@ class Workspace {
                 openWindow()
             }
             // The close button only asks; this app agrees and destroys that window.
-            case Window(id, WindowEvent.CloseRequested) -> closeWindow(id)
-            case Window(id, WindowEvent.Destroyed) -> forget(id)
+            case Window(val id, WindowEvent.CloseRequested) -> closeWindow(id)
+            case Window(val id, WindowEvent.Destroyed) -> forget(id)
             // Cmd+Q (the Quit role) arrives here.
             case ExitRequested(_) -> application.requestExit()
             else -> {}

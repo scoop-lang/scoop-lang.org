@@ -9,11 +9,10 @@ suspend fun fetch(loop: EventLoop, id: Int, delayMs: Long): String {
 }
 
 fun main() {
-    val loop: EventLoop = PlatformEventLoop()
+    val loop = eventLoop()
     loop.run suspend {
-        scope ->
-        val a = scope.async<String> suspend { fetch(loop, 1, 30L) }
-        val b = scope.async<String> suspend { fetch(loop, 2, 10L) }
+        val a = async<String> suspend { fetch(loop, 1, 30L) }
+        val b = async<String> suspend { fetch(loop, 2, 10L) }
         println(a.await())
         println(b.await())
     }

@@ -20,7 +20,7 @@ class NumberRows(private val picked: State<Long>): ItemSource {
     public override fun keyAt(index: Long): ViewKey = ViewKey.Number(index)
     public override fun indexOfKey(key: ViewKey): Long? =
         when (key) {
-            case Number(index) -> if (index >= 0L && index < count)
+            case Number(val index) -> if (index >= 0L && index < count)
                 Some(index)
             else
                 None
@@ -50,7 +50,7 @@ class HugeList(scope: ComponentScope): Component(scope) {
         val target = this.target
         val visible =
             when (list.reading) {
-                case Some(snapshot) -> f"${snapshot.visible.start} ..< ${snapshot.visible.end}"
+                case Some(val snapshot) -> f"${snapshot.visible.start} ..< ${snapshot.visible.end}"
                 case None -> "not laid out yet"
             }
         val content =

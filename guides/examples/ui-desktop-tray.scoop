@@ -42,7 +42,7 @@ class TrayApp {
 
     fun showWindow() {
         when (window) {
-            case Some(existing) -> existing.requestFocus()
+            case Some(val existing) -> existing.requestFocus()
             case None -> {
                 val created =
                     active!!.createWindow(

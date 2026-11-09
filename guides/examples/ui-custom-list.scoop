@@ -21,7 +21,7 @@ class RowSource(private val total: Long): ItemSource {
     public override fun keyAt(index: Long): ViewKey = ViewKey.Number(index)
     public override fun indexOfKey(key: ViewKey): Long? {
         when (key) {
-            case Number(value) -> {
+            case Number(val value) -> {
                 if (value >= 0L && value < total)
                     return Some(value)
             }

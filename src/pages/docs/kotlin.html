@@ -44,11 +44,11 @@ val prod = base.{ host: "example.com", port: 443 }</code></pre>
 <p>普通分支保持 Kotlin 语义；只有以 <code>case</code> 开头的分支才是模式。每个 <code>case</code> 只有一个模式，不支持用逗号并列多个模式：</p>
 <pre><code class="language-scoop">fun label(value: (Int, String?)): String = when (value) {
     case (0, _) -&gt; "zero"
-    case (n, Some(name)) if n &gt; 0 -&gt; f"${name} #${n}"
+    case (val n, Some(val name)) if n &gt; 0 -&gt; f"${name} #${n}"
     case (_, Some(_)) -&gt; "negative"
     case (_, None) -&gt; "anonymous"
 }</code></pre>
-<p>模式中的裸标识符总是新的绑定（除非它是 subject 所属 enum 的变体名）；要和已有常量比较，请使用 guard。</p>
+<p>模式中的绑定必须显式写 <code>val name</code>；裸标识符只匹配 subject 所属 enum 的变体，不会引用已有变量，也不会成为绑定。要和已有常量比较，请使用普通分支或 guard。</p>
 
 <h2 id="closures">闭包与 lambda</h2>
 <ul>

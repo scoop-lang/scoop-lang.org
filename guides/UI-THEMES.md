@@ -121,7 +121,7 @@ val window = scope.nativeWindow
 model.systemChanged(window.observedTheme)
 scope.observeWindow(window) {
     event -> when (event) {
-        case ThemeChanged(value) -> model.systemChanged(value)
+        case ThemeChanged(val value) -> model.systemChanged(value)
         else -> {}
     }
 }

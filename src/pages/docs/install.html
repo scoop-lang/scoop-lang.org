@@ -3,7 +3,7 @@
 <p class="intro">安装 Scoop 工具链、运行第一个程序，然后创建一个带测试的项目。本页按当前工具包布局介绍安装、依赖管理与常用命令。</p>
 
 <h2 id="install">安装工具链</h2>
-<p>Scoop 的工具包包含编译器、包管理器、链接器、语言服务、调试器、标准库源码、C 运行时和配套原生库，不需要另外安装 LLVM。安装时使用随包工具在本机生成系统库的 <code>.slib</code> 和离线 API 文档；之后编译应用直接复用这些结果。首次安装和构建应用都需要下面列出的系统开发工具。</p>
+<p>Scoop 的工具包包含编译器、包管理器、链接器、语言服务、调试器、标准库源码、C 运行时和配套原生库，不需要另外安装 LLVM。系统库以预编译的 <code>.slib</code> 随目标库组件包提供，安装后只需用随包工具在本机生成离线 API 文档；编译应用直接使用这些预编译库，不会重新编译系统库。构建应用需要下面列出的系统开发工具。</p>
 
 <div class="table-wrap"><table>
   <tr><th>平台</th><th>目标</th><th>说明</th></tr>
@@ -19,27 +19,40 @@
 
 <h3 id="quick-install">macOS／Linux 一键安装</h3>
 <pre><code class="language-sh">curl -fsSL https://scoop-lang.org/install.sh | sh</code></pre>
-<p>脚本读取 <a href="https://release.scoop-lang.org/latest.txt">release.scoop-lang.org/latest.txt</a> 索引，下载适合本机的最新版各组件包，解压到 <code>~/.scoop</code>，构建默认目标的系统库和文档，再把 <code>~/.scoop/bin</code> 加入 shell 配置。支持 Apple Silicon macOS 和 x86-64 GNU/Linux；Bash、Zsh、Fish 使用各自的配置文件，其他 shell 使用 <code>~/.profile</code>。完成后打开新终端，或在当前 sh／Bash／Zsh 中执行 <code>export PATH="$HOME/.scoop/bin:$PATH"</code>。</p>
-<p>安装脚本用 shell 直接调用随包编译器，不要求另装 Python、Rust、Cargo 或 CMake；调试器所需的配套 Python 仍包含在工具包内。可以用 <code>--release</code> 指定已发布的 release（例如 <code>2026-11-07</code>），并在 <code>--</code> 后传入安装后构建选项：</p>
-<pre><code class="language-sh">curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --release 2026-11-07
+<p>脚本读取 <a href="https://release.scoop-lang.org/latest.txt">release.scoop-lang.org/latest.txt</a> 索引，下载适合本机的最新版各组件包，解压到 <code>~/.scoop</code>，生成默认目标的 API 文档，再把 <code>~/.scoop/bin</code> 加入 shell 配置。支持 Apple Silicon macOS 和 x86-64 GNU/Linux；Bash、Zsh、Fish 使用各自的配置文件，其他 shell 使用 <code>~/.profile</code>。完成后打开新终端，或在当前 sh／Bash／Zsh 中执行 <code>export PATH="$HOME/.scoop/bin:$PATH"</code>。</p>
+<p>安装脚本用 shell 直接调用随包编译器，不要求另装 Python、Rust、Cargo 或 CMake；调试器所需的配套 Python 仍包含在工具包内。可以用 <code>--release</code> 指定已发布的 release（例如 <code>2026-11-09</code>），并在 <code>--</code> 后传入 post-install 选项：</p>
+<pre><code class="language-sh">curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --release 2026-11-09
 curl -fsSL https://scoop-lang.org/install.sh | sh -s -- -- --jobs 2</code></pre>
-<p>再次运行可升级到所选版本。工具、系统源码、native 库、runtime 和文档目录会被替换；下载缓存、安装构建缓存和用户外部命令保留。升级后需要的其他目标须重新执行 post-install。若准备失败，修正报错后重跑 <code>sh ~/.scoop/post-install.sh</code> 即可。</p>
+<p>再次运行可升级到所选版本。工具、系统库、源码、native 库、runtime 和文档目录会被替换；下载缓存、安装构建缓存和用户外部命令保留。升级后需要其他目标的文档时重新执行 post-install。若准备失败，修正报错后重跑 <code>sh ~/.scoop/post-install.sh</code> 即可。</p>
 
 <h3 id="manual-install">手动安装</h3>
 <ol class="steps">
   <li><strong>解压工具包</strong>
-    <p>打开 <a href="https://release.scoop-lang.org/latest.txt">latest.txt</a>，下载本平台（<code>macos</code> 或 <code>linux</code>）各 <code>package</code> 行列出的归档：工具（<code>bin</code>）、目标库（<code>lib-*</code>）、调试器（<code>llvm</code>）和系统源码（<code>sources</code>），地址为 <code>https://release.scoop-lang.org/&lt;路径&gt;</code>。各归档顶层直接就是安装根，依次解压到同一目录：</p>
+    <p>打开 <a href="https://release.scoop-lang.org/latest.txt">latest.txt</a>，下载本平台（<code>macos</code>、<code>linux</code> 或 <code>windows</code>）<code>package</code> 行列出的归档，地址为 <code>https://release.scoop-lang.org/&lt;路径&gt;</code>：</p>
+    <ul>
+      <li><code>bin-&lt;host&gt;</code>：编译器等命令、外部子命令、随包 LLVM／LLDB 工具与调试器 Python，必装；</li>
+      <li><code>sources</code>：内置 Cone 源码、公开头文件与 vendor 输入，必装；</li>
+      <li><code>lib-base-&lt;target&gt;</code>：该目标的预编译非 GUI 系统库、native 库与 runtime，每个要使用的目标都需要；</li>
+      <li><code>lib-gui-&lt;target&gt;</code>：<code>scoop.window</code>、<code>scoop.graphics</code>、<code>scoop.ui</code> 等 GUI 库及 Skia，开发 GUI 程序时与同目标的 lib-base 一起安装；</li>
+      <li><code>native-&lt;target&gt;</code>：仅 Windows 的两个 LLVM-MinGW 目标，提供该 CRT 的配置头、启动对象与导入库。</li>
+    </ul>
+    <p>同一 release 的包按相同版本成组安装。各归档顶层直接就是安装根，依次解压到同一目录：</p>
 <pre><code class="language-sh">$ mkdir -p ~/.scoop
 $ for f in scoop-*.tar.xz; do tar -xJf "$f" -C ~/.scoop; done</code></pre>
   </li>
-  <li><strong>构建系统库与文档</strong>
+  <li><strong>生成 API 文档</strong>
 <pre><code class="language-sh">sh ~/.scoop/post-install.sh</code></pre>
-    <p>默认准备本机目标；用 <code>--target &lt;triple&gt;</code> 选择其他随包目标，或用 <code>--all-targets</code> 准备全部目标，并提供对应的 C 工具链／SDK。例如 Linux 用户安装 musl 开发工具后可运行 <code>sh ~/.scoop/post-install.sh --target x86_64-unknown-linux-musl</code>。已完成的构建和文档按输入变化复用。</p>
+    <p>post-install 只为已安装的目标生成离线 API 文档，不再构建系统库。默认处理本机目标；用 <code>--target &lt;triple&gt;</code> 处理其他已安装的目标，或用 <code>--all-targets</code> 处理全部已安装的目标。例如 Linux 用户可运行 <code>sh ~/.scoop/post-install.sh --target x86_64-unknown-linux-musl</code>。所选目标缺少 lib-base 包时会报错并提示应安装的归档；已安装 lib-gui 包时同时生成 GUI 库文档。已生成的文档按输入变化复用。</p>
   </li>
   <li><strong>加入 PATH</strong>
 <pre><code class="language-sh"># ~/.zshrc 或 ~/.bashrc
 export PATH="$HOME/.scoop/bin:$PATH"</code></pre>
-    <p>Windows 发行包暂未提供，请从 <a href="https://github.com/windoze/scoop">源码</a> 自行编译。发行包上线后，在 PowerShell 中把各归档解压到 <code>%USERPROFILE%\.scoop</code>，运行 <code>&amp; "$HOME/.scoop/post-install.ps1"</code>，并把 <code>%USERPROFILE%\.scoop\bin</code> 加入用户 PATH。</p>
+    <p>Windows 暂不支持一键安装脚本。在 PowerShell 中把各归档解压到 <code>%USERPROFILE%\.scoop</code>，运行 post-install（默认目标为 MSVC UCRT），并把 <code>%USERPROFILE%\.scoop\bin</code> 加入用户 PATH：</p>
+<pre><code class="language-powershell">New-Item -ItemType Directory -Force "$HOME/.scoop"
+Get-ChildItem scoop-*.tar.xz | ForEach-Object { tar -xJf $_.FullName -C "$HOME/.scoop" }
+&amp; "$HOME/.scoop/post-install.ps1"
+# 已安装 MinGW 目标的 lib-base 与 native 包时：
+&amp; "$HOME/.scoop/post-install.ps1" --target x86_64-w64-windows-llvm-mingw-ucrt</code></pre>
   </li>
   <li><strong>确认安装</strong>
 <pre><code class="language-sh">$ scoop --version          # Windows：sco --version
@@ -55,7 +68,8 @@ scoop &lt;version&gt; (&lt;revision&gt;)</code></pre>
   bin/                  scoop（Windows 为 sco.exe）、scoopc、scoop-link、scoop-lsp、scoop-pm、
                         scoop-lldb、scoop-lldb-dap 及其他 scoop- 前缀的 LLVM 工具
   commands/             scoop-example 等外部子命令
-  lib/&lt;target-triple&gt;/  原生静态库、运行时，以及安装后生成的 .slib
+  lib/&lt;target-triple&gt;/  预编译系统库 .slib、原生静态库与运行时（lib-base／lib-gui 包）
+  libexec/llvm/         随包 Clang、LLD 等 LLVM 工具及其动态库
   libexec/lldb/         调试器配套 Python 与平台 helper
   include/              公开的 Scoop C 头文件
   src/                  全部内置 Cone 的源码与示例

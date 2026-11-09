@@ -106,10 +106,10 @@ class EditorView(private val app: NotesApp, scope: ComponentScope): Component(sc
             { reply, mount -> ConfirmClose(reply, mount) },
             {
                 result -> when (result) {
-                    case Accepted(yes) -> if (yes)
+                    case Accepted(val yes) -> if (yes)
                         application.requestExit()
                     case Cancelled(_) -> status.value = "Close cancelled"
-                    case Failed(error) -> status.value = error.message ?: "Dialog failed"
+                    case Failed(val error) -> status.value = error.message ?: "Dialog failed"
                 }
             },
             attributes =
@@ -186,10 +186,10 @@ class EditorView(private val app: NotesApp, scope: ComponentScope): Component(sc
                                 DialogTarget.Owner(window),
                                 {
                                     result -> when (result) {
-                                        case Accepted(path) -> status.value =
+                                        case Accepted(val path) -> status.value =
                                             "Picked " + path.display()
                                         case Cancelled(_) -> status.value = "Open cancelled"
-                                        case Failed(error) -> status.value =
+                                        case Failed(val error) -> status.value =
                                             error.message ?: "Open failed"
                                     }
                                 }
