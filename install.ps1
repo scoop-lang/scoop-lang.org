@@ -2,7 +2,10 @@
 #
 #   irm https://scoop-lang.org/install.ps1 | iex
 #   & ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -Release 2026-11-09 -- --jobs 2
-#   powershell -ExecutionPolicy Bypass -File install.ps1 -NoModifyPath -- --all-targets
+#   powershell -ExecutionPolicy Bypass -File install.ps1 -NoModifyPath
+#
+# Pass post-install options (after --) with the script block form: Windows PowerShell 5.1
+# -File treats "--" and "--name" arguments as parameter names and rejects them.
 #
 # Keep this file ASCII-only: Windows PowerShell 5.1 may decode a downloaded script
 # with a legacy code page before Invoke-Expression runs it.
@@ -152,7 +155,13 @@ function Install-ScoopToolchain {
         if (-not $scoopShell -or (Split-Path -Leaf $scoopShell) -notin 'powershell.exe', 'pwsh.exe') {
             $scoopShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
         }
-        & $scoopShell -NoProfile -ExecutionPolicy Bypass -File $scoopPostInstall @scoopPostArgs | Out-Host
+        # Windows PowerShell 5.1 -File treats "--name" arguments as parameters, so pass the
+        # options inside an encoded command, quoted as PowerShell string literals.
+        $scoopQuoted = @($scoopPostInstall) + $scoopPostArgs | ForEach-Object { "'" + ($_ -replace "'", "''") + "'" }
+        $scoopCommand = "try { & $($scoopQuoted -join ' '); exit `$LASTEXITCODE } " +
+            'catch { [Console]::Error.WriteLine("Error: $($_.Exception.Message)"); exit 1 }'
+        $scoopEncoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($scoopCommand))
+        & $scoopShell -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand $scoopEncoded | Out-Host
         $scoopExit = $LASTEXITCODE
         if ($scoopExit -ne 0) {
             [Console]::Error.WriteLine("Installation preparation failed. Fix the reported error, then rerun:`n  & `"$scoopPostInstall`"")
@@ -225,7 +234,8 @@ RELEASE names a published release such as 2026-11-09 (-Version is an alias).
 Examples:
   irm https://scoop-lang.org/install.ps1 | iex
   & ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -Release 2026-11-09 -- --jobs 2
-  powershell -ExecutionPolicy Bypass -File install.ps1 -- --all-targets
+  powershell -ExecutionPolicy Bypass -File install.ps1 -NoModifyPath
+Pass post-install options with the script block form, not with -File.
 '@
     return
 }

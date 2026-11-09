@@ -3,6 +3,7 @@ name: Release website
 on:
   push:
     branches: [main]
+  pull_request:
   release:
     types: [published]
   workflow_dispatch:
@@ -11,7 +12,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: github-pages
+  # Pull requests only run the checks, so they must not queue behind or cancel a deployment.
+  group: ${{ github.event_name == 'pull_request' && format('checks-{0}', github.ref) || 'github-pages' }}
   cancel-in-progress: false
 
 jobs:
@@ -84,6 +86,7 @@ jobs:
           python -m unittest discover -s tools/tests -v
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: [build, windows-installer]
     runs-on: ubuntu-24.04
     permissions:
