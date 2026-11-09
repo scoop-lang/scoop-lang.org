@@ -128,8 +128,13 @@ Set-Content -LiteralPath "$PSScriptRoot/docs/index.html" -Value 'API documentati
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("existing data")
         before = self.user_path()
+        # Post-install options use the documented script block form; -File cannot pass "--".
+        command = (
+            f"& ([scriptblock]::Create((irm {self.base_url}/install.ps1))) "
+            "-NoModifyPath -- --jobs 2 --work-dir ($env:USERPROFILE + '\\it''s build')"
+        )
         for _ in range(2):
-            result = self.install("--", "--jobs", "2")
+            result = self.run_powershell("-Command", command)
         self.assertIn("Scoop is installed", result.stdout)
         self.assertEqual((install / "VERSION").read_text(), "1.2.3\n")
         self.assertTrue((install / "bin/sco.exe").is_file())
@@ -140,11 +145,13 @@ Set-Content -LiteralPath "$PSScriptRoot/docs/index.html" -Value 'API documentati
             self.assertEqual((install / relative).read_text(), "existing data")
         self.assertTrue((install / "commands/scoop-example.exe").is_file())
         arguments = (self.profile / "post-install-arguments").read_text().splitlines()
-        self.assertEqual(arguments, ["--jobs 2", "--jobs 2"])
+        work_dir = str(self.profile / "it's build")
+        self.assertEqual(arguments, [f"--jobs 2 --work-dir {work_dir}"] * 2)
         self.assertEqual(self.user_path(), before)
         self.assertEqual(
-            self.server.requests[:3],
+            self.server.requests[:4],
             [
+                "/install.ps1",
                 "/latest.txt",
                 "/2026-11-07/windows/scoop-1.2.3-bin-x86_64-pc-windows-gnullvm.tar.xz",
                 "/2026-11-07/windows/scoop-1.2.3-sources.tar.xz",
