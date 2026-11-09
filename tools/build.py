@@ -11,7 +11,8 @@ also adds the reference chapter list from REFERENCE and previous/next links.
 ``redirect: TARGET`` turns the page into a redirect to TARGET (relative to
 the page). Fragments may embed verified examples from examples/ with
 ``{{example NAME}}`` (adds the recorded NAME.out when present) or
-``{{example NAME nooutput}}``. ``{{root}}`` expands to the relative path of
+``{{example NAME nooutput}}``; NAME is looked up in examples/ and then in
+guides/examples/. ``{{root}}`` expands to the relative path of
 the site root.
 """
 
@@ -30,6 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 PAGES = SRC / "pages"
 EXAMPLES = ROOT / "examples"
+GUIDE_EXAMPLES = ROOT / "guides" / "examples"
 ASSETS = ROOT / "assets"
 
 META_RE = re.compile(r"^<!--(.*?)-->\s*", re.DOTALL)
@@ -94,11 +96,15 @@ def parse_meta(text: str) -> tuple[dict[str, str], str]:
 
 def render_example(match: re.Match[str]) -> str:
     name = match.group(1)
-    source = EXAMPLES / f"{name}.scoop"
-    if not source.is_file():
+    # Site examples come first; guide examples (e.g. UI programs) are a fallback.
+    folder = next(
+        (d for d in (EXAMPLES, GUIDE_EXAMPLES) if (d / f"{name}.scoop").is_file()), None
+    )
+    if folder is None:
         raise FileNotFoundError(f"unknown example: {name}")
+    source = folder / f"{name}.scoop"
     code = html.escape(source.read_text().rstrip())
-    output = EXAMPLES / f"{name}.out"
+    output = folder / f"{name}.out"
     with_output = output.is_file() and not match.group(2)
     block = (
         f'<div class="codeblock{" has-output" if with_output else ""}">'

@@ -1,6 +1,6 @@
-<!-- title: 库 Cone 一览; nav: reference; layout: reference; description: Scoop 随工具链发布的库 Cone：核心库、集合与文本、平台与异步 I/O、HTTP、TLS、JSON、正则、命令行与终端。 -->
+<!-- title: 库 Cone 一览; nav: reference; layout: reference; description: Scoop 随工具链发布的库 Cone：核心库、集合与文本、平台与异步 I/O、HTTP、TLS、JSON、正则、命令行与终端、图形与桌面 UI。 -->
 <h1>库 Cone 一览</h1>
-<p class="intro">Scoop 工具链附带一组预编译的库 Cone，覆盖从集合、文本到 TLS、HTTP/2 与终端交互的常见需求。它们都是普通的 Scoop Cone：源码随安装包发布在 <code>~/.scoop/src</code>，每个库都有可运行的 <code>examples/</code>，完整 API 见 <a href="../api/index.html">API 文档</a>。</p>
+<p class="intro">Scoop 工具链附带一组预编译的库 Cone，覆盖从集合、文本、TLS、HTTP/2 与终端交互到 2D 绘图和桌面 UI 的常见需求。它们都是普通的 Scoop Cone：源码随安装包发布在 <code>~/.scoop/src</code>，每个库都有可运行的 <code>examples/</code>，完整 API 见 <a href="../api/index.html">API 文档</a>。</p>
 
 <h2 id="usage">使用内置库</h2>
 <p>内置库的 group 都是 <code>scoop</code>，当前版本为 <code>0.1.0</code>。<code>scoop.core</code> 总是可用；单文件程序还默认依赖 <code>scoop.std</code>。其他库需要显式声明：</p>
@@ -25,7 +25,8 @@
 <div class="table-wrap"><table>
   <tr><th>Cone</th><th>内容</th></tr>
   <tr><td><code>scoop.platform</code></td><td>同步平台 API：文件系统、目录、临时文件、环境变量、进程、线程与并发原语、网络、系统时钟与系统熵、native I/O buffer。系统字符串 <code>OsString</code> 用 WTF-8 无损保存 Windows 的 UTF-16 名称（包括非配对 surrogate），可用 <code>fromUtf16</code>/<code>toUtf16</code> 显式转换。</td></tr>
-  <tr><td><code>scoop.asyncio</code></td><td>平台事件循环 <code>PlatformEventLoop</code>：macOS 使用系统 libdispatch，Linux 使用 io_uring/liburing，Windows 使用 IOCP；提供定时器、TCP/UDP、DNS、异步文件与目录、TTY、SOCKS5，复用 core 的 Job、CoroutineScope、async/launch 与取消协议。</td></tr>
+  <tr><td><code>scoop.asyncio</code></td><td>平台事件循环 <code>PlatformEventLoop</code>：macOS 使用系统 libdispatch，Linux 使用 io_uring/liburing，Windows 使用 IOCP；提供定时器、TCP/UDP、DNS、异步文件与目录、TTY、SOCKS5，复用 core 的 Job、CoroutineScope、async/launch 与取消协议。事件循环由 <code>eventLoop()</code> 创建，可在配置 lambda 中选择阻塞线程池。</td></tr>
+  <tr><td><code>scoop.concurrent</code></td><td>多线程协程执行器与 worker 组、阻塞任务线程池、异步 <code>AsyncMutex</code> 与条件变量、channel；等待时挂起协程而不阻塞执行器线程。</td></tr>
 </table></div>
 {{example coroutines}}
 <p><code>PlatformEventLoop.run</code> 是同步、单次使用的根入口，等待根作用域和子任务完成，并关闭本轮遗留资源。Linux 异步后端要求内核 6.1 及实际可用的 io_uring 能力；初始化会探测所需操作，能力不足时报错，不自动切换后端。</p>
@@ -77,6 +78,27 @@ $ curl -X POST -H 'content-type: application/json' -d '{"name":"Ada"}' http://12
 <pre><code class="language-sh">$ scoop run --release cli.scoop Ada --count 2 --excited
 Hello, Ada!
 Hello, Ada!</code></pre>
+
+<h2 id="gui">图形与桌面 UI</h2>
+<p>GUI 库随 <code>lib-gui</code> 组件包发布，支持 macOS、Linux GNU（Wayland 与 X11）和 Windows 桌面；Linux musl 目标不提供 GUI 后端。界面由 Scoop 通过 Skia 自绘（macOS 用 Metal，Windows 用 D3D12，Linux 用 EGL／GLES），窗口、菜单、文件对话框和托盘使用系统原生实现。入门见 <a href="../guides/ui.html">UI 教程</a>。</p>
+<div class="table-wrap"><table>
+  <tr><th>Cone</th><th>内容</th></tr>
+  <tr><td><code>scoop.ui</code></td><td>声明式自绘框架：保留身份的 Component、成员 State、不可变 View、挂载与更新、布局协议、输入、焦点、弹层与滚动。本身不带控件和默认样式。</td></tr>
+  <tr><td><code>scoop.ui.component</code></td><td>基础控件库：Label、Button、Input、Checkbox、布局容器、滚动与虚拟列表、Popover、Dialog、菜单、Toast、Tabs、表格、日历与图表，以及原生菜单、窗框、文件对话框与多窗口控制器。</td></tr>
+  <tr><td><code>scoop.ui.style</code></td><td>主题与样式协议：颜色、边框、圆角、阴影等 Style，主题 tokens、部件绘制与可复用效果。</td></tr>
+  <tr><td><code>scoop.ui.style.macos</code> / <code>.material</code> / <code>.fluent</code> / <code>.shadcn</code></td><td>四套主题预设，提供 <code>macosTheme</code>、<code>materialTheme</code>、<code>fluentTheme</code>、<code>shadcnTheme</code>，支持浅色与深色。</td></tr>
+  <tr><td><code>scoop.ui.component.desktop</code> / <code>scoop.ui.component.tray</code></td><td>把 Dock／任务栏状态与系统托盘接入组件 scope；单独成库，不需要的应用不必引入。</td></tr>
+  <tr><td><code>scoop.graphics</code></td><td>与窗口无关的 Skia 2D 绘图：路径、渐变、裁剪与变换、图像和图层滤镜，左上原点的逻辑坐标；CPU 离屏绘制不需要启动应用。</td></tr>
+  <tr><td><code>scoop.graphics.text</code> / <code>scoop.graphics.svg</code></td><td>字体与段落排版（SkParagraph、HarfBuzz、ICU，支持富文本与行内对象）；静态 SVG 渲染。</td></tr>
+  <tr><td><code>scoop.window</code> / <code>scoop.window.asyncio</code></td><td>原生窗口骨架（AppKit、Win32、Wayland／X11）：窗口、原生事件、重绘请求、显示器、原生菜单、剪贴板与显式生命周期，以及与事件循环的集成。</td></tr>
+  <tr><td><code>scoop.surface</code></td><td>窗口呈现、帧调度、动画与区域输入，是 UI 宿主与图形设备之间的一层。</td></tr>
+  <tr><td><code>scoop.desktop</code> / <code>scoop.tray</code></td><td>应用与窗口图标、Dock 角标与菜单、任务栏进度与 overlay、Windows Jump List；原生系统托盘（Linux 使用 StatusNotifierItem）。</td></tr>
+  <tr><td><code>scoop.icons.lucide</code></td><td>精选的 Lucide SVG 图标，以不可变 <code>SvgAsset</code> 提供。</td></tr>
+</table></div>
+<p>UI 程序同样可以单文件运行，在文件头声明所需的库：</p>
+{{example ui-counter nooutput}}
+<pre><code class="language-sh">$ scoop run --release ui-counter.scoop</code></pre>
+<p>打开的窗口是一个按钮，每次点击计数加一。布局、状态、表单、主题、自绘与桌面集成按篇讲解，见 <a href="../guides/ui.html">UI 教程</a>；需要分发时用 <code>scoop bundle</code> 生成各平台的安装包。</p>
 
 <h2 id="examples">更多示例</h2>
 <p>可以先用离线示例索引查找完整程序和运行说明：</p>

@@ -14,7 +14,7 @@ Scoop 编程语言的官方网站源码。纯静态站点，不依赖任何前�
   `guides/_layouts/guide.html` 提供页面布局与指南导航；`guides/examples/` 保存指南示例。
 - `_config.yml`、`Gemfile`、`Gemfile.lock` — Jekyll 配置与固定的 Ruby 依赖；指南输出到 `dist/guides/`。
 - `examples/` — 页面中嵌入的示例程序（唯一来源），`NAME.out` 是记录的运行输出。
-  在页面中用 `{{example NAME}}` 嵌入代码和输出，`{{example NAME nooutput}}` 只嵌入代码。
+  在页面中用 `{{example NAME}}` 嵌入代码和输出，`{{example NAME nooutput}}` 只嵌入代码；`examples/` 中找不到时再查找 `guides/examples/`（首页与库 Cone 一览的 UI 示例来自那里）。
 - `assets/` — 样式、Scoop 语法高亮与页面脚本、logo。
 - `tools/build.py` — 生成官网页面并调用 Jekyll，统一输出到 `dist/`。
 - `install.sh` — macOS Apple Silicon／Linux x86-64 安装脚本，构建时原样复制到 `dist/install.sh`。
@@ -59,7 +59,7 @@ API 文档由工具链的 post-install 调用 `scoop doc` 生成，位于 `~/.sc
 
 ```sh
 curl -fsSL https://scoop-lang.org/install.sh | sh
-curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --release 2026-11-07
+curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --release 2026-11-09
 curl -fsSL https://scoop-lang.org/install.sh | sh -s -- -- --jobs 2
 ```
 
@@ -67,16 +67,16 @@ Windows（PowerShell 5.1 或 7）：
 
 ```powershell
 irm https://scoop-lang.org/install.ps1 | iex
-& ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -Release 2026-11-07 -- --jobs 2
+& ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -Release 2026-11-09 -- --jobs 2
 ```
 
 发行包存放在 Cloudflare R2 bucket `scoop-releases`，公开地址为 <https://release.scoop-lang.org>。每个 release 是一个 `YYYY-MM-DD/` 目录，下分 `macos/`、`linux/`、`windows/`。脚本默认读取根目录的 `latest.txt`，`--release <目录名>`（别名 `--version`）读取 `<目录名>/index.txt`，再下载并解压索引中本平台的全部包。索引每行一条记录，字段以空格分隔：
 
 ```text
 format 1
-release 2026-11-07
-version 0.0.0-dev
-package macos 2026-11-07/macos/scoop-0.0.0-dev-bin-aarch64-apple-darwin.tar.xz
+release 2026-11-09
+version 0.0.0-dev.20261109
+package macos 2026-11-09/macos/scoop-0.0.0-dev.20261109-bin-aarch64-apple-darwin.tar.xz
 ```
 
 每个平台目录包含该宿主的 `bin`、全局的 `sources`、各目标的 `lib-base`／`lib-gui`，Windows 另有两个 MinGW 目标的 `native` 包；系统库已预编译在 lib 包中，post-install 只生成 API 文档。
@@ -88,7 +88,7 @@ package macos 2026-11-07/macos/scoop-0.0.0-dev-bin-aarch64-apple-darwin.tar.xz
 ```sh
 sh tools/publish_release_index.sh --dry-run   # 预览最新 release 的索引
 sh tools/publish_release_index.sh             # 上传 <release>/index.txt 与 latest.txt
-sh tools/publish_release_index.sh 2026-11-07  # 指定 release；较旧的 release 不覆盖 latest.txt
+sh tools/publish_release_index.sh 2026-11-09  # 指定 release；较旧的 release 不覆盖 latest.txt
 ```
 
 安装根固定为 `~/.scoop`；解压后执行随包 post-install，成功后幂等地更新 Bash、Zsh（支持 `ZDOTDIR`）、Fish（支持 `XDG_CONFIG_HOME`）或 POSIX shell 的配置。升级替换发行目录，保留 `packages`、`build` 及用户外部命令；未准备的其他目标不保留旧 `.slib`。脚本不会改变调用它的父 shell，当前终端可显式设置 PATH，或打开新终端。
