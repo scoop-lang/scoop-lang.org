@@ -60,8 +60,31 @@ jobs:
         with:
           path: dist
 
+  windows-installer:
+    if: github.event_name != 'release' || !github.event.release.prerelease
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out website
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Check the PowerShell installer
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD/install.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors) { $errors | ForEach-Object { Write-Error $_.ToString() }; exit 1 }
+          tar --version
+          python -m unittest discover -s tools/tests -v
+
   deploy:
-    needs: build
+    needs: [build, windows-installer]
     runs-on: ubuntu-24.04
     permissions:
       pages: write

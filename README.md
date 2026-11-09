@@ -18,8 +18,10 @@ Scoop 编程语言的官方网站源码。纯静态站点，不依赖任何前�
 - `assets/` — 样式、Scoop 语法高亮与页面脚本、logo。
 - `tools/build.py` — 生成官网页面并调用 Jekyll，统一输出到 `dist/`。
 - `install.sh` — macOS Apple Silicon／Linux x86-64 安装脚本，构建时原样复制到 `dist/install.sh`。
+- `install.ps1` — Windows x64 PowerShell 安装脚本，构建时原样复制到 `dist/install.ps1`。
 - `tools/publish_release_index.sh` — 为 R2 bucket `scoop-releases` 中的 release 生成并上传下载索引。
 - `tools/tests/test_install.py` — 用本地归档和隔离用户目录验证 `curl | sh` 安装、升级、PATH 配置及失败退出。
+- `tools/tests/test_install_ps1.py` — 仅在 Windows 运行：用本地 HTTP 服务和隔离的 `USERPROFILE` 验证 `install.ps1`。
 - `tools/check_examples.py` — 用 `scoop` 编译运行官网和指南示例，并与 `.out` 比对。
 - `tools/check_reference.py` — 用 `scoop check` 检查参考文档中的每个 Scoop 代码块。
 - `data/api-docs.tar.xz` — 发布用的 API 文档快照，CI 解包后复制到 `dist/api/`。
@@ -61,6 +63,13 @@ curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --release 2026-11-07
 curl -fsSL https://scoop-lang.org/install.sh | sh -s -- -- --jobs 2
 ```
 
+Windows（PowerShell 5.1 或 7）：
+
+```powershell
+irm https://scoop-lang.org/install.ps1 | iex
+& ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -Release 2026-11-07 -- --jobs 2
+```
+
 发行包存放在 Cloudflare R2 bucket `scoop-releases`，公开地址为 <https://release.scoop-lang.org>。每个 release 是一个 `YYYY-MM-DD/` 目录，下分 `macos/`、`linux/`、`windows/`。脚本默认读取根目录的 `latest.txt`，`--release <目录名>`（别名 `--version`）读取 `<目录名>/index.txt`，再下载并解压索引中本平台的全部包。索引每行一条记录，字段以空格分隔：
 
 ```text
@@ -72,7 +81,7 @@ package macos 2026-11-07/macos/scoop-0.0.0-dev-bin-aarch64-apple-darwin.tar.xz
 
 每个平台目录包含该宿主的 `bin`、全局的 `sources`、各目标的 `lib-base`／`lib-gui`，Windows 另有两个 MinGW 目标的 `native` 包；系统库已预编译在 lib 包中，post-install 只生成 API 文档。
 
-脚本支持 Apple Silicon macOS 和 x86-64 Linux。在 Windows（MSYS／Git Bash）上运行时只列出索引中的下载地址，需按安装页手动解压并运行 `post-install.ps1`；索引中没有本平台的包时，脚本提示包尚未就绪，需从源码编译。
+`install.sh` 支持 Apple Silicon macOS 和 x86-64 Linux，在 MSYS／Git Bash 中运行时提示改用 `install.ps1`。`install.ps1` 支持 x64 Windows，用系统自带的 `tar.exe`（需支持 xz）解压，下载索引中 `windows` 的全部包。索引中没有本平台的包时，两个脚本都提示包尚未就绪，需从源码编译。
 
 上传新 release 后，用 `.envrc` 中的 R2 凭据重新生成索引（索引不收录 `llvm-sources` 包）：
 
@@ -84,12 +93,16 @@ sh tools/publish_release_index.sh 2026-11-07  # 指定 release；较旧的 relea
 
 安装根固定为 `~/.scoop`；解压后执行随包 post-install，成功后幂等地更新 Bash、Zsh（支持 `ZDOTDIR`）、Fish（支持 `XDG_CONFIG_HOME`）或 POSIX shell 的配置。升级替换发行目录，保留 `packages`、`build` 及用户外部命令；未准备的其他目标不保留旧 `.slib`。脚本不会改变调用它的父 shell，当前终端可显式设置 PATH，或打开新终端。
 
+`install.ps1` 的安装根为 `%USERPROFILE%\.scoop`，替换与保留的目录与 `install.sh` 相同；post-install 在子 PowerShell 中以 `-ExecutionPolicy Bypass` 运行，成功后把 `bin` 加到注册表中用户 PATH 的最前面（保留 `%VAR%` 引用，`-NoModifyPath` 跳过）并更新当前会话。脚本出错时只报告错误，不调用 `exit`，因此 `irm | iex` 不会关闭用户的 PowerShell 窗口；以 `-File` 运行时返回非零退出码。
+
 验证安装脚本无需下载真实发行包，也不写入当前用户的安装目录：
 
 ```sh
 sh -n install.sh
 python3 -m unittest discover -s tools/tests
 ```
+
+`install.ps1` 的测试只在 Windows 上运行（其他平台自动跳过），CI 的 `windows-installer` job 在 `windows-latest` 上执行。
 
 测试使用真实 `sh`、`tar` 和文件操作，以临时归档替代网络下载；发行包的真实 post-install 与程序编译运行由 Scoop 仓库的 Release workflow 验证。
 

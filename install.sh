@@ -59,7 +59,10 @@ scoop_install() {
             scoop_platform=macos
             ;;
         Linux/x86_64|Linux/amd64) scoop_platform=linux ;;
-        MINGW*|MSYS*|CYGWIN*) scoop_platform=windows ;;
+        MINGW*|MSYS*|CYGWIN*)
+            scoop_error 'on Windows, run the PowerShell installer instead:
+  irm https://scoop-lang.org/install.ps1 | iex'
+            ;;
         *) scoop_error "unsupported host: $scoop_system/$scoop_machine" ;;
     esac
 
@@ -107,14 +110,6 @@ scoop_install() {
         scoop_error "Scoop packages for $scoop_platform are not ready yet in release $scoop_index_release.
 Please build Scoop from source: https://github.com/windoze/scoop"
     fi
-    if [ "$scoop_platform" = windows ]; then
-        printf 'Download these packages, extract them into %%USERPROFILE%%\\.scoop and run post-install.ps1:\n' >&2
-        for scoop_package in $scoop_packages; do
-            printf '  %s/%s\n' "$scoop_base_url" "$scoop_package" >&2
-        done
-        scoop_error 'this script cannot install on Windows; see https://scoop-lang.org/docs/install.html'
-    fi
-
     printf 'Downloading Scoop %s (release %s) for %s...\n' "$scoop_version" "$scoop_index_release" "$scoop_platform"
     mkdir "$scoop_download_dir/package"
     scoop_package_number=0
