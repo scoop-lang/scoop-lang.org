@@ -39,7 +39,7 @@ class PowerShellInstallerTests(unittest.TestCase):
         tar = Path(os.environ["SystemRoot"]) / "System32" / "tar.exe"
         packages = {
             "bin": {
-                "VERSION": "1.2.3\n",
+                "VERSION": b"1.2.3\n",
                 "bin/sco.exe": tar.read_bytes(),
                 "commands/scoop-example.exe": b"example command",
                 "post-install.ps1": b"""
