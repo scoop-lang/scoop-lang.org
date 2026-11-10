@@ -45,7 +45,7 @@ kind = "executable"          # 或 "library"
   <tr><td><code>"=1.4.2"</code></td><td>只有该版本</td></tr>
   <tr><td><code>"&gt;=1.4.0, &lt;1.8.0"</code></td><td>各比较项的交集</td></tr>
 </table></div>
-<p>版本号必须写全 <code>major.minor.patch</code>；没有 <code>latest</code>、通配符或“或”表达式。<code>artifact</code> 来源要求精确版本。来源与求解细节、workspace 与 registry 见<a href="../guides/registry.html">registry 指南</a>与<a href="https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md">包管理规范</a>。</p>
+<p>版本号必须写全 <code>major.minor.patch</code>；没有 <code>latest</code>、通配符或“或”表达式。<code>artifact</code> 来源要求精确版本。来源与求解细节、workspace 与 registry 见<a href="../guides/registry.html">registry 指南</a>与<a href="https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md">包管理规范</a>。</p>
 
 <h3 id="workspaces">workspace</h3>
 <p>多个 Cone 可以组成 workspace：根清单的 <code>[workspace]</code> 列出 <code>members</code> 与可选的 <code>default-members</code>，成员可以用 <code>{ workspace = true }</code> 继承 <code>group</code>、<code>version</code> 等字段以及 <code>[workspace.dependencies]</code> 中的依赖声明。命令行用 <code>--workspace</code> 或 <code>-p group:name</code> 选择成员。workspace 中的每个程序独立求解依赖，可以使用不同的版本。</p>

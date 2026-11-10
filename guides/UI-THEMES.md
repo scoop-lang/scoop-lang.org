@@ -274,4 +274,4 @@ restored: background=set, border=set
 | 加了 Glow 后点击范围没有变大 | 效果不改变布局和命中范围，这是预期行为 |
 | `frame { style { ... } }` 里写 `background = Some(...)` 类型不匹配 | 这里是 `StyleOverride`，字段类型是 `StyleValue`；使用同名方法 `background(Some(...))` |
 
-下一篇[自绘元素]({{ '/ui-custom.html' | relative_url }})介绍如何从 Canvas 开始绘制自己的控件，并接入主题部件和 `StylePainter`。主题与样式的完整规则见 Scoop 仓库的 [UI 规范](https://github.com/windoze/scoop/tree/main/docs/specs)；各个配置项可以在 [API 文档](../api/index.html)中查找。以上示例在 macOS 上验证，Linux 上用法相同。
+下一篇[自绘元素]({{ '/ui-custom.html' | relative_url }})介绍如何从 Canvas 开始绘制自己的控件，并接入主题部件和 `StylePainter`。主题与样式的完整规则见 Scoop 仓库的 [UI 规范](https://github.com/scoop-lang/scoop/tree/main/docs/specs)；各个配置项可以在 [API 文档](../api/index.html)中查找。以上示例在 macOS 上验证，Linux 上用法相同。

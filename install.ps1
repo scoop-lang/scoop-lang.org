@@ -116,7 +116,7 @@ function Install-ScoopToolchain {
         }
         if ($scoopPackages.Count -eq 0) {
             throw ("Scoop packages for windows are not ready yet in release $scoopIndexRelease.`n" +
-                'Please build Scoop from source: https://github.com/windoze/scoop')
+                'Please build Scoop from source: https://github.com/scoop-lang/scoop')
         }
 
         Write-Host "Downloading Scoop $scoopVersion (release $scoopIndexRelease) for windows..."

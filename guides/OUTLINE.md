@@ -41,7 +41,7 @@ order: 90
 | P0 | 运行第一个程序 `QUICKSTART.md` | 单文件 Hello World；`scoop new` 创建 Cone；build/run；传递参数和退出码；从示例与离线 API 文档继续学习 | 从空目录创建、编译并运行一个带测试模板的小程序 |
 | P0 | 配置编辑器 `EDITOR.md` | 安装 VSIX；工具与 sysroot 路径；打开 Cone/workspace；补全、导航、重命名和格式化；测试配置；缺锁定依赖时的处理 | 编辑器能分析已准备的项目，读者能区分语法服务与完整依赖语义 |
 
-可复用材料：[工具包说明](https://github.com/windoze/scoop/blob/main/scripts/distribution/README.md)、[VS Code 扩展说明](https://github.com/windoze/scoop/blob/main/tooling/vscode-scoop/README.md)、[LSP 配置](https://github.com/windoze/scoop/blob/main/compiler/lsp/README.md)、[入门示例](https://github.com/windoze/scoop/tree/main/sysroot/share/scoop/examples/topics/start)。安装指南只指向实际提供的发行入口，不虚构下载地址或版本支持范围。
+可复用材料：[工具包说明](https://github.com/scoop-lang/scoop/blob/main/scripts/distribution/README.md)、[VS Code 扩展说明](https://github.com/scoop-lang/scoop/blob/main/tooling/vscode-scoop/README.md)、[LSP 配置](https://github.com/scoop-lang/scoop/blob/main/compiler/lsp/README.md)、[入门示例](https://github.com/scoop-lang/scoop/tree/main/sysroot/share/scoop/examples/topics/start)。安装指南只指向实际提供的发行入口，不虚构下载地址或版本支持范围。
 
 ## 3. 语言学习
 
@@ -54,7 +54,7 @@ order: 90
 | P1 | 泛型与约束 `GENERICS.md` | 类型和函数泛型；推断、不变性与上界；value/ref 约束；函数条件、成员要求与条件接口实现；常见约束诊断 | 泛型容器和受约束算法；区分有同名方法与实现名义接口 |
 | P1 | 错误处理与资源释放 `ERRORS-AND-RESOURCES.md` | Option 与异常的选用；throw/try/catch/finally；异常信息与重抛；Closeable/use/useAsync；成功、失败和取消时的收尾 | 文件转换在成功和失败时都关闭资源；GC 与确定性释放的区别 |
 
-可复用材料：[语言规范](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-SPEC.md)、[语言主题示例](https://github.com/windoze/scoop/tree/main/sysroot/share/scoop/examples/topics/language)、[core 示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.core/examples/README.md)。Kotlin 差异集中在基础指南中列出，并链接对应专题，不为每个差异再建立一套重复教程。
+可复用材料：[语言规范](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-SPEC.md)、[语言主题示例](https://github.com/scoop-lang/scoop/tree/main/sysroot/share/scoop/examples/topics/language)、[core 示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.core/examples/README.md)。Kotlin 差异集中在基础指南中列出，并链接对应专题，不为每个差异再建立一套重复教程。
 
 ## 4. 项目、依赖与构建
 
@@ -66,7 +66,7 @@ order: 90
 | P0 | 构建、运行与选择目标 `BUILDING.md` | check/build/run 的结果；debug/release 与调试信息；产物和输出目录；目标与 native 前提；增量构建；源码缓存与编译缓存；clean 的范围 | 对同一项目完成检查、运行和 release 构建，知道输出在哪里以及何时会重建 |
 | P2 | 嵌入资源与构建时配置 `COMPILE-TIME-INPUTS.md` | includeStr/includeBytes/includeDir；文件选择与相对路径；编译期 env；常量要求；嵌入输入变化；发布时携带资源 | 嵌入帮助文本、模板目录和构建版本，区分编译期配置与运行期输入 |
 
-可复用材料：[包管理规范](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md)、[编译与构建规范](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-IMPL-SPEC.md)、[多文件示例](https://github.com/windoze/scoop/blob/main/sysroot/share/scoop/examples/topics/start/cone.md)、[跨 Cone 可见性示例](https://github.com/windoze/scoop/blob/main/sysroot/share/scoop/examples/topics/language/visibility.md)、[编译期输入示例](https://github.com/windoze/scoop/blob/main/sysroot/share/scoop/examples/topics/language/compiler-inputs.md)。
+可复用材料：[包管理规范](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md)、[编译与构建规范](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-IMPL-SPEC.md)、[多文件示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/share/scoop/examples/topics/start/cone.md)、[跨 Cone 可见性示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/share/scoop/examples/topics/language/visibility.md)、[编译期输入示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/share/scoop/examples/topics/language/compiler-inputs.md)。
 
 这里讲依赖消费；维护 registry 的目录、索引和部署继续放在已有 registry 指南中。构建指南解释用户会遇到的目标、工具链和产物兼容问题，不展开 `.slib` 二进制格式。
 
@@ -83,20 +83,20 @@ order: 90
 | P1 | 编写 HTTP 服务 `HTTP-SERVER.md` | 启动与停机；路由和 middleware；query/JSON 提取；错误响应；流式响应；静态文件/SPA；TLS、SSE 与 WebSocket 入口 | 从一个端点扩展成带 JSON API 的小服务，并完成优雅停机 |
 | P1 | 编写命令行与终端程序 `CLI-AND-TERMINAL.md` | argv 与退出码；位置参数、选项、重复参数和帮助；stdout/stderr；日志；终端检测、输入与行编辑；退出恢复 | 构建可脚本化的 CLI，再按需加入交互式输入 |
 
-可复用材料：[示例目录](https://github.com/windoze/scoop/blob/main/sysroot/share/scoop/examples/catalog.toml)、[stdlib 示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.std/examples/README.md)、[platform 示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.platform/examples/README.md)、[JSON](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.json/README.md)、[异步示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.asyncio/examples/README.md)、[HTTP client](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.http.client/README.md)、[HTTP server](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.http.server/README.md)、[CLI 示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.cli/examples/README.md)。
+可复用材料：[示例目录](https://github.com/scoop-lang/scoop/blob/main/sysroot/share/scoop/examples/catalog.toml)、[stdlib 示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.std/examples/README.md)、[platform 示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.platform/examples/README.md)、[JSON](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.json/README.md)、[异步示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.asyncio/examples/README.md)、[HTTP client](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.http.client/README.md)、[HTTP server](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.http.server/README.md)、[CLI 示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.cli/examples/README.md)。
 
 库指南不按每个 Cone 机械建立一篇文章。下面的现有能力先在 `LIBRARIES.md` 中给出选择依据、最小用法和材料入口；有足够的独立任务内容时再拆成专题：
 
 | 能力 | 覆盖位置与现有材料 |
 | --- | --- |
-| 正则、字符集和 Unicode/IDNA | 文本处理章节；[regex](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.regex/README.md)、[charset](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.charset/README.md)、[IDNA](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.idna/README.md) |
-| URL 解析与构造 | 标准库地图及 HTTP 指南；[URL](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.url/README.md) |
-| 数学、大整数与十进制 | 数值章节；[math](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.math/README.md) |
-| 压缩与流组合 | 文件和 HTTP 指南；[compression](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.compression/README.md) |
-| 密码、证书与 TLS | 库选择及 TLS 专节；[crypto 示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.crypto/examples/README.md)、[TLS 示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.tls/examples/README.md)、[异步 TLS 示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.tls.asyncio/examples/README.md) |
-| 日志配置与控制台输出 | CLI 和故障定位指南；[log](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.log/README.md)、[console provider](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.log.console/README.md) |
-| 终端与交互行编辑 | CLI/终端指南；[terminal](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.terminal/README.md)、[异步终端示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.terminal.asyncio/examples/README.md)、[readline](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.readline/README.md) |
-| HTTP 协议层与异步适配 | HTTP 指南的进阶阅读；[HTTP](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.http/README.md)、[HTTP asyncio](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.http.asyncio/README.md) |
+| 正则、字符集和 Unicode/IDNA | 文本处理章节；[regex](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.regex/README.md)、[charset](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.charset/README.md)、[IDNA](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.idna/README.md) |
+| URL 解析与构造 | 标准库地图及 HTTP 指南；[URL](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.url/README.md) |
+| 数学、大整数与十进制 | 数值章节；[math](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.math/README.md) |
+| 压缩与流组合 | 文件和 HTTP 指南；[compression](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.compression/README.md) |
+| 密码、证书与 TLS | 库选择及 TLS 专节；[crypto 示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.crypto/examples/README.md)、[TLS 示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.tls/examples/README.md)、[异步 TLS 示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.tls.asyncio/examples/README.md) |
+| 日志配置与控制台输出 | CLI 和故障定位指南；[log](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.log/README.md)、[console provider](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.log.console/README.md) |
+| 终端与交互行编辑 | CLI/终端指南；[terminal](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.terminal/README.md)、[异步终端示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.terminal.asyncio/examples/README.md)、[readline](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.readline/README.md) |
+| HTTP 协议层与异步适配 | HTTP 指南的进阶阅读；[HTTP](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.http/README.md)、[HTTP asyncio](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.http.asyncio/README.md) |
 
 ## 6. 测试、调试与持续集成
 
@@ -107,7 +107,7 @@ order: 90
 | P0 | 常见错误与排查 `TROUBLESHOOTING.md` | 读取主诊断和关联位置；源码/类型/import；依赖/lock；工具链/sysroot；native 链接；运行期异常；编辑器问题；最小复现 | 根据错误所属环节找到下一步，不靠删除缓存或乱改版本碰运气 |
 | P1 | 在 CI 中检查和构建 `CI.md` | 配套工具链准备；fmt → check → test → build；提交 lock；locked/frozen；测试与生产用途；目标矩阵；保留报告与产物 | 用普通命令复现本地流程，明确检查、测试运行和跨目标验证的区别 |
 
-可复用材料：[测试示例](https://github.com/windoze/scoop/blob/main/sysroot/share/scoop/examples/topics/test/assertions.md)、[测试库示例](https://github.com/windoze/scoop/blob/main/sysroot/src/scoop.test/examples/README.md)、[调试器使用说明](https://github.com/windoze/scoop/blob/main/tooling/vscode-scoop/README.md#原生调试)、[调试实施边界](https://github.com/windoze/scoop/blob/main/docs/debugging/IMPLEMENTATION.md)、[当前 CLI](https://github.com/windoze/scoop/blob/main/compiler/scoop/src/cli/args.rs)。测试指南以 `scoop.test` 为入口；编译器仓库的 fixture runner 不作为应用开发者的默认测试方式。
+可复用材料：[测试示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/share/scoop/examples/topics/test/assertions.md)、[测试库示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.test/examples/README.md)、[调试器使用说明](https://github.com/scoop-lang/scoop/blob/main/tooling/vscode-scoop/README.md#原生调试)、[调试实施边界](https://github.com/scoop-lang/scoop/blob/main/docs/debugging/IMPLEMENTATION.md)、[当前 CLI](https://github.com/scoop-lang/scoop/blob/main/compiler/scoop/src/cli/args.rs)。测试指南以 `scoop.test` 为入口；编译器仓库的 fixture runner 不作为应用开发者的默认测试方式。
 
 ## 7. 库开发、文档与发布
 
@@ -118,7 +118,7 @@ order: 90
 | 已完成 | [如何组织和发布 registry]({{ '/registry.html' | relative_url }}) `REGISTRY.md` | 静态目录与索引；独立清单；手工归档；部署顺序；不可变版本与撤回；消费者配置 | 在当前已实现消费协议上发布并下载源码包 |
 | P1 | 分发原生应用与库产物 `DISTRIBUTION.md` | executable 与源码包/.slib 的用途；目标与系统依赖；GNU/musl 链接选择；伴随资源和调试文件；预编译库消费；已有产物链接 | 在声明的目标环境运行交付程序，理解产物与工具链/ABI 的配套要求 |
 
-可复用材料：[库 API 风格](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-API-STYLE.md)、[包管理规范](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md)、[文档命令设计](https://github.com/windoze/scoop/blob/main/docs/milestone60/DESIGN.md)、[产物与链接规范](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-IMPL-SPEC.md)、[工具包使用前提](https://github.com/windoze/scoop/blob/main/scripts/distribution/README.md)。
+可复用材料：[库 API 风格](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-API-STYLE.md)、[包管理规范](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md)、[文档命令设计](https://github.com/scoop-lang/scoop/blob/main/docs/milestone60/DESIGN.md)、[产物与链接规范](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-IMPL-SPEC.md)、[工具包使用前提](https://github.com/scoop-lang/scoop/blob/main/scripts/distribution/README.md)。
 
 库开发指南负责 API 和消费者使用，registry 指南负责源码发布与托管，分发指南负责交付原生产物。三者共用明确的版本与来源说明，不各自重复完整的包管理教程。
 
@@ -131,7 +131,7 @@ order: 90
 | P2 | 命令与配置速查 `COMMAND-REFERENCE.md` | 命令任务索引；常用选项；sysroot/target/profile；环境变量；路径基准；退出状态；低层工具和外部子命令入口 | 快速找到命令和 `--help`；说明 PM 与 build 中同类选项的命名差别 |
 | P1 | Cone.toml 与 workspace 速查 `MANIFEST-REFERENCE.md` | 最小完整清单；cone/source/test/native 字段；依赖来源；registry；workspace 继承；overrides；路径与默认值 | 查询一个字段的写法和适用位置，链接对应操作指南 |
 
-可复用材料：[语言规范 FFI 部分](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-SPEC.md#13-核心注解与-ffi)、[runtime 契约](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-RUNTIME-SPEC.md)、[构建与链接规范](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-IMPL-SPEC.md)、[包管理清单](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md)、[Scoop CLI](https://github.com/windoze/scoop/blob/main/compiler/scoop/src/cli/args.rs)、[PM CLI](https://github.com/windoze/scoop/blob/main/compiler/pm/src/cli.rs)。
+可复用材料：[语言规范 FFI 部分](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-SPEC.md#13-核心注解与-ffi)、[runtime 契约](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-RUNTIME-SPEC.md)、[构建与链接规范](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-IMPL-SPEC.md)、[包管理清单](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md)、[Scoop CLI](https://github.com/scoop-lang/scoop/blob/main/compiler/scoop/src/cli/args.rs)、[PM CLI](https://github.com/scoop-lang/scoop/blob/main/compiler/pm/src/cli.rs)。
 
 参考页提供字段和任务的导航，不手工复制全部 `--help` 或 API 签名。涉及生成器的常规用法放在序列化和构建章节；自定义生成器协议继续链接现有开发文档，暂不单独扩成用户教程系列。
 

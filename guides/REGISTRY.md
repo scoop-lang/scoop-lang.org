@@ -10,7 +10,7 @@ order: 20
 
 Scoop 的 registry 是一组通过 HTTP(S) 提供的静态文件：`config.json` 描述格式，每个 Cone 的 JSON 索引列出版本与依赖，`tar.zst` 归档保存源码。维护者生成这些文件并部署到静态站点，`scoop-pm` 负责版本选择、下载和缓存。
 
-本文面向 registry 维护者和库作者，说明目录组织、源码包准备、发布顺序和消费者接入。协议以[包管理规范第 8 节](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md#8-源码-registry)为准。
+本文面向 registry 维护者和库作者，说明目录组织、源码包准备、发布顺序和消费者接入。协议以[包管理规范第 8 节](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md#8-源码-registry)为准。
 
 ## 1. 当前可用的能力
 
@@ -24,7 +24,7 @@ Scoop 的 registry 是一组通过 HTTP(S) 提供的静态文件：`config.json`
 | `scoop pm registry add/yank/unyank` | 下一阶段设计，当前不能调用 |
 | 远端 `scoop publish`、托管账号和上传 API | 当前没有提供 |
 
-`scoop pm …` 转发给配套的 `scoop-pm`；可以用 `scoop pm --help` 查看安装版本支持的命令。未来的发布工具见[包管理规范第 9 节](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md#9-源码打包与静态发布)，不应把其中的计划命令作为当前操作步骤。
+`scoop pm …` 转发给配套的 `scoop-pm`；可以用 `scoop pm --help` 查看安装版本支持的命令。未来的发布工具见[包管理规范第 9 节](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md#9-源码打包与静态发布)，不应把其中的计划命令作为当前操作步骤。
 
 ## 2. 组织 registry
 
@@ -115,7 +115,7 @@ LICENSE
 
 ## 4. 从零跑通一个 registry
 
-以下是 macOS/Linux shell 下的独立演示，只发布 `org.example:answer:1.0.0`。需要相互匹配的 Scoop 配套命令与预编译 sysroot、Python 3 和 `zstd` 命令。开发仓库的工具构建与 sysroot 准备见[脚本说明](https://github.com/windoze/scoop/blob/main/scripts/README.md)，运行开发版时显式设置 `SCOOP_SYSROOT`。
+以下是 macOS/Linux shell 下的独立演示，只发布 `org.example:answer:1.0.0`。需要相互匹配的 Scoop 配套命令与预编译 sysroot、Python 3 和 `zstd` 命令。开发仓库的工具构建与 sysroot 准备见[脚本说明](https://github.com/scoop-lang/scoop/blob/main/scripts/README.md)，运行开发版时显式设置 `SCOOP_SYSROOT`。
 
 ### 4.1 写一个独立库
 
@@ -376,8 +376,8 @@ PM 与构建共用 `SCOOP_PACKAGE_CACHE_DIR` 环境变量。命令行覆盖的�
 
 ## 9. 实现与验证入口
 
-- [包管理规范](https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md)：第 4 节来源、第 6 节 lock、第 8 节读取协议、第 9 节后续发布工具。
-- [CLI 命令定义](https://github.com/windoze/scoop/blob/main/compiler/pm/src/cli.rs)与[解析命令参数](https://github.com/windoze/scoop/blob/main/compiler/pm/src/cli/resolve.rs)：当前实际可调用的命令。
-- [索引结构](https://github.com/windoze/scoop/blob/main/compiler/pm/src/sources/registry.rs)、[索引读取](https://github.com/windoze/scoop/blob/main/compiler/pm/src/sources/registry/index.rs)、[已发布清单检查](https://github.com/windoze/scoop/blob/main/compiler/pm/src/sources/registry/manifest.rs)、[下载与匹配](https://github.com/windoze/scoop/blob/main/compiler/pm/src/sources/registry/fetch.rs)：格式和首次获取行为。
-- [静态 registry 正式 fixture](https://github.com/windoze/scoop/blob/main/tests/fixtures/driver/pm-registry/consume.py)：普通 HTTP 文件服务、传递依赖、共享下载、更新与 frozen 构建的完整示例。
-- [M63 实施记录](https://github.com/windoze/scoop/blob/main/docs/package-manager/PROGRESS.md)：已完成范围及已有验收边界。
+- [包管理规范](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md)：第 4 节来源、第 6 节 lock、第 8 节读取协议、第 9 节后续发布工具。
+- [CLI 命令定义](https://github.com/scoop-lang/scoop/blob/main/compiler/pm/src/cli.rs)与[解析命令参数](https://github.com/scoop-lang/scoop/blob/main/compiler/pm/src/cli/resolve.rs)：当前实际可调用的命令。
+- [索引结构](https://github.com/scoop-lang/scoop/blob/main/compiler/pm/src/sources/registry.rs)、[索引读取](https://github.com/scoop-lang/scoop/blob/main/compiler/pm/src/sources/registry/index.rs)、[已发布清单检查](https://github.com/scoop-lang/scoop/blob/main/compiler/pm/src/sources/registry/manifest.rs)、[下载与匹配](https://github.com/scoop-lang/scoop/blob/main/compiler/pm/src/sources/registry/fetch.rs)：格式和首次获取行为。
+- [静态 registry 正式 fixture](https://github.com/scoop-lang/scoop/blob/main/tests/fixtures/driver/pm-registry/consume.py)：普通 HTTP 文件服务、传递依赖、共享下载、更新与 frozen 构建的完整示例。
+- [M63 实施记录](https://github.com/scoop-lang/scoop/blob/main/docs/package-manager/PROGRESS.md)：已完成范围及已有验收边界。
