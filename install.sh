@@ -108,7 +108,7 @@ scoop_install() {
 
     if [ -z "$scoop_packages" ]; then
         scoop_error "Scoop packages for $scoop_platform are not ready yet in release $scoop_index_release.
-Please build Scoop from source: https://github.com/windoze/scoop"
+Please build Scoop from source: https://github.com/scoop-lang/scoop"
     fi
     printf 'Downloading Scoop %s (release %s) for %s...\n' "$scoop_version" "$scoop_index_release" "$scoop_platform"
     mkdir "$scoop_download_dir/package"

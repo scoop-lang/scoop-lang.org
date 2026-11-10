@@ -30,7 +30,7 @@
 </table></div>
 {{example coroutines}}
 <p><code>PlatformEventLoop.run</code> 是同步、单次使用的根入口，等待根作用域和子任务完成，并关闭本轮遗留资源。Linux 异步后端要求内核 6.1 及实际可用的 io_uring 能力；初始化会探测所需操作，能力不足时报错，不自动切换后端。</p>
-<p>已有宿主主循环的程序可使用 <code>PlatformEventLoop.attach</code>，由宿主监听通知并推进任务；macOS 提供 <code>MainDispatchHost</code>。具体生命周期和线程规则见<a href="https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-ASYNCIO-SPEC.md#11-平台后端与宿主主循环迁移合同">异步 I/O 规范</a>。</p>
+<p>已有宿主主循环的程序可使用 <code>PlatformEventLoop.attach</code>，由宿主监听通知并推进任务；macOS 提供 <code>MainDispatchHost</code>。具体生命周期和线程规则见<a href="https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-ASYNCIO-SPEC.md#11-平台后端与宿主主循环迁移合同">异步 I/O 规范</a>。</p>
 
 <h2 id="net">网络与安全</h2>
 <div class="table-wrap"><table>

@@ -408,4 +408,4 @@ scoop run ui-custom-list.scoop --release
 | 点弹层的内边距也会关闭弹层 | 弹层面板没有覆盖整个面板的输入区域；像 `PanelArea` 那样创建区域并 `routeChildren` |
 | 列表滚走后正在编辑或聚焦的行丢失状态 | 没有测量和放置 `context.pinnedItems` 中的条目 |
 
-下一篇[桌面集成与异步]({{ '/ui-desktop.html' | relative_url }})介绍菜单栏、托盘、多窗口和后台任务。本篇所用接口的完整合同见 Scoop 仓库的 [UI 规范](https://github.com/windoze/scoop/tree/main/docs/specs)；工具链中的 `scoop.ui/examples/custom` 是一个只依赖框架的自绘 Counter，`scoop.ui.component` 的源码则展示了全部内置控件如何基于这些接口实现。以上示例在 macOS 上验证，Linux 上用法相同。
+下一篇[桌面集成与异步]({{ '/ui-desktop.html' | relative_url }})介绍菜单栏、托盘、多窗口和后台任务。本篇所用接口的完整合同见 Scoop 仓库的 [UI 规范](https://github.com/scoop-lang/scoop/tree/main/docs/specs)；工具链中的 `scoop.ui/examples/custom` 是一个只依赖框架的自绘 Counter，`scoop.ui.component` 的源码则展示了全部内置控件如何基于这些接口实现。以上示例在 macOS 上验证，Linux 上用法相同。

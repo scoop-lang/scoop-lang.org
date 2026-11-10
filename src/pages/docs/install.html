@@ -11,7 +11,7 @@
   <tr><td>Linux</td><td><code>x86_64-unknown-linux-gnu</code> / <code>x86_64-unknown-linux-musl</code></td><td>GNU 宿主包提供两套目标资源；当前基线 glibc 2.43 / musl 1.2.5。需 GCC、GNU ld 与开发文件，构建 musl 程序另需 musl-gcc 和匹配的开发文件</td></tr>
   <tr><td>Windows</td><td><code>x86_64-pc-windows-msvc-ucrt</code>（默认）<br><code>x86_64-w64-windows-llvm-mingw-ucrt</code><br><code>x86_64-w64-windows-llvm-mingw-msvcrt</code></td><td>Windows 10 x64 及以上，当前发行基线 build 10.0.26300。工具包自带 Clang、LLD、资源编译器和两套 LLVM-MinGW 开发资源；默认的 MSVC UCRT 目标另需本机 C++ Build Tools 与 Windows SDK（不需要完整的 Visual Studio IDE）。使用前先为所选目标执行 post-install</td></tr>
 </table></div>
-<p>版本基线以随包说明及<a href="https://github.com/windoze/scoop/blob/main/scripts/release.toml">发行配置</a>为准；GNU 宿主命令不保证在纯 musl 系统运行。使用 <code>scoop.asyncio</code> 的 Linux 程序还要求内核 6.1 及实际可用的 io_uring 能力；这一要求不适用于所有 Scoop 程序。</p>
+<p>版本基线以随包说明及<a href="https://github.com/scoop-lang/scoop/blob/main/scripts/release.toml">发行配置</a>为准；GNU 宿主命令不保证在纯 musl 系统运行。使用 <code>scoop.asyncio</code> 的 Linux 程序还要求内核 6.1 及实际可用的 io_uring 能力；这一要求不适用于所有 Scoop 程序。</p>
 <div class="callout">
   <strong>Windows 上的命令名是 <code>sco</code></strong>
   <p>为避免与同名的 Scoop 包管理器冲突，Windows 工具包的主驱动安装为 <code>sco.exe</code>，不提供 <code>scoop.exe</code> 别名。本站所有 <code>scoop …</code> 命令在 Windows 上写作 <code>sco …</code>，例如 <code>sco run hello.scoop</code>、<code>sco pm resolve</code>、<code>sco example --list</code>。其他程序名不变（<code>scoopc.exe</code>、<code>scoop-pm.exe</code>、<code>scoop-lsp.exe</code> 等），环境变量仍是 <code>SCOOP_*</code>。</p>
@@ -88,7 +88,7 @@ scoop &lt;version&gt; (&lt;revision&gt;)</code></pre>
 
 <div class="callout">
   <strong>从源码构建</strong>
-  <p>Scoop 仍处于开发预览阶段。你也可以从 <a href="https://github.com/windoze/scoop">GitHub 仓库</a> 构建完整工具包：先按<a href="https://github.com/windoze/scoop/blob/main/scripts/README.md">脚本说明</a>准备 Python 3.12+ 及开发文件、SWIG 4、Ninja、Rust、C/C++ 工具链、CMake、Make、Perl、Node.js 22.18+ 与 npm，再执行 <code>python3 scripts/package_toolchain.py --jobs 6</code>。归档生成在 <code>tmp/dist</code> 下。</p>
+  <p>Scoop 仍处于开发预览阶段。你也可以从 <a href="https://github.com/scoop-lang/scoop">GitHub 仓库</a> 构建完整工具包：先按<a href="https://github.com/scoop-lang/scoop/blob/main/scripts/README.md">脚本说明</a>准备 Python 3.12+ 及开发文件、SWIG 4、Ninja、Rust、C/C++ 工具链、CMake、Make、Perl、Node.js 22.18+ 与 npm，再执行 <code>python3 scripts/package_toolchain.py --jobs 6</code>。归档生成在 <code>tmp/dist</code> 下。</p>
 </div>
 
 <h2 id="hello">第一个程序</h2>
@@ -184,7 +184,7 @@ kind = "executable"
 $ scoop pm deps
 $ scoop build --release --locked
 $ scoop pm update</code></pre>
-<p>Git/registry 源码默认缓存在 <code>~/.scoop/packages/</code>。多 Cone 项目可以使用 <code>[workspace]</code>，通过 <code>-p group:name</code> 选择成员，或用 <code>scoop build --workspace</code> / <code>scoop test --workspace</code> 处理全部成员；<code>run</code> 必须选中唯一可执行 Cone。规则见<a href="https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md">包管理规范</a>。维护 registry 的步骤见<a href="../guides/registry.html">发布指南</a>；目前已交付消费端，打包与索引维护命令仍属后续计划。</p>
+<p>Git/registry 源码默认缓存在 <code>~/.scoop/packages/</code>。多 Cone 项目可以使用 <code>[workspace]</code>，通过 <code>-p group:name</code> 选择成员，或用 <code>scoop build --workspace</code> / <code>scoop test --workspace</code> 处理全部成员；<code>run</code> 必须选中唯一可执行 Cone。规则见<a href="https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-PACKAGE-SPEC.md">包管理规范</a>。维护 registry 的步骤见<a href="../guides/registry.html">发布指南</a>；目前已交付消费端，打包与索引维护命令仍属后续计划。</p>
 <p>Cone 还可以携带 C/C++ 源码与原生系统库，用于编写 FFI 绑定，详见参考文档的<a href="../reference/ffi.html#native-sources">原生互操作</a>一章。</p>
 
 <h2 id="commands">命令速查</h2>
@@ -214,7 +214,7 @@ $ scoop pm update</code></pre>
 <h3 id="debugging">源码调试</h3>
 <p>工具包附带 <code>scoop-lldb</code> 与 <code>scoop-lldb-dap</code>（带 <code>scoop-</code> 前缀，可与其他 LLVM 安装共存于 PATH）。在 VS Code 中按 F5 选择 Scoop，或运行 <code>Scoop: Debug Current File</code>，可自动构建并启动调试；也支持调试测试和附加现有进程。</p>
 <pre><code class="language-sh">$ scoop build --release --debug-info full</code></pre>
-<p>调试文件随程序输出：macOS 使用 <code>.dSYM</code>，Linux 使用 <code>.debug</code>，Windows 使用相邻的 <code>.pdb</code>。debug 构建默认包含完整调试信息，release 默认不包含；异常与 trap 可以显示物理栈及源码位置。当前不提供完整 Scoop 表达式求值或协程逻辑栈，配置方法见<a href="https://github.com/windoze/scoop/blob/main/tooling/vscode-scoop/README.md#原生调试">调试说明</a>。</p>
+<p>调试文件随程序输出：macOS 使用 <code>.dSYM</code>，Linux 使用 <code>.debug</code>，Windows 使用相邻的 <code>.pdb</code>。debug 构建默认包含完整调试信息，release 默认不包含；异常与 trap 可以显示物理栈及源码位置。当前不提供完整 Scoop 表达式求值或协程逻辑栈，配置方法见<a href="https://github.com/scoop-lang/scoop/blob/main/tooling/vscode-scoop/README.md#原生调试">调试说明</a>。</p>
 
 <h2 id="next">下一步</h2>
 <ul>

@@ -273,4 +273,4 @@ scoop run ui-overlays-workspace.scoop --release
 | Toast 不显示 | 页面中没有放 `toaster(state)`，或同一个 `ToastState` 交给了多个 toaster |
 | 关闭对话框后焦点回到了意外的位置 | 用 `focus { restoreTarget = Some(handle) }` 指定关闭后的焦点 |
 
-下一篇[数据展示]({{ '/ui-data.html' | relative_url }})介绍卡片、表格、日历、图表和会话组件。弹层与焦点的完整规则见 Scoop 仓库的 [UI 规范](https://github.com/windoze/scoop/tree/main/docs/specs)；各控件的全部配置项可以在 [API 文档](../api/index.html)中查找。以上示例在 macOS 上验证，Linux 上用法相同。
+下一篇[数据展示]({{ '/ui-data.html' | relative_url }})介绍卡片、表格、日历、图表和会话组件。弹层与焦点的完整规则见 Scoop 仓库的 [UI 规范](https://github.com/scoop-lang/scoop/tree/main/docs/specs)；各控件的全部配置项可以在 [API 文档](../api/index.html)中查找。以上示例在 macOS 上验证，Linux 上用法相同。

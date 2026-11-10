@@ -8,7 +8,7 @@ order: 0
 
 # 用户指南
 
-这里整理面向 Scoop 使用者的操作指南，包含可执行的示例、使用流程和常见问题。还没有安装工具链时，先从[快速开始](../docs/install.html)准备运行环境。指南中的 `scoop` 命令在 Windows 上写作 `sco`。语言与核心库的完整规则见[参考文档](../reference/index.html)，运行时和编译产物的实现合同见[语言规范](https://github.com/windoze/scoop/tree/main/docs/specs)。
+这里整理面向 Scoop 使用者的操作指南，包含可执行的示例、使用流程和常见问题。还没有安装工具链时，先从[快速开始](../docs/install.html)准备运行环境。指南中的 `scoop` 命令在 Windows 上写作 `sco`。语言与核心库的完整规则见[参考文档](../reference/index.html)，运行时和编译产物的实现合同见[语言规范](https://github.com/scoop-lang/scoop/tree/main/docs/specs)。
 
 完整的拟写主题、章节范围、现有材料与优先级见[用户文档大纲与编写计划]({{ '/outline.html' | relative_url }})。以下仅列已完成的指南。
 

@@ -146,7 +146,7 @@ fun main() {
 </ul>
 
 <h3 id="event-loop">事件循环</h3>
-<p><code>PlatformEventLoop</code> 在 macOS 上使用 libdispatch，在 Linux 上使用 io_uring（要求内核 6.1 及所需能力，能力不足时报错而不是切换后端），在 Windows 上使用 IOCP（overlapped socket 与文件句柄，取消通过 <code>CancelIoEx</code> 撤销在途请求）。它提供定时器、TCP/UDP、DNS、异步文件与目录、TTY 等操作。<code>run</code> 只能调用一次，不能嵌套或在结束后复用；已有宿主主循环的程序使用 <code>attach</code>。详见<a href="stdlib.html#platform">库 Cone 一览</a>与 <a href="https://github.com/windoze/scoop/blob/main/docs/specs/SCOOP-ASYNCIO-SPEC.md">异步 I/O 规范</a>。</p>
+<p><code>PlatformEventLoop</code> 在 macOS 上使用 libdispatch，在 Linux 上使用 io_uring（要求内核 6.1 及所需能力，能力不足时报错而不是切换后端），在 Windows 上使用 IOCP（overlapped socket 与文件句柄，取消通过 <code>CancelIoEx</code> 撤销在途请求）。它提供定时器、TCP/UDP、DNS、异步文件与目录、TTY 等操作。<code>run</code> 只能调用一次，不能嵌套或在结束后复用；已有宿主主循环的程序使用 <code>attach</code>。详见<a href="stdlib.html#platform">库 Cone 一览</a>与 <a href="https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-ASYNCIO-SPEC.md">异步 I/O 规范</a>。</p>
 
 <h2 id="threads">线程与数据竞争</h2>
 <p><code>scoop.platform.concurrent</code> 提供 <code>Thread</code>、<code>Mutex</code>、<code>ConditionVariable</code> 等同步原语。Scoop <strong>不提供</strong> Rust 或 Swift 式的并发安全保证：</p>

@@ -189,11 +189,11 @@ rm -rf "$api_dir"
 
 ### 首次配置 GitHub Pages
 
-1. 将包含工作流的代码推送到 `windoze/scoop-lang.org` 的 `main` 分支。
-2. 打开仓库的 [Settings → Pages](https://github.com/windoze/scoop-lang.org/settings/pages)，在 **Build and deployment → Source** 中选择 **GitHub Actions**。
+1. 将包含工作流的代码推送到 `scoop-lang/scoop-lang.org` 的 `main` 分支。
+2. 打开仓库的 [Settings → Pages](https://github.com/scoop-lang/scoop-lang.org/settings/pages)，在 **Build and deployment → Source** 中选择 **GitHub Actions**。
 3. 在同页的 **Custom domain** 中填写 `scoop-lang.org` 并保存，然后再修改下文的 DNS 记录。Actions 发布使用此设置绑定域名，仓库里的 `CNAME` 文件不起绑定作用，因此这里不添加该文件。
 4. 检查 **Settings → Environments → github-pages** 的部署分支规则：允许 `main`；如果使用 Release 发布，还需要允许相应的 tag，例如 tag 规则 `v*`。手动运行也必须选择允许部署的分支。
-5. 打开 [Actions](https://github.com/windoze/scoop-lang.org/actions/workflows/release.yml) 手动运行一次。若首次推送发生在启用 Pages 之前，配置完成后重新运行失败的工作流即可。
+5. 打开 [Actions](https://github.com/scoop-lang/scoop-lang.org/actions/workflows/release.yml) 手动运行一次。若首次推送发生在启用 Pages 之前，配置完成后重新运行失败的工作流即可。
 
 仓库默认的 Actions 权限即可；工作流已为部署 job 声明 `pages: write` 和 `id-token: write`。若仓库限制了允许使用的 Actions，需要允许 `actions/*` 与 `ruby/setup-ruby`。
 
@@ -209,9 +209,9 @@ rm -rf "$api_dir"
 | A | `@` | `185.199.109.153` |
 | A | `@` | `185.199.110.153` |
 | A | `@` | `185.199.111.153` |
-| CNAME | `www` | `windoze.github.io` |
+| CNAME | `www` | `scoop-lang.github.io` |
 
-`www` 指向用户名对应的 Pages 域名，不带仓库名或路径；GitHub 会将 `www.scoop-lang.org` 重定向到配置的 `scoop-lang.org`。替换服务商为 `@`、`www` 创建的冲突停车记录，保留邮件等其他用途的 DNS 记录。
+`www` 指向组织对应的 Pages 域名，不带仓库名或路径；GitHub 会将 `www.scoop-lang.org` 重定向到配置的 `scoop-lang.org`。替换服务商为 `@`、`www` 创建的冲突停车记录，保留邮件等其他用途的 DNS 记录。
 
 需要 IPv6 时，再添加以下四条 `AAAA` 记录，并保留上面的 `A` 记录：
 

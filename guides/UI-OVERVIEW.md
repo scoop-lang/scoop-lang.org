@@ -151,4 +151,4 @@ error[SCOOPC_HIR_ERROR]: implicit use of an outer receiver is not allowed; use `
 | column 设了居中，文字仍靠左 | Label 撑满可用宽度；用段落 `settings { alignment = TextAlignment.Center }` |
 | 在 `render()` 中修改 State | 不允许。render 只能读取状态，修改应放在回调或生命周期中，见[状态与数据流]({{ '/ui-state.html' | relative_url }}) |
 
-下一篇[布局与文字]({{ '/ui-layout.html' | relative_url }})介绍容器、约束与文字排版。各库的完整 API 可以在 [API 文档](../api/index.html)中查找；实现必须遵守的完整规则见 Scoop 仓库的 [UI 规范](https://github.com/windoze/scoop/tree/main/docs/specs)。
+下一篇[布局与文字]({{ '/ui-layout.html' | relative_url }})介绍容器、约束与文字排版。各库的完整 API 可以在 [API 文档](../api/index.html)中查找；实现必须遵守的完整规则见 Scoop 仓库的 [UI 规范](https://github.com/scoop-lang/scoop/tree/main/docs/specs)。
