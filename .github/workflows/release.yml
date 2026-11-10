@@ -82,7 +82,6 @@ jobs:
           $errors = $null
           [System.Management.Automation.Language.Parser]::ParseFile("$PWD/install.ps1", [ref]$null, [ref]$errors) | Out-Null
           if ($errors) { $errors | ForEach-Object { Write-Error $_.ToString() }; exit 1 }
-          tar --version
           python -m unittest discover -s tools/tests -v
 
   deploy:
