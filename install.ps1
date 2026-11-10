@@ -36,12 +36,12 @@ function Install-ScoopToolchain {
     if (-not $scoopInstallRoot) { throw '--home requires a directory' }
     $scoopInstallRoot = [IO.Path]::GetFullPath($scoopInstallRoot)
     if ($PSVersionTable.PSEdition -ne 'Core') {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor
-            [Net.SecurityProtocolType]::Tls12
+        # Let Windows negotiate current TLS versions, including TLS 1.3.
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::SystemDefault
     }
     $scoopUrl = $env:SCOOP_INSTALL_URL
     if (-not $scoopUrl) {
-        $scoopUrl = 'https://github.com/scoop-lang/scoop-install/releases/latest/download/scoop-install-x86_64-pc-windows-gnullvm.exe'
+        $scoopUrl = 'https://release.scoop-lang.org/installers/0.1.0/scoop-install-x86_64-pc-windows-gnullvm.exe'
     }
     $scoopDownloadDir = Join-Path $scoopInstallRoot ('tmp\bootstrap.' + [IO.Path]::GetRandomFileName())
     New-Item -ItemType Directory -Force -Path $scoopDownloadDir | Out-Null

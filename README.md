@@ -57,6 +57,8 @@ API 文档由工具链的 post-install 调用 `scoop doc` 生成，位于 `~/.sc
 
 官网脚本只探测宿主、下载独立的 [scoop-install](https://github.com/scoop-lang/scoop-install)，并把参数传给 `scoop-install toolchain install`。组件选择、版本管理和文档生成由安装器负责。
 
+当前 bootstrap 固定下载 `https://release.scoop-lang.org/installers/0.1.0/` 下的宿主安装器，同目录提供 `SHA256SUMS`。安装器版本与工具链版本独立；默认工具链通过 `https://release.scoop-lang.org/latest.toml` 选择，当前为 `0.0.0-dev.20261111`。
+
 ```sh
 curl -fsSL https://scoop-lang.org/install.sh | sh
 curl -fsSL https://scoop-lang.org/install.sh | sh -s -- 0.0.0-dev.20261111 --target x86_64-unknown-linux-musl
@@ -69,7 +71,7 @@ irm https://scoop-lang.org/install.ps1 | iex
 
 默认安装目录为 `~/.scoop`；`--home DIR` 或 `SCOOP_HOME` 可覆盖。`SCOOP_NO_MODIFY_PATH=1` 跳过持久化 PATH。`SCOOP_INSTALL_URL` 可指定 bootstrap 下载的安装器文件 URL，`SCOOP_DIST_SERVER` 指定安装器读取的发行镜像根。详细使用方式见 [快速开始页面](src/pages/docs/install.html)。
 
-打包仓库生成完整 TOML manifest，显式关联 host、target、bin、base、GUI、native、sources 和 vendor，含各归档的大小与 SHA-256。格式见 [发行索引合同](https://github.com/scoop-lang/scoop/blob/main/docs/distribution/MANIFEST.md)。先把三平台组件上传到 R2 的 `<release-dir>/{macos,linux,windows}/`，全局 sources／vendor 以 macOS 产物为准，再发布索引：
+打包仓库生成完整 TOML manifest，显式关联 host、target、bin、base、GUI、native、sources 和 vendor，含各归档的大小与 SHA-256。格式见 [发行索引合同](https://github.com/scoop-lang/scoop/blob/ad6e8a2c72cf822700b6f1d1e524dfcab563742f/docs/distribution/MANIFEST.md)。先把三平台组件上传到 R2 的 `<release-dir>/{macos,linux,windows}/`，全局 sources／vendor 以 macOS 产物为准，再发布索引：
 
 ```sh
 python3 tools/publish_release_index.py /path/to/manifest.toml --release-dir 2026-11-11 --latest --dry-run
@@ -78,7 +80,9 @@ python3 tools/publish_release_index.py /path/to/manifest.toml --release-dir 2026
 
 需要 Python 3.11+。`tools/publish_release_index.sh` 是同一命令的 shell 入口。脚本按 manifest 中的关系改写归档 URL，不扫描 bucket 或从文件名推断组件；不会代为上传归档。固定入口为 `versions/<version>.toml`，只有显式 `--latest` 才更新 `latest.toml`。固定索引使用条件写入：内容相同可以重试，版本已指向其他构建时拒绝覆盖，并保留 latest。重打包必须使用新版本。
 
-`--dry-run` 只在 `tmp/release-index/` 生成结果，不读取凭据、不访问网络。实际发布沿用 `SCOOP_RELEASE_R2_KEY_ID`、`SCOOP_RELEASE_R2_SECRET`、`SCOOP_RELEASE_R2_ENDPOINT`，bucket 默认为 `scoop-releases`。正式发布顺序为组件归档、固定 manifest、latest，官网 bootstrap 切换前还须发布三个宿主的安装器可执行文件。
+`--dry-run` 只在 `tmp/release-index/` 生成结果，不读取凭据、不访问网络。实际发布沿用 `SCOOP_RELEASE_R2_KEY_ID`、`SCOOP_RELEASE_R2_SECRET`、`SCOOP_RELEASE_R2_ENDPOINT`，bucket 默认为 `scoop-releases`，公开域名为 `release.scoop-lang.org`。正式发布顺序为组件归档与安装器、固定 manifest、latest，最后更新官网 bootstrap 的安装器版本。安装器放在 `installers/<installer-version>/`，按宿主命名并提供 `SHA256SUMS`；已发布版本使用固定路径，后续构建另选版本。
+
+本次发布共 20 个工具链组件，覆盖 3 个宿主、7 个 target；固定索引为 [`versions/0.0.0-dev.20261111.toml`](https://release.scoop-lang.org/versions/0.0.0-dev.20261111.toml)，归档位于 `2026-11-11/` 下。
 
 ```sh
 sh -n install.sh tools/publish_release_index.sh

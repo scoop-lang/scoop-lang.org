@@ -28,9 +28,17 @@ curl -fsSL https://scoop-lang.org/install.sh | sh -s -- 0.0.0-dev.20261111</code
 <p>支持 Windows PowerShell 5.1 和 PowerShell 7。默认安装在 <code>%USERPROFILE%\.scoop</code>，更新用户 PATH 和当前会话；设置 <code>$env:SCOOP_NO_MODIFY_PATH = '1'</code> 可跳过用户 PATH 修改。脚本错误会保留交互窗口，失败状态记录在 <code>$LASTEXITCODE</code>。</p>
 
 <h3 id="manual-install">直接使用安装器</h3>
-<p>也可以从 <a href="https://github.com/scoop-lang/scoop-install/releases">安装器 Releases</a> 下载对应宿主的可执行文件，命名为 <code>scoop-install</code>（Windows 为 <code>scoop-install.exe</code>；macOS／Linux 需执行 <code>chmod +x</code>），运行：</p>
-<pre><code class="language-sh">./scoop-install toolchain install latest
-scoop-install show
+<p>安装器和工具链组件均从 <code>release.scoop-lang.org</code> 下载。当前安装器版本为 <code>0.1.0</code>，也可以直接下载对应宿主的可执行文件：</p>
+<div class="table-wrap"><table>
+  <tr><th>宿主</th><th>安装器下载</th></tr>
+  <tr><td>Apple Silicon macOS</td><td><a href="https://release.scoop-lang.org/installers/0.1.0/scoop-install-aarch64-apple-darwin">scoop-install（ARM64）</a></td></tr>
+  <tr><td>x86-64 GNU/Linux</td><td><a href="https://release.scoop-lang.org/installers/0.1.0/scoop-install-x86_64-unknown-linux-gnu">scoop-install（x86-64）</a></td></tr>
+  <tr><td>x64 Windows</td><td><a href="https://release.scoop-lang.org/installers/0.1.0/scoop-install-x86_64-pc-windows-gnullvm.exe">scoop-install.exe（x64）</a></td></tr>
+</table></div>
+<p><a href="https://release.scoop-lang.org/installers/0.1.0/SHA256SUMS">SHA-256 校验清单</a>。将下载的文件命名为 <code>scoop-install</code>（Windows 为 <code>scoop-install.exe</code>；macOS／Linux 需执行 <code>chmod +x scoop-install</code>），运行：</p>
+<pre><code class="language-sh">./scoop-install toolchain install latest</code></pre>
+<p>手动安装后，将管理目录的 <code>bin</code> 加入 PATH（默认 <code>~/.scoop/bin</code>，Windows 为 <code>%USERPROFILE%\.scoop\bin</code>），再查询和管理工具链：</p>
+<pre><code class="language-sh">scoop-install show
 scoop-install toolchain list
 scoop-install target list
 scoop-install component list</code></pre>

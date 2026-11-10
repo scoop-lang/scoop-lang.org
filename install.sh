@@ -65,7 +65,7 @@ scoop_install() {
     trap 'exit 129' HUP
     trap 'exit 130' INT
     trap 'exit 143' TERM
-    scoop_url=${SCOOP_INSTALL_URL:-https://github.com/scoop-lang/scoop-install/releases/latest/download/scoop-install-$scoop_host}
+    scoop_url=${SCOOP_INSTALL_URL:-https://release.scoop-lang.org/installers/0.1.0/scoop-install-$scoop_host}
     printf 'Downloading scoop-install for %s...\n' "$scoop_host"
     curl -fSL --retry 3 "$scoop_url" -o "$scoop_download_dir/scoop-install"
     chmod +x "$scoop_download_dir/scoop-install"
