@@ -19,8 +19,8 @@ Scoop 编程语言的官方网站源码。纯静态站点，不依赖任何前�
 - `tools/build.py` — 生成官网页面并调用 Jekyll，统一输出到 `dist/`。
 - `install.sh` — macOS Apple Silicon／Linux x86-64 安装脚本，构建时原样复制到 `dist/install.sh`。
 - `install.ps1` — Windows x64 PowerShell 安装脚本，构建时原样复制到 `dist/install.ps1`。
-- `tools/publish_release_index.sh` — 为 R2 bucket `scoop-releases` 中的 release 生成并上传下载索引。
-- `tools/tests/test_install.py` — 用本地归档和隔离用户目录验证 `curl | sh` 安装、升级、PATH 配置及失败退出。
+- `tools/publish_release_index.sh` — 发布打包生成的 manifest 与显式 latest 指针。
+- `tools/tests/test_install.py` — 用本地 HTTP 服务和隔离用户目录验证 bootstrap 参数、PATH 配置与失败退出。
 - `tools/tests/test_install_ps1.py` — 仅在 Windows 运行：用本地 HTTP 服务和隔离的 `USERPROFILE` 验证 `install.ps1`。
 - `tools/check_examples.py` — 用 `scoop` 编译运行官网和指南示例，并与 `.out` 比对。
 - `tools/check_reference.py` — 用 `scoop check` 检查参考文档中的每个 Scoop 代码块。
@@ -45,66 +45,51 @@ bundle install
 构建完整站点并预览：
 
 ```sh
-python3 tools/build.py            # 生成 dist/，并把 ~/.scoop/docs/<target> 的 API 文档复制到 dist/api
+python3 tools/build.py --api-docs /path/to/toolchain/docs/<target>  # 生成官网、指南与该目标 API 文档
 python3 tools/build.py --no-api   # 跳过 API 文档
 python3 tools/build.py --api-docs /path/to/scoop-doc-output
 python3 -m http.server -d dist 8000
 ```
 
-API 文档由工具链的 post-install 调用 `scoop doc` 生成，位于 `~/.scoop/docs/<target-triple>`。
+API 文档由工具链的 post-install 调用 `scoop doc` 生成，位于 `~/.scoop/toolchains/<version>-<host>/docs/<target-triple>`。
 
-## 工具链安装脚本
+## 工具链安装入口与发布索引
 
-站点部署后可运行：
+官网脚本只探测宿主、下载独立的 [scoop-install](https://github.com/scoop-lang/scoop-install)，并把参数传给 `scoop-install toolchain install`。组件选择、版本管理和文档生成由安装器负责。
+
+当前 bootstrap 固定下载 `https://release.scoop-lang.org/installers/0.1.0/` 下的宿主安装器，同目录提供 `SHA256SUMS`。安装器版本与工具链版本独立；默认工具链通过 `https://release.scoop-lang.org/latest.toml` 选择，当前为 `0.0.0-dev.20261111`。
 
 ```sh
 curl -fsSL https://scoop-lang.org/install.sh | sh
-curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --release 2026-11-09
-curl -fsSL https://scoop-lang.org/install.sh | sh -s -- -- --jobs 2
+curl -fsSL https://scoop-lang.org/install.sh | sh -s -- 0.0.0-dev.20261111 --target x86_64-unknown-linux-musl
 ```
-
-Windows（PowerShell 5.1 或 7）：
 
 ```powershell
 irm https://scoop-lang.org/install.ps1 | iex
-& ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -Release 2026-11-09 -- --jobs 2
+& ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) --target x86_64-w64-windows-llvm-mingw-ucrt
 ```
 
-发行包存放在 Cloudflare R2 bucket `scoop-releases`，公开地址为 <https://release.scoop-lang.org>。每个 release 是一个 `YYYY-MM-DD/` 目录，下分 `macos/`、`linux/`、`windows/`。脚本默认读取根目录的 `latest.txt`，`--release <目录名>`（别名 `--version`）读取 `<目录名>/index.txt`，再下载并解压索引中本平台的全部包。索引每行一条记录，字段以空格分隔：
+默认安装目录为 `~/.scoop`；`--home DIR` 或 `SCOOP_HOME` 可覆盖。`SCOOP_NO_MODIFY_PATH=1` 跳过持久化 PATH。`SCOOP_INSTALL_URL` 可指定 bootstrap 下载的安装器文件 URL，`SCOOP_DIST_SERVER` 指定安装器读取的发行镜像根。详细使用方式见 [快速开始页面](src/pages/docs/install.html)。
 
-```text
-format 1
-release 2026-11-09
-version 0.0.0-dev.20261109
-package macos 2026-11-09/macos/scoop-0.0.0-dev.20261109-bin-aarch64-apple-darwin.tar.xz
-```
-
-每个平台目录包含该宿主的 `bin`、全局的 `sources`、各目标的 `lib-base`／`lib-gui`，Windows 另有两个 MinGW 目标的 `native` 包；系统库已预编译在 lib 包中，post-install 只生成 API 文档。
-
-`install.sh` 支持 Apple Silicon macOS 和 x86-64 Linux，在 MSYS／Git Bash 中运行时提示改用 `install.ps1`。`install.ps1` 支持 x64 Windows，用系统自带的 `tar.exe`（需支持 xz）解压，下载索引中 `windows` 的全部包。索引中没有本平台的包时，两个脚本都提示包尚未就绪，需从源码编译。
-
-上传新 release 后，用 `.envrc` 中的 R2 凭据重新生成索引（索引不收录 `llvm-sources` 包）：
+打包仓库生成完整 TOML manifest，显式关联 host、target、bin、base、GUI、native、sources 和 vendor，含各归档的大小与 SHA-256。格式见 [发行索引合同](https://github.com/scoop-lang/scoop/blob/ad6e8a2c72cf822700b6f1d1e524dfcab563742f/docs/distribution/MANIFEST.md)。先把三平台组件上传到 R2 的 `<release-dir>/{macos,linux,windows}/`，全局 sources／vendor 以 macOS 产物为准，再发布索引：
 
 ```sh
-sh tools/publish_release_index.sh --dry-run   # 预览最新 release 的索引
-sh tools/publish_release_index.sh             # 上传 <release>/index.txt 与 latest.txt
-sh tools/publish_release_index.sh 2026-11-09  # 指定 release；较旧的 release 不覆盖 latest.txt
+python3 tools/publish_release_index.py /path/to/manifest.toml --release-dir 2026-11-11 --latest --dry-run
+python3 tools/publish_release_index.py /path/to/manifest.toml --release-dir 2026-11-11 --latest
 ```
 
-安装根固定为 `~/.scoop`；解压后执行随包 post-install，成功后幂等地更新 Bash、Zsh（支持 `ZDOTDIR`）、Fish（支持 `XDG_CONFIG_HOME`）或 POSIX shell 的配置。升级替换发行目录，保留 `packages`、`build` 及用户外部命令；未准备的其他目标不保留旧 `.slib`。脚本不会改变调用它的父 shell，当前终端可显式设置 PATH，或打开新终端。
+需要 Python 3.11+。`tools/publish_release_index.sh` 是同一命令的 shell 入口。脚本按 manifest 中的关系改写归档 URL，不扫描 bucket 或从文件名推断组件；不会代为上传归档。固定入口为 `versions/<version>.toml`，只有显式 `--latest` 才更新 `latest.toml`。固定索引使用条件写入：内容相同可以重试，版本已指向其他构建时拒绝覆盖，并保留 latest。重打包必须使用新版本。
 
-`install.ps1` 的安装根为 `%USERPROFILE%\.scoop`，替换与保留的目录与 `install.sh` 相同；post-install 在子 PowerShell 中以 `-ExecutionPolicy Bypass` 运行，成功后把 `bin` 加到注册表中用户 PATH 的最前面（保留 `%VAR%` 引用，`-NoModifyPath` 跳过）并更新当前会话。脚本出错时只报告错误，不调用 `exit`，因此 `irm | iex` 不会关闭用户的 PowerShell 窗口；以 `-File` 运行时返回非零退出码。
+`--dry-run` 只在 `tmp/release-index/` 生成结果，不读取凭据、不访问网络。实际发布沿用 `SCOOP_RELEASE_R2_KEY_ID`、`SCOOP_RELEASE_R2_SECRET`、`SCOOP_RELEASE_R2_ENDPOINT`，bucket 默认为 `scoop-releases`，公开域名为 `release.scoop-lang.org`。正式发布顺序为组件归档与安装器、固定 manifest、latest，最后更新官网 bootstrap 的安装器版本。安装器放在 `installers/<installer-version>/`，按宿主命名并提供 `SHA256SUMS`；已发布版本使用固定路径，后续构建另选版本。
 
-验证安装脚本无需下载真实发行包，也不写入当前用户的安装目录：
+本次发布共 20 个工具链组件，覆盖 3 个宿主、7 个 target；固定索引为 [`versions/0.0.0-dev.20261111.toml`](https://release.scoop-lang.org/versions/0.0.0-dev.20261111.toml)，归档位于 `2026-11-11/` 下。
 
 ```sh
-sh -n install.sh
-python3 -m unittest discover -s tools/tests
+sh -n install.sh tools/publish_release_index.sh
+python3 -m unittest discover -s tools/tests -v
 ```
 
-`install.ps1` 的测试只在 Windows 上运行（其他平台自动跳过），CI 的 `windows-installer` job 在 `windows-latest` 上执行。
-
-测试使用真实 `sh`、`tar` 和文件操作，以临时归档替代网络下载；发行包的真实 post-install 与程序编译运行由 Scoop 仓库的 Release workflow 验证。
+测试使用仓库 `tmp/`、隔离用户目录、真实 curl／PowerShell 和本地 HTTP 服务，覆盖 bootstrap 参数、PATH、失败退出与发布索引；不下载真实工具链。安装器自己的组件与代理验收位于独立仓库，最终真实发行验收在 Scoop 仓库记录。Windows 测试保存并恢复测试涉及的用户 PATH。
 
 指南入口为 `http://localhost:8000/guides/index.html`。单独修改指南时，可以在完成一次完整构建后运行 `bundle exec jekyll build`，或用 `bundle exec jekyll build --watch` 持续更新 `dist/guides/`；保留上述 HTTP 服务即可预览。Jekyll 单独构建只输出指南，官网页面、共享 assets 和 API 仍由 `tools/build.py` 准备。
 
@@ -170,7 +155,8 @@ CI 使用仓库内的 `data/api-docs.tar.xz`，不依赖 runner 上预装 Scoop�
 
 ```sh
 # 可替换为 scoop doc --output-dir 指定的目录。
-api_docs="$HOME/.scoop/docs/aarch64-apple-darwin"
+# scoop-install show 可查看已选版本的 Root。
+api_docs="/path/to/toolchain/docs/aarch64-apple-darwin"
 test -f "$api_docs/index.html" && COPYFILE_DISABLE=1 tar \
   --exclude='.DS_Store' --exclude='._*' --exclude='.scoop-doc.json' \
   -cJf data/api-docs.tar.xz -C "$api_docs" .
@@ -181,7 +167,8 @@ test -f "$api_docs/index.html" && COPYFILE_DISABLE=1 tar \
 本地复现 CI 构建（先按上文安装 Ruby 依赖）：
 
 ```sh
-api_dir="$(mktemp -d)"
+mkdir -p tmp
+api_dir="$(mktemp -d "$PWD/tmp/api.XXXXXX")"
 tar -xJf data/api-docs.tar.xz -C "$api_dir"
 python3 tools/build.py --api-docs "$api_dir"
 rm -rf "$api_dir"

@@ -1,95 +1,84 @@
-<!-- title: 快速开始; nav: install; layout: docs; description: 安装 Scoop 工具链，运行第一个程序，创建并测试 Cone 项目。 -->
+<!-- title: 快速开始; nav: install; layout: docs; description: 用 scoop-install 选择工具链和目标，运行第一个程序，创建并测试 Cone 项目。 -->
 <h1>快速开始</h1>
-<p class="intro">安装 Scoop 工具链、运行第一个程序，然后创建一个带测试的项目。本页按当前工具包布局介绍安装、依赖管理与常用命令。</p>
+<p class="intro">用 <code>scoop-install</code> 安装所需版本和目标，再运行第一个程序。安装器在独立的 <a href="https://github.com/scoop-lang/scoop-install">scoop-lang/scoop-install</a> 仓库维护。</p>
 
 <h2 id="install">安装工具链</h2>
-<p>Scoop 的工具包包含编译器、包管理器、链接器、语言服务、调试器、标准库源码、C 运行时和配套原生库，不需要另外安装 LLVM。系统库以预编译的 <code>.slib</code> 随目标库组件包提供，安装后只需用随包工具在本机生成离线 API 文档；编译应用直接使用这些预编译库，不会重新编译系统库。构建应用需要下面列出的系统开发工具。</p>
-
+<p>默认安装宿主命令、一个本机目标的预编译基础库，以及支持 LSP 源码导航的 <code>sources</code>。GUI 库、其他 target 和上游 <code>vendor</code> 源码可按需添加。工具链自带 LLVM、LLDB 与调试器所需的 Python；安装器自身不要求 Python、Rust、Cargo 或系统 tar。</p>
 <div class="table-wrap"><table>
-  <tr><th>平台</th><th>目标</th><th>说明</th></tr>
-  <tr><td>macOS</td><td><code>aarch64-apple-darwin</code></td><td>Apple Silicon，当前发行基线 macOS 27.0.1；需 Xcode 或 Command Line Tools、Apple Clang、macOS SDK 与系统 linker</td></tr>
-  <tr><td>Linux</td><td><code>x86_64-unknown-linux-gnu</code> / <code>x86_64-unknown-linux-musl</code></td><td>GNU 宿主包提供两套目标资源；当前基线 glibc 2.43 / musl 1.2.5。需 GCC、GNU ld 与开发文件，构建 musl 程序另需 musl-gcc 和匹配的开发文件</td></tr>
-  <tr><td>Windows</td><td><code>x86_64-pc-windows-msvc-ucrt</code>（默认）<br><code>x86_64-w64-windows-llvm-mingw-ucrt</code><br><code>x86_64-w64-windows-llvm-mingw-msvcrt</code></td><td>Windows 10 x64 及以上，当前发行基线 build 10.0.26300。工具包自带 Clang、LLD、资源编译器和两套 LLVM-MinGW 开发资源；默认的 MSVC UCRT 目标另需本机 C++ Build Tools 与 Windows SDK（不需要完整的 Visual Studio IDE）。使用前先为所选目标执行 post-install</td></tr>
+  <tr><th>宿主</th><th>默认 target</th><th>可追加 target 与构建要求</th></tr>
+  <tr><td>Apple Silicon macOS</td><td><code>aarch64-apple-darwin</code></td><td>可追加 <code>x86_64-apple-darwin</code>；应用构建需 Xcode 或 Command Line Tools 与 macOS SDK。当前发行基线 macOS 27.0.1。</td></tr>
+  <tr><td>x86-64 GNU/Linux</td><td><code>x86_64-unknown-linux-gnu</code></td><td>可追加 <code>x86_64-unknown-linux-musl</code>；需 GCC、GNU ld 与开发文件，musl 目标另需 musl-gcc。当前基线 glibc 2.43／musl 1.2.5；musl 不提供 GUI 组件。</td></tr>
+  <tr><td>x64 Windows</td><td><code>x86_64-pc-windows-msvc-ucrt</code></td><td>可追加 <code>x86_64-w64-windows-llvm-mingw-ucrt</code>、<code>x86_64-w64-windows-llvm-mingw-msvcrt</code>，自动安装对应 LLVM-MinGW SDK 数据。默认 MSVC 目标需本机 C++ Build Tools 与 Windows SDK；当前发行基线 build 10.0.26300。</td></tr>
 </table></div>
-<p>版本基线以随包说明及<a href="https://github.com/scoop-lang/scoop/blob/main/scripts/release.toml">发行配置</a>为准；GNU 宿主命令不保证在纯 musl 系统运行。使用 <code>scoop.asyncio</code> 的 Linux 程序还要求内核 6.1 及实际可用的 io_uring 能力；这一要求不适用于所有 Scoop 程序。</p>
-<div class="callout">
-  <strong>Windows 上的命令名是 <code>sco</code></strong>
-  <p>为避免与同名的 Scoop 包管理器冲突，Windows 工具包的主驱动安装为 <code>sco.exe</code>，不提供 <code>scoop.exe</code> 别名。本站所有 <code>scoop …</code> 命令在 Windows 上写作 <code>sco …</code>，例如 <code>sco run hello.scoop</code>、<code>sco pm resolve</code>、<code>sco example --list</code>。其他程序名不变（<code>scoopc.exe</code>、<code>scoop-pm.exe</code>、<code>scoop-lsp.exe</code> 等），环境变量仍是 <code>SCOOP_*</code>。</p>
-</div>
+<p>可安装组合与系统要求以该版本的 manifest 和<a href="https://github.com/scoop-lang/scoop/blob/main/scripts/release.toml">发行配置</a>为准。GNU 宿主程序不保证在纯 musl 系统运行；<code>scoop.asyncio</code> 的 Linux 程序另需内核 6.1 及可用的 io_uring。</p>
+<div class="callout"><strong>Windows 上的主命令是 <code>sco</code></strong><p>本站的 <code>scoop …</code> 命令在 Windows 上写作 <code>sco …</code>，例如 <code>sco run hello.scoop</code>。安装器仍叫 <code>scoop-install</code>，其他工具和 <code>SCOOP_*</code> 环境变量也保持原名。</p></div>
 
 <h3 id="quick-install">macOS／Linux 一键安装</h3>
-<pre><code class="language-sh">curl -fsSL https://scoop-lang.org/install.sh | sh</code></pre>
-<p>脚本读取 <a href="https://release.scoop-lang.org/latest.txt">release.scoop-lang.org/latest.txt</a> 索引，下载适合本机的最新版各组件包，解压到 <code>~/.scoop</code>，生成默认目标的 API 文档，再把 <code>~/.scoop/bin</code> 加入 shell 配置。支持 Apple Silicon macOS 和 x86-64 GNU/Linux；Bash、Zsh、Fish 使用各自的配置文件，其他 shell 使用 <code>~/.profile</code>。完成后打开新终端，或在当前 sh／Bash／Zsh 中执行 <code>export PATH="$HOME/.scoop/bin:$PATH"</code>。</p>
-<p>安装脚本用 shell 直接调用随包编译器，不要求另装 Python、Rust、Cargo 或 CMake；调试器所需的配套 Python 仍包含在工具包内。可以用 <code>--release</code> 指定已发布的 release（例如 <code>2026-11-09</code>），并在 <code>--</code> 后传入 post-install 选项：</p>
-<pre><code class="language-sh">curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --release 2026-11-09
-curl -fsSL https://scoop-lang.org/install.sh | sh -s -- -- --jobs 2</code></pre>
-<p>再次运行可升级到所选版本。工具、系统库、源码、native 库、runtime 和文档目录会被替换；下载缓存、安装构建缓存和用户外部命令保留。升级后需要其他目标的文档时重新执行 post-install。若准备失败，修正报错后重跑 <code>sh ~/.scoop/post-install.sh</code> 即可。</p>
+<pre><code class="language-sh">curl -fsSL https://scoop-lang.org/install.sh | sh
+# Linux：只安装 musl 目标，省略 GNU 默认目标
+curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --target x86_64-unknown-linux-musl
+# 安装一个已发布的精确版本
+curl -fsSL https://scoop-lang.org/install.sh | sh -s -- 0.0.0-dev.20261111</code></pre>
+<p>脚本下载本机的 <code>scoop-install</code> 并调用 <code>toolchain install</code>。默认安装在 <code>~/.scoop</code>，将 <code>bin</code> 加入 Bash、Zsh、Fish 或 POSIX shell 配置。完成后打开新终端，或运行 <code>export PATH="$HOME/.scoop/bin:$PATH"</code>。用 <code>--home DIR</code> 或 <code>SCOOP_HOME</code> 指定其他目录；<code>SCOOP_NO_MODIFY_PATH=1</code> 可跳过持久化 PATH。</p>
 
 <h3 id="windows-install">Windows 一键安装</h3>
-<p>在 PowerShell（Windows PowerShell 5.1 或 PowerShell 7）中运行：</p>
-<pre><code class="language-powershell">irm https://scoop-lang.org/install.ps1 | iex</code></pre>
-<p>脚本读取同一份索引，下载 <code>windows</code> 的全部组件包，用系统自带的 <code>tar.exe</code> 解压到 <code>%USERPROFILE%\.scoop</code>，为默认的 MSVC UCRT 目标生成 API 文档，再把 <code>%USERPROFILE%\.scoop\bin</code> 加入用户 PATH。当前 PowerShell 窗口可以直接使用 <code>sco</code>，其他终端需重新打开。要求 x64 Windows，且系统 <code>tar.exe</code> 支持 xz（<code>tar --version</code> 的输出包含 <code>liblzma</code>）；否则请按下文手动安装。在 cmd 中可运行 <code>powershell -ExecutionPolicy Bypass -c "irm https://scoop-lang.org/install.ps1 | iex"</code>。</p>
-<p>指定 release、跳过 PATH 修改或传入 post-install 选项时，把脚本作为脚本块调用：</p>
-<pre><code class="language-powershell">&amp; ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -Release 2026-11-09
-&amp; ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) -NoModifyPath -- --all-targets</code></pre>
-<p>升级规则与 macOS／Linux 相同。若准备失败，修正报错后重跑 <code>&amp; "$HOME/.scoop/post-install.ps1"</code>。</p>
+<pre><code class="language-powershell">irm https://scoop-lang.org/install.ps1 | iex
+# 只安装 MinGW UCRT 目标
+&amp; ([scriptblock]::Create((irm https://scoop-lang.org/install.ps1))) --target x86_64-w64-windows-llvm-mingw-ucrt</code></pre>
+<p>支持 Windows PowerShell 5.1 和 PowerShell 7。默认安装在 <code>%USERPROFILE%\.scoop</code>，更新用户 PATH 和当前会话；设置 <code>$env:SCOOP_NO_MODIFY_PATH = '1'</code> 可跳过用户 PATH 修改。脚本错误会保留交互窗口，失败状态记录在 <code>$LASTEXITCODE</code>。</p>
 
-<h3 id="manual-install">手动安装</h3>
-<ol class="steps">
-  <li><strong>解压工具包</strong>
-    <p>打开 <a href="https://release.scoop-lang.org/latest.txt">latest.txt</a>，下载本平台（<code>macos</code>、<code>linux</code> 或 <code>windows</code>）<code>package</code> 行列出的归档，地址为 <code>https://release.scoop-lang.org/&lt;路径&gt;</code>：</p>
-    <ul>
-      <li><code>bin-&lt;host&gt;</code>：编译器等命令、外部子命令、随包 LLVM／LLDB 工具与调试器 Python，必装；</li>
-      <li><code>sources</code>：内置 Cone 源码、公开头文件与 vendor 输入，必装；</li>
-      <li><code>lib-base-&lt;target&gt;</code>：该目标的预编译非 GUI 系统库、native 库与 runtime，每个要使用的目标都需要；</li>
-      <li><code>lib-gui-&lt;target&gt;</code>：<code>scoop.window</code>、<code>scoop.graphics</code>、<code>scoop.ui</code> 等 GUI 库及 Skia，开发 GUI 程序时与同目标的 lib-base 一起安装；</li>
-      <li><code>native-&lt;target&gt;</code>：仅 Windows 的两个 LLVM-MinGW 目标，提供该 CRT 的配置头、启动对象与导入库。</li>
-    </ul>
-    <p>同一 release 的包按相同版本成组安装。各归档顶层直接就是安装根，依次解压到同一目录：</p>
-<pre><code class="language-sh">$ mkdir -p ~/.scoop
-$ for f in scoop-*.tar.xz; do tar -xJf "$f" -C ~/.scoop; done</code></pre>
-  </li>
-  <li><strong>生成 API 文档</strong>
-<pre><code class="language-sh">sh ~/.scoop/post-install.sh</code></pre>
-    <p>post-install 只为已安装的目标生成离线 API 文档，不再构建系统库。默认处理本机目标；用 <code>--target &lt;triple&gt;</code> 处理其他已安装的目标，或用 <code>--all-targets</code> 处理全部已安装的目标。例如 Linux 用户可运行 <code>sh ~/.scoop/post-install.sh --target x86_64-unknown-linux-musl</code>。所选目标缺少 lib-base 包时会报错并提示应安装的归档；已安装 lib-gui 包时同时生成 GUI 库文档。已生成的文档按输入变化复用。</p>
-  </li>
-  <li><strong>加入 PATH</strong>
-<pre><code class="language-sh"># ~/.zshrc 或 ~/.bashrc
-export PATH="$HOME/.scoop/bin:$PATH"</code></pre>
-    <p>Windows 手动安装时，在 PowerShell 中把各归档解压到 <code>%USERPROFILE%\.scoop</code>，运行 post-install（默认目标为 MSVC UCRT），并把 <code>%USERPROFILE%\.scoop\bin</code> 加入用户 PATH：</p>
-<pre><code class="language-powershell">New-Item -ItemType Directory -Force "$HOME/.scoop"
-Get-ChildItem scoop-*.tar.xz | ForEach-Object { tar -xJf $_.FullName -C "$HOME/.scoop" }
-&amp; "$HOME/.scoop/post-install.ps1"
-# 已安装 MinGW 目标的 lib-base 与 native 包时：
-&amp; "$HOME/.scoop/post-install.ps1" --target x86_64-w64-windows-llvm-mingw-ucrt</code></pre>
-  </li>
-  <li><strong>确认安装</strong>
-<pre><code class="language-sh">$ scoop --version          # Windows：sco --version
-scoop &lt;version&gt; (&lt;revision&gt;)</code></pre>
-    <p><code>scoop</code> 会自动把自身所在的安装根作为 sysroot；如需使用其他位置，可设置 <code>SCOOP_SYSROOT</code> 或传入 <code>--sysroot</code>。</p>
-  </li>
-</ol>
+<h3 id="manual-install">直接使用安装器</h3>
+<p>安装器和工具链组件均从 <code>release.scoop-lang.org</code> 下载。当前安装器版本为 <code>0.1.0</code>，也可以直接下载对应宿主的可执行文件：</p>
+<div class="table-wrap"><table>
+  <tr><th>宿主</th><th>安装器下载</th></tr>
+  <tr><td>Apple Silicon macOS</td><td><a href="https://release.scoop-lang.org/installers/0.1.0/scoop-install-aarch64-apple-darwin">scoop-install（ARM64）</a></td></tr>
+  <tr><td>x86-64 GNU/Linux</td><td><a href="https://release.scoop-lang.org/installers/0.1.0/scoop-install-x86_64-unknown-linux-gnu">scoop-install（x86-64）</a></td></tr>
+  <tr><td>x64 Windows</td><td><a href="https://release.scoop-lang.org/installers/0.1.0/scoop-install-x86_64-pc-windows-gnullvm.exe">scoop-install.exe（x64）</a></td></tr>
+</table></div>
+<p><a href="https://release.scoop-lang.org/installers/0.1.0/SHA256SUMS">SHA-256 校验清单</a>。将下载的文件命名为 <code>scoop-install</code>（Windows 为 <code>scoop-install.exe</code>；macOS／Linux 需执行 <code>chmod +x scoop-install</code>），运行：</p>
+<pre><code class="language-sh">./scoop-install toolchain install latest</code></pre>
+<p>手动安装后，将管理目录的 <code>bin</code> 加入 PATH（默认 <code>~/.scoop/bin</code>，Windows 为 <code>%USERPROFILE%\.scoop\bin</code>），再查询和管理工具链：</p>
+<pre><code class="language-sh">scoop-install show
+scoop-install toolchain list
+scoop-install target list
+scoop-install component list</code></pre>
+<p>默认只选择本机 target；显式 <code>--target</code> 列表替代默认列表，可以重复传入或用逗号分隔。安装目标后仍须在编译时用 <code>--target</code> 选择它。以下示例适用于 macOS：</p>
+<pre><code class="language-sh">scoop-install target add x86_64-apple-darwin
+scoop-install component add gui --target aarch64-apple-darwin
+scoop-install component add vendor
+scoop-install component remove vendor
+scoop-install target remove x86_64-apple-darwin</code></pre>
+<p><code>sources</code> 包含 Scoop 自有 Cone、胶水、公开头文件和资源，默认保留用于 FFI 与 LSP；<code>vendor</code> 包含上游源码及编译补丁，重建上游库时才需要。每个 target 的 base 包提供预编译系统库、native 库与 runtime；GUI 组件依赖同版本同目标的 base。</p>
+<p>安装后生成已选目标的离线 API 文档，不重建系统库。<code>--skip-docs</code> 可暂缓生成，之后用 <code>scoop-install docs</code> 补齐；文档生成失败时工具链仍可使用，按提示重试。离线或私有分发可用 <code>toolchain install --manifest PATH_OR_URL</code>；镜像根地址通过 <code>SCOOP_DIST_SERVER</code> 配置。</p>
 
-<p>安装根的目录结构：</p>
+<h3 id="toolchain-selection">版本与项目选择</h3>
+<pre><code class="language-sh">scoop-install toolchain install 0.0.0-dev.20261111
+scoop-install default 0.0.0-dev.20261111
+scoop +0.0.0-dev.20261111 --version
+scoop-install update</code></pre>
+<p><code>update</code> 保留当前默认版本已选的 targets、各目标 GUI 和 vendor，完整安装成功后切换默认版本，旧版本继续保留。确认不再需要时用 <code>toolchain remove VERSION</code> 删除；删除当前默认版本前先选择另一个默认版本。构建缓存按工具链发行身份隔离，切换版本不需要手动 clean。</p>
+<p>在项目或其父目录放置 <code>scoop-toolchain.toml</code>：</p>
+<pre><code class="language-toml">[toolchain]
+version = "0.0.0-dev.20261111"
+targets = ["aarch64-apple-darwin"]</code></pre>
+<p>选择优先级为命令行 <code>+VERSION</code>、<code>SCOOP_TOOLCHAIN</code>、最近的项目配置、全局 default。项目缺少所需版本或 target 时给出安装命令，不在编译或编辑时自动下载。VS Code 扩展从工作区目录启动语言服务，多工作区可各自固定版本。</p>
+
+<p>安装目录：</p>
 <pre><code>~/.scoop/
-  VERSION
-  post-install.sh       安装后准备入口，Windows 为 post-install.ps1
-  bin/                  scoop（Windows 为 sco.exe）、scoopc、scoop-link、scoop-lsp、scoop-pm、
-                        scoop-lldb、scoop-lldb-dap 及其他 scoop- 前缀的 LLVM 工具
-  commands/             scoop-example 等外部子命令
-  lib/&lt;target-triple&gt;/  预编译系统库 .slib、原生静态库与运行时（lib-base／lib-gui 包）
-  libexec/llvm/         随包 Clang、LLD 等 LLVM 工具及其动态库
-  libexec/lldb/         调试器配套 Python 与平台 helper
-  include/              公开的 Scoop C 头文件
-  src/                  全部内置 Cone 的源码与示例
-  share/scoop/          toolchain.toml（工具包内容与目标信息）、离线示例索引与正文
-  docs/                 安装后生成的标准库 API 文档，按目标区分
-  tooling/              VS Code 扩展与 Scoop 编程 skill</code></pre>
-
-<div class="callout">
-  <strong>从源码构建</strong>
-  <p>Scoop 仍处于开发预览阶段。你也可以从 <a href="https://github.com/scoop-lang/scoop">GitHub 仓库</a> 构建完整工具包：先按<a href="https://github.com/scoop-lang/scoop/blob/main/scripts/README.md">脚本说明</a>准备 Python 3.12+ 及开发文件、SWIG 4、Ninja、Rust、C/C++ 工具链、CMake、Make、Perl、Node.js 22.18+ 与 npm，再执行 <code>python3 scripts/package_toolchain.py --jobs 6</code>。归档生成在 <code>tmp/dist</code> 下。</p>
-</div>
+  bin/                       scoop-install 与 Scoop 命令代理
+  settings.toml              默认版本
+  downloads/                 已下载的组件归档
+  packages/                  各版本共享的包管理器源码缓存
+  commands/                  用户外部子命令
+  toolchains/&lt;version&gt;-&lt;host&gt;/
+    bin/                     该版本的实际工具
+    lib/&lt;target&gt;/            所选目标的预编译库与 runtime
+    src/、include/、native/  自有 Cone、头文件、胶水和资源
+    vendor/                  按需安装的上游源码与补丁
+    libexec/、tooling/        LLVM／LLDB／Python 与编辑器工具
+    docs/&lt;target&gt;/           安装后生成的 API 文档</code></pre>
+<p>代理启动真实版本中的程序，工具据自身位置定位 sysroot；显式 <code>--sysroot</code> 或 <code>SCOOP_SYSROOT</code> 仍可覆盖资源位置。</p>
+<div class="callout"><strong>从源码构建</strong><p>构建依赖与流程见<a href="https://github.com/scoop-lang/scoop/blob/main/scripts/README.md">脚本说明</a>。<code>python3 scripts/package_toolchain.py --download-dir /path/to/downloads --jobs 6</code> 可在不同工作目录间复用上游下载，输出组件归档及 manifest。工具链、安装器和官网分别在独立仓库维护。</p></div>
 
 <h2 id="hello">第一个程序</h2>
 <p>新建 <code>hello.scoop</code>：</p>
@@ -201,13 +190,14 @@ $ scoop pm update</code></pre>
   <tr><td><code>scoop link</code></td><td>不编译源码，只链接已有产物</td></tr>
   <tr><td><code>scoop clean [root]</code></td><td>移除选定 target 目录中的所有 profile 与构建缓存</td></tr>
   <tr><td><code>scoop example [topic]</code></td><td>查询离线示例；支持 <code>--list</code> 与 <code>--search</code></td></tr>
-  <tr><td><code>scoop &lt;other&gt;</code></td><td>运行 <code>&lt;sysroot&gt;/commands/scoop-&lt;other&gt;</code> 外部子命令</td></tr>
+  <tr><td><code>scoop &lt;other&gt;</code></td><td>先查找工具链的 <code>commands/</code>，再查共享的 <code>$SCOOP_HOME/commands/</code> 外部子命令</td></tr>
 </table></div>
 <p>常用选项：<code>--release</code>（优化构建）、<code>--target &lt;triple&gt;</code>（交叉目标）、<code>--target-dir</code>（输出目录）、<code>-j</code>（并发编译进程数）、<code>--message-format json</code>（机器可读诊断）。</p>
 
 <h2 id="editor">编辑器支持</h2>
 <p>工具包附带 VS Code 扩展，提供 Tree-sitter 语法高亮、折叠、缩进，以及通过 <code>scoop-lsp</code> 提供的诊断、补全、悬停文档、签名帮助、跳转、引用、重命名和快速修复：</p>
-<pre><code class="language-sh">$ code --install-extension ~/.scoop/tooling/scoop-language-support-*.vsix</code></pre>
+<pre><code class="language-sh">$ scoop-install show  # 查看 Root 所指的工具链目录
+$ code --install-extension /path/to/toolchain/tooling/scoop-language-support-*.vsix</code></pre>
 <p>扩展会依次查找 <code>scoop.server.path</code> 设置、<code>~/.scoop/bin/scoop-lsp</code> 与 PATH 中的 <code>scoop-lsp</code>。Tree-sitter 语法包（<code>tree-sitter-scoop</code>）也可以单独用于其他支持 Tree-sitter 的编辑器。</p>
 <p>编辑器消费已有的锁定依赖，不自动更新版本或下载源码。缺少 lock 或依赖时，在项目目录运行 <code>scoop pm resolve</code> 或 <code>scoop pm fetch</code>，再继续分析。</p>
 
@@ -222,5 +212,5 @@ $ scoop pm update</code></pre>
   <li><a href="tour.html">语言导览</a>：系统了解 Scoop 的语法和类型系统；</li>
   <li><a href="kotlin.html">对比 Kotlin</a>：如果你熟悉 Kotlin，这里列出了所有需要注意的差异；</li>
   <li><a href="../reference/index.html">参考文档</a>：查阅完整的语言参考、核心库与随工具链发布的<a href="../reference/stdlib.html">库 Cone</a>；</li>
-  <li><code>scoop example --list</code> 列出离线主题；库示例位于 <code>~/.scoop/src/&lt;cone&gt;/examples</code>。</li>
+  <li><code>scoop example --list</code> 列出离线主题；库示例位于 <code>&lt;toolchain-root&gt;/src/&lt;cone&gt;/examples</code>。</li>
 </ul>
