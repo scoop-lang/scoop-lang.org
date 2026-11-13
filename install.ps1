@@ -27,7 +27,7 @@ function Install-ScoopToolchain {
         } elseif ($item.StartsWith('--home=')) {
             $scoopInstallRoot = $item.Substring(7)
         } elseif ($item -in '--help', '-h') {
-            Write-Host 'Usage: install.ps1 [VERSION] [--target TARGET] [--component gui,vendor] [--skip-docs] [--home DIR]'
+            Write-Host 'Usage: install.ps1 [VERSION] [--target TARGET] [--component gui,profiling,vendor] [--skip-docs] [--home DIR]'
             Write-Host 'All arguments are passed to scoop-install toolchain install.'
             Write-Host 'Set SCOOP_NO_MODIFY_PATH=1 to leave the user PATH unchanged.'
             return 0

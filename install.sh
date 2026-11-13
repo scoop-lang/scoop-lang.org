@@ -32,7 +32,7 @@ scoop_install() {
             --home=*) scoop_install_root=${scoop_arg#--home=} ;;
             -h|--help)
                 printf '%s\n' \
-                    'Usage: sh install.sh [VERSION] [--target TARGET] [--component gui,vendor] [--skip-docs] [--home DIR]' \
+                    'Usage: sh install.sh [VERSION] [--target TARGET] [--component gui,profiling,vendor] [--skip-docs] [--home DIR]' \
                     'Bootstrap scoop-install and install a toolchain (latest and the native target by default).' \
                     'All arguments are passed to: scoop-install toolchain install' \
                     'Set SCOOP_NO_MODIFY_PATH=1 to leave shell configuration unchanged.'

@@ -95,7 +95,7 @@ class PowerShellInstallerTests(unittest.TestCase):
             "--target",
             "target-one,target-two",
             "--component",
-            "gui,vendor",
+            "gui,profiling,vendor",
             "--skip-docs",
         ]
         before = self.user_path()

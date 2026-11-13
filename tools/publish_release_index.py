@@ -70,7 +70,7 @@ def rewrite(document, release_dir, base_url):
         for target in selection["targets"]:
             resources = document["targets"][target]
             assign(resources["base"], platform)
-            for optional in ("gui", "native"):
+            for optional in ("gui", "native", "profiling"):
                 if optional in resources:
                     assign(resources[optional], platform)
     if locations.keys() != document["archives"].keys():

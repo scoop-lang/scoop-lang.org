@@ -78,7 +78,7 @@ cp "$0" "$SCOOP_HOME/bin/scoop"
             "--target",
             "target-one,target-two",
             "--component",
-            "gui,vendor",
+            "gui,profiling,vendor",
             "--skip-docs",
         ]
         self.install(*args)

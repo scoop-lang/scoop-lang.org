@@ -39,8 +39,9 @@ class PublicationTests(unittest.TestCase):
                 "targets": [target],
                 "bin": binary,
             }
-            self.document["targets"][target] = {"base": base}
-            components.extend((binary, base))
+            profile = f"profile-{index}"
+            self.document["targets"][target] = {"base": base, "profiling": profile}
+            components.extend((binary, base, profile))
         for index, component in enumerate(components):
             self.document["archives"][component] = {
                 "path": f"archive-{index}.tar.xz",
@@ -83,6 +84,9 @@ class PublicationTests(unittest.TestCase):
             ("vendor", "macos"),
             ("bin-1", "linux"),
             ("base-2", "windows"),
+            ("profile-0", "macos"),
+            ("profile-1", "linux"),
+            ("profile-2", "windows"),
         ):
             self.assertIn(
                 f"/2026-11-11/{platform}/", manifest["archives"][component]["path"]

@@ -71,7 +71,7 @@ irm https://scoop-lang.org/install.ps1 | iex
 
 默认安装目录为 `~/.scoop`；`--home DIR` 或 `SCOOP_HOME` 可覆盖。`SCOOP_NO_MODIFY_PATH=1` 跳过持久化 PATH。`SCOOP_INSTALL_URL` 可指定 bootstrap 下载的安装器文件 URL，`SCOOP_DIST_SERVER` 指定安装器读取的发行镜像根。详细使用方式见 [快速开始页面](src/pages/docs/install.html)。
 
-打包仓库生成完整 TOML manifest，显式关联 host、target、bin、base、GUI、native、sources 和 vendor，含各归档的大小与 SHA-256。格式见 [发行索引合同](https://github.com/scoop-lang/scoop/blob/ad6e8a2c72cf822700b6f1d1e524dfcab563742f/docs/distribution/MANIFEST.md)。先把三平台组件上传到 R2 的 `<release-dir>/{macos,linux,windows}/`，全局 sources／vendor 以 macOS 产物为准，再发布索引：
+打包仓库生成完整 TOML manifest，显式关联 host、target、bin、base、GUI、profiling、native、sources 和 vendor，含各归档的大小与 SHA-256。profiling 是按目标选择的可选组件，具体版本可用性由 manifest 决定；bootstrap 原样转交 `--component profiling`。格式见 [发行索引合同](https://github.com/scoop-lang/scoop/blob/main/docs/distribution/MANIFEST.md)。先把三平台组件上传到 R2 的 `<release-dir>/{macos,linux,windows}/`，全局 sources／vendor 以 macOS 产物为准，再发布索引：
 
 ```sh
 python3 tools/publish_release_index.py /path/to/manifest.toml --release-dir 2026-11-13 --latest --dry-run

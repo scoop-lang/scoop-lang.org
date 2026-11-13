@@ -49,6 +49,10 @@ scoop-install component add vendor
 scoop-install component remove vendor
 scoop-install target remove x86_64-apple-darwin</code></pre>
 <p><code>sources</code> 包含 Scoop 自有 Cone、胶水、公开头文件和资源，默认保留用于 FFI 与 LSP；<code>vendor</code> 包含上游源码及编译补丁，重建上游库时才需要。每个 target 的 base 包提供预编译系统库、native 库与 runtime；GUI 组件依赖同版本同目标的 base。</p>
+<p>提供 profiling 组件的发行版本可以单独安装训练资源：</p>
+<pre><code class="language-sh">scoop-install component add profiling --target aarch64-apple-darwin
+scoop-install component remove profiling --target aarch64-apple-darwin</code></pre>
+<p>该组件提供全部系统 Cone 的 Profiling/full 与 Release/full 两套库、训练位置映射和采集 runtime，安装时无需编译。目标的 base/native 需要已安装，GUI native 资源仍由 gui 提供。普通 debug/release 的库选择不变；更新保留 profiling 的选择，删除 target 会一并移除。首次安装也可传 <code>--component profiling</code>；具体版本是否提供该组件以 <code>scoop-install component list</code> 为准。</p>
 <p>安装后生成已选目标的离线 API 文档，不重建系统库。<code>--skip-docs</code> 可暂缓生成，之后用 <code>scoop-install docs</code> 补齐；文档生成失败时工具链仍可使用，按提示重试。离线或私有分发可用 <code>toolchain install --manifest PATH_OR_URL</code>；镜像根地址通过 <code>SCOOP_DIST_SERVER</code> 配置。</p>
 
 <h3 id="toolchain-selection">版本与项目选择</h3>
