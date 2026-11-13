@@ -18,7 +18,7 @@
 # Linux：只安装 musl 目标，省略 GNU 默认目标
 curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --target x86_64-unknown-linux-musl
 # 安装一个已发布的精确版本
-curl -fsSL https://scoop-lang.org/install.sh | sh -s -- 0.0.0-dev.20261113</code></pre>
+curl -fsSL https://scoop-lang.org/install.sh | sh -s -- 0.0.0-dev.20261114</code></pre>
 <p>脚本下载本机的 <code>scoop-install</code> 并调用 <code>toolchain install</code>。默认安装在 <code>~/.scoop</code>，将 <code>bin</code> 加入 Bash、Zsh、Fish 或 POSIX shell 配置。完成后打开新终端，或运行 <code>export PATH="$HOME/.scoop/bin:$PATH"</code>。用 <code>--home DIR</code> 或 <code>SCOOP_HOME</code> 指定其他目录；<code>SCOOP_NO_MODIFY_PATH=1</code> 可跳过持久化 PATH。</p>
 
 <h3 id="windows-install">Windows 一键安装</h3>
@@ -52,14 +52,14 @@ scoop-install target remove x86_64-apple-darwin</code></pre>
 <p>安装后生成已选目标的离线 API 文档，不重建系统库。<code>--skip-docs</code> 可暂缓生成，之后用 <code>scoop-install docs</code> 补齐；文档生成失败时工具链仍可使用，按提示重试。离线或私有分发可用 <code>toolchain install --manifest PATH_OR_URL</code>；镜像根地址通过 <code>SCOOP_DIST_SERVER</code> 配置。</p>
 
 <h3 id="toolchain-selection">版本与项目选择</h3>
-<pre><code class="language-sh">scoop-install toolchain install 0.0.0-dev.20261113
-scoop-install default 0.0.0-dev.20261113
-scoop +0.0.0-dev.20261113 --version
+<pre><code class="language-sh">scoop-install toolchain install 0.0.0-dev.20261114
+scoop-install default 0.0.0-dev.20261114
+scoop +0.0.0-dev.20261114 --version
 scoop-install update</code></pre>
 <p><code>update</code> 保留当前默认版本已选的 targets、各目标 GUI 和 vendor，完整安装成功后切换默认版本，旧版本继续保留。确认不再需要时用 <code>toolchain remove VERSION</code> 删除；删除当前默认版本前先选择另一个默认版本。构建缓存按工具链发行身份隔离，切换版本不需要手动 clean。</p>
 <p>在项目或其父目录放置 <code>scoop-toolchain.toml</code>：</p>
 <pre><code class="language-toml">[toolchain]
-version = "0.0.0-dev.20261113"
+version = "0.0.0-dev.20261114"
 targets = ["aarch64-apple-darwin"]</code></pre>
 <p>选择优先级为命令行 <code>+VERSION</code>、<code>SCOOP_TOOLCHAIN</code>、最近的项目配置、全局 default。项目缺少所需版本或 target 时给出安装命令，不在编译或编辑时自动下载。VS Code 扩展从工作区目录启动语言服务，多工作区可各自固定版本。</p>
 
