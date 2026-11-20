@@ -328,6 +328,16 @@ th { font-size: 13px; color: var(--fg-mute); font-weight: 600; letter-spacing: .
 }
 .cta h2 { margin: 0 0 10px; font-size: 30px; }
 .cta p { color: var(--fg-soft); margin: 0 0 24px; }
+.cta p:has(+ .install-cmds) { margin-bottom: 14px; }
+.install-cmds { max-width: 620px; margin: 0 auto 28px; text-align: left; }
+.install-label { font: 600 12px var(--font); letter-spacing: .5px; color: var(--fg-mute); margin: 0 0 6px 2px; }
+.install-cmd { position: relative; margin-bottom: 14px; }
+.install-cmd:last-child { margin-bottom: 0; }
+.install-cmd pre { position: static; margin: 0; padding: 12px 76px 12px 18px; }
+.install-cmd .copy-btn {
+  opacity: 1; top: 50%; transform: translateY(-50%);
+  background: var(--code-bg); box-shadow: 0 0 0 8px var(--code-bg), -18px 0 12px 4px var(--code-bg);
+}
 
 /* grid children must be allowed to shrink below their code blocks' width */
 .hero > *, .showcase > *, .grid > *, .docs > * { min-width: 0; }
