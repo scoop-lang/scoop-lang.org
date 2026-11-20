@@ -76,7 +76,7 @@ order: 90
 | --- | --- | --- | --- |
 | P0 | 查找和使用标准库 `LIBRARIES.md` | 按任务选择 Cone；依赖与 import；示例和离线 API 搜索；数组、列表、字典；文本、字节、日期与时长；其他库入口 | 查到并正确使用一个真实 API；完成词频统计、文本处理和日期运算 |
 | P1 | 文件、系统与 I/O `FILES-AND-SYSTEM.md` | Path、目录与 metadata；文本/字节读写；流与缓冲；时钟和系统随机源；资源关闭；错误路径 | 遍历目录并生成报告，正确处理路径、编码和写入失败 |
-| P1 | JSON 与类型化序列化 `SERIALIZATION.md` | JSON 值与 DTO；编解码协议；companion codec 与生成能力；字段、缺省和 Option；泛型数据；错误路径 | 从 JSON 读取配置并输出结构化结果，解释缺失字段与无效数据 |
+| P1 | JSON 与类型化序列化 `SERIALIZATION.md` | JSON 值与 DTO、编解码协议、用 `@GenerateWith` 选择 `scoop.codec`、字段映射与 Option 缺省规则、泛型数据和错误路径 | 从 JSON 读取配置并输出结构化结果，解释缺失字段与无效数据 |
 | P1 | 异步任务与 I/O `ASYNC.md` | suspend 与事件循环；结构化 scope；launch/async；await/join；取消、超时和 finally；Context；异步资源与 TCP | 并发执行两个任务并取消其中一个；完成一个可正常收尾的 TCP 程序 |
 | P2 | 线程、共享状态与同步 `THREADS.md` | 线程启动和 join；可用同步原语与原子类型；共享引用；任务与线程的区别；跨线程资源寿命 | 用真实同步完成共享计数，不把 GC、val 或 suspend 当作线程安全保证 |
 | P1 | 调用 HTTP 服务 `HTTP-CLIENT.md` | client 与连接复用；GET/JSON/上传下载；响应和 body 寿命；超时、取消、重试；TLS/代理；SSE/WebSocket 入口 | 请求本地服务、处理非成功状态、下载文件并正确关闭响应 |
@@ -104,7 +104,7 @@ order: 90
 | --- | --- | --- | --- |
 | P0 | 编写和运行测试 `TESTING.md` | 测试源码与依赖；测试容器和用例；断言；准备/清理；预期异常；list/filter/ignore；输出捕获与 no-run；测试用途 | 给一个库写正常、边界和异常测试，并只运行指定用例 |
 | P1 | 源码调试与异常栈 `DEBUGGING.md` | 调试信息级别；VS Code/LLDB 启动和 attach；断点与变量；调试测试；优化程序；源码映射；dSYM/.debug；异常历史栈 | 在应用和测试中定位失败；理解变量不可用及当前协程物理栈的限制 |
-| P0 | 常见错误与排查 `TROUBLESHOOTING.md` | 读取主诊断和关联位置；源码/类型/import；依赖/lock；工具链/sysroot；native 链接；运行期异常；编辑器问题；最小复现 | 根据错误所属环节找到下一步，不靠删除缓存或乱改版本碰运气 |
+| P0 | 常见错误与排查 `TROUBLESHOOTING.md` | E/W/ICE 编号、主诊断与 cause/note/help；关联位置与 JSON schema 2；源码/类型/import；依赖/lock；工具链/sysroot；native 链接；运行期异常；编辑器问题；最小复现 | 根据错误所属规则和原因找到下一步，不靠删除缓存或乱改版本碰运气 |
 | P1 | 在 CI 中检查和构建 `CI.md` | 配套工具链准备；fmt → check → test → build；提交 lock；locked/frozen；测试与生产用途；目标矩阵；保留报告与产物 | 用普通命令复现本地流程，明确检查、测试运行和跨目标验证的区别 |
 
 可复用材料：[测试示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/share/scoop/examples/topics/test/assertions.md)、[测试库示例](https://github.com/scoop-lang/scoop/blob/main/sysroot/src/scoop.test/examples/README.md)、[调试器使用说明](https://github.com/scoop-lang/scoop/blob/main/tooling/vscode-scoop/README.md#原生调试)、[调试实施边界](https://github.com/scoop-lang/scoop/blob/main/docs/debugging/IMPLEMENTATION.md)、[当前 CLI](https://github.com/scoop-lang/scoop/blob/main/compiler/scoop/src/cli/args.rs)。测试指南以 `scoop.test` 为入口；编译器仓库的 fixture runner 不作为应用开发者的默认测试方式。

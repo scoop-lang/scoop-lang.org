@@ -153,6 +153,12 @@ SCOOP_WINDOW_BACKEND=x11 scoop test ui-testing-cone --release
 
 **Windows** 上，通过 SSH 等非交互会话运行时无法创建原生 `Application`。在这种环境中用 `sco test ui-testing-cone --release --no-run` 只检查测试能否构建，在登录的桌面会话中再实际运行；也可以把窗口测试标注为 `@Ignore`，在桌面上用 `--ignored` 运行。
 
+### 22.7 验证手势和读屏器操作
+
+在桌面会话中运行[翻页示例]({{ '/ui-interaction.html' | relative_url }})。先用 Tab 找到“下一页”并用空格激活，再用 VoiceOver、讲述人或 Orca 按名称执行同一按钮。两次都应只翻一页，标题随之更新。用支持的设备在卡片上轻扫，检查方向和结果。如果读屏器占用了系统手势，可以用按钮完成同一操作。
+
+检查自绘复选框时，除名称外还要读取角色和勾选状态，执行切换后核对界面的计数。对话框打开时，确认读屏器只能操作模态内容，关闭后可以回到触发控件。更多文本选区、虚拟列表和真实设备用例见[框架的交互验证步骤](https://github.com/scoop-lang/scoop/blob/main/docs/ui/interaction-polish/MANUAL-VALIDATION.md)。
+
 ## 常见错误与继续阅读
 
 | 现象 | 原因与处理 |

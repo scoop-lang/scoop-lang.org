@@ -97,7 +97,7 @@ val prod = base.{ host: "example.com", port: 443 }</code></pre>
 <ul>
   <li>值类型、副本更新、嵌套解构与穷尽的模式匹配；</li>
   <li>单态化泛型，以及条件接口实现、负向约束等泛型约束；</li>
-  <li>编译期合成的编解码（<code>ValueEncoder</code> / <code>ValueDecoder</code>）与静态类型描述；</li>
+  <li>通过 <code>@GenerateWith</code> 选择 <code>scoop.codec</code> 生成编解码方法，通过 <code>typeInfo&lt;T&gt;()</code> 查询静态类型描述。见<a href="../reference/annotations.html#codecs">编解码</a>。</li>
   <li>直接的 C FFI：<code>@Extern</code>、<code>@CLayout</code>、<code>Ptr</code>、<code>FunPtr</code>、<code>@Unsafe</code>、<code>@NoGC</code>；</li>
   <li>确定性资源释放：同步关闭用 <code>Closeable</code> + <code>use</code>，异步关闭用 <code>AsyncCloseable</code> + <code>useAsync</code>；一般资源保留 <code>Disposable.dispose()</code>。GC-free 的 <code>release</code> 块只提供尽力而为的回收清理；</li>
   <li>task-local 的上下文参数 <code>context(name: T)</code>，在协程与任务之间按规则传播；</li>

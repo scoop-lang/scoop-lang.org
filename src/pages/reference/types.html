@@ -152,7 +152,7 @@ fun main() {
 <p><code>[e1, e2, …]</code> 构造一个新数组。构造 <code>Array</code> 还是 <code>MutableArray</code> 由上下文的期望类型决定，没有约束时为 <code>Array</code>。空数组 <code>[]</code> 必须有期望类型。</p>
 <ul>
   <li>有期望类型时，每个元素都必须是期望元素类型的子类型。</li>
-  <li>没有期望类型时，若任一元素是值类型，其余元素的类型必须与它<strong>完全相同</strong>；若全部是引用类型，元素类型取它们的最小共同上界，没有唯一上界时取 <code>Any</code>（编译器给出警告）。</li>
+  <li>没有期望类型时，若任一元素是值类型，其余元素的类型必须与它<strong>完全相同</strong>；若全部是引用类型，元素类型取它们的最小共同上界，没有唯一上界时取 <code>Any</code>。当前编译器尚未实现规范中要求的 <code>Any</code> 推断警告；需要限制元素类型时，请显式标注数组类型。</li>
   <li>数组字面量中的值类型元素<strong>不会自动装箱</strong>，需要放进接口数组时显式写 <code>as</code>。</li>
 </ul>
 <pre><code class="language-scoop">interface Shape {}

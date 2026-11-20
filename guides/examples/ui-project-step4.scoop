@@ -12,6 +12,7 @@ import scoop.ui.component.*
 import scoop.ui.style.Insets
 import scoop.ui.style.ThemeSource
 import scoop.ui.style.currentThemeSource
+import scoop.ui.style.read
 import scoop.ui.style.shadcn.shadcnTheme
 import scoop.ui.text.TextEditorState
 
@@ -215,10 +216,11 @@ class PaymentStore {
             Array<Payment>(current.size + 1L) {
                 index -> if (index < at)
                     current[index]
-                else if (index == at)
-                    row
                 else
-                    current[index - 1L]
+                    if (index == at)
+                        row
+                    else
+                        current[index - 1L]
             }
         )
         status.value = f"Payment ${row.id + 1L} restored."
@@ -246,7 +248,7 @@ class PaymentsApp(private val store: PaymentStore, scope: ComponentScope): Compo
     private val theme = currentThemeSource()
     public override fun render(): View {
         val store = this.store
-        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val pageColor = this.theme.read(scope).tokens.palette.background.background
         val summary = store.summary
         val filterInput =
             input(store.filter) {
@@ -257,43 +259,45 @@ class PaymentsApp(private val store: PaymentStore, scope: ComponentScope): Compo
         val payments = statCard("Payments", f"${summary.count}")
         val volume = statCard("Total volume", f"USD ${summary.total}")
         val waiting = statCard("Pending", f"${summary.pending}")
-        val content = column {
-            this.typography("Payments", TypographyRole.H2)
-            this.row {
-                this.item(payments) { this.grow = 1.0 }
-                this.item(volume) { this.grow = 1.0 }
-                this.item(waiting) { this.grow = 1.0 }
-                this.spacing = 12.0
-            }
-            this.chart(store.chart) {
-                this.kind = ChartKind.Bar
-                this.height = Some(140.0)
-                this.legend = false
-            }
-            this.dataTable(store.table) {
-                this.bodyHeight = 280.0
-                this.pageSizes = [5L, 10L, 20L]
-                this.toolbar(filterInput)
-            }
-            this.typography(f"Selected amount: USD ${store.selectedAmount}", TypographyRole.Muted)
-            this.typography(store.status.value, TypographyRole.Muted)
-            this.alertDialog(store.confirming.binding(), warning) {
-                this.title("Delete this payment?")
-                this.description(store.pending.value?.email ?: "")
-                this.cancel("Keep payment")
-                this.action("Delete payment", { store.confirmDelete() }) {
-                    this.variant = ButtonVariant.Destructive
+        val content =
+            column {
+                this.typography("Payments", TypographyRole.H2)
+                this.row {
+                    this.item(payments) { this.grow = 1.0 }
+                    this.item(volume) { this.grow = 1.0 }
+                    this.item(waiting) { this.grow = 1.0 }
+                    this.spacing = 12.0
                 }
+                this.chart(store.chart) {
+                    this.kind = ChartKind.Bar
+                    this.height = Some(140.0)
+                    this.legend = false
+                }
+                this.dataTable(store.table) {
+                    this.bodyHeight = 280.0
+                    this.pageSizes = [5L, 10L, 20L]
+                    this.toolbar(filterInput)
+                }
+                this.typography(
+                    f"Selected amount: USD ${store.selectedAmount}",
+                    TypographyRole.Muted
+                )
+                this.typography(store.status.value, TypographyRole.Muted)
+                this.alertDialog(store.confirming.binding(), warning) {
+                    this.title("Delete this payment?")
+                    this.description(store.pending.value?.email ?: "")
+                    this.cancel("Keep payment")
+                    this.action("Delete payment", { store.confirmDelete() }) {
+                        this.variant = ButtonVariant.Destructive
+                    }
+                }
+                this.toaster(store.notifications)
+                this.spacing = 16.0
+                this.padding = Insets.all(24.0)
+                this.alignment = CrossAlignment.Stretch
             }
-            this.toaster(store.notifications)
-            this.spacing = 16.0
-            this.padding = Insets.all(24.0)
-            this.alignment = CrossAlignment.Stretch
-        }
         // The page is taller than the default window, so the root scrolls.
-        return frame(scrollArea(content)) {
-            this.style { this.background(Some(Paint(pageColor))) }
-        }
+        return frame(scrollArea(content)) { this.style { this.background(Some(Paint(pageColor))) } }
     }
 }
 

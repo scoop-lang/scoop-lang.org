@@ -87,7 +87,7 @@ class ThemeDemo(private val model: ThemeModel, scope: ComponentScope): Component
         val model = this.model
         val count = this.count
         val name = this.name
-        val theme = model.source.current.value
+        val theme = model.source.read(scope)
         val nameField = input(name) { placeholder = "Project name" }
         val content =
             column {

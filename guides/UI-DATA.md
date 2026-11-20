@@ -147,6 +147,8 @@ scoop run ui-data-dates.scoop --release
 
 **图表。** `chart(model) { kind = ... }` 绘制折线、面积、柱状、饼图、雷达和径向图（`ChartKind.Line`、`Area`、`Bar`、`Pie`、`Radar`、`Radial`）。数据是 `ChartData(datums, series)`：`datums` 是横轴上的类别（例如月份），每个 `ChartSeries` 是一组数值，`None` 表示缺失。数据交给 `ChartModel(data)` 持有，之后用 `model.replaceData(newData)` 更新；图例点击可以隐藏某个系列，悬停或用方向键移动时显示数值提示。常用配置有 `curve`（`Linear`、`Step`、`Monotone`）、`stack`（堆叠）、`height`、`xAxis` / `yAxis`、`legend`、`tooltip`。
 
+用手指或笔尖轻点图表中的数据点会选中它并保留数值提示。若用户开始滚动或加入第二个触点，这次轻点取消。键盘用户可用方向键移动，读屏器用户可按集合中的数据项导航。图例按钮操作同一组可见系列。
+
 **会话组件。** 用于聊天、助手对话这类界面：
 
 - `bubble(text) { variant; align }`：消息气泡，七种外观，`align = MessageAlignment.End` 靠右；

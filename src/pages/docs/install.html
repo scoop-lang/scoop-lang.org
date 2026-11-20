@@ -90,6 +90,7 @@ Hello, Scoop!</code></pre>
 
 <h3 id="single-file-deps">单文件依赖</h3>
 <p>单文件程序在文件头部用 <code>//! dep:</code> 声明额外依赖的精确坐标，从预编译产物中查找，例如使用 JSON 库。单文件入口不参与 PM 的版本求解；需要 Git/registry、源码依赖或 workspace 时使用 Cone 项目。</p>
+<p>下面的 JSON 示例需要带有 <code>scoop-codec-generator</code> 的工具链。文件头声明 <code>scoop.json</code> 库依赖，<code>User</code> 的 companion 通过 <code>@GenerateWith</code> 选择生成器。见<a href="../reference/annotations.html#codecs">编解码</a>。</p>
 {{example json}}
 <p>文件首行也可以是 <code>#!</code> 解释器注释，因此 Scoop 文件能直接作为脚本执行：</p>
 <pre><code class="language-scoop">#!/usr/bin/env -S scoop run --release
@@ -193,6 +194,23 @@ $ scoop pm update</code></pre>
   <tr><td><code>scoop &lt;other&gt;</code></td><td>先查找工具链的 <code>commands/</code>，再查共享的 <code>$SCOOP_HOME/commands/</code> 外部子命令</td></tr>
 </table></div>
 <p>常用选项：<code>--release</code>（优化构建）、<code>--target &lt;triple&gt;</code>（交叉目标）、<code>--target-dir</code>（输出目录）、<code>-j</code>（并发编译进程数）、<code>--message-format json</code>（机器可读诊断）。</p>
+
+<h2 id="diagnostics">读懂编译器诊断</h2>
+<p>以下格式适用于包含<a href="https://github.com/scoop-lang/scoop/pull/146">诊断编号更新</a>的工具链；较早版本可能仍显示阶段码。可用 <code>scoop --version</code> 确认正在使用的版本。</p>
+<pre><code class="language-text">error[E0501]: initializer of `n` must be of type Int, found String</code></pre>
+<p>编号由前缀、两位分类号和两位规则序号组成。<code>E0501</code> 中的 <code>05</code> 是类型与转换，<code>01</code> 是类型不匹配；它标识实际规则，同一规则在不同编译阶段或工具中使用同一个编号。具体措辞、类型名和位置会随程序变化。</p>
+<div class="table-wrap"><table>
+  <tr><th>前缀</th><th>如何阅读</th></tr>
+  <tr><td><code>E</code></td><td>源码、输入、配置或外部操作的错误规则</td></tr>
+  <tr><td><code>W</code></td><td>警告；即使因禁止警告而构建失败，仍保留 W 编号</td></tr>
+  <tr><td><code>N</code></td><td><code>note</code>：相关位置、候选或解释</td></tr>
+  <tr><td><code>H</code></td><td><code>help</code>：可以采取的修改建议</td></tr>
+  <tr><td><code>ICE</code></td><td>编译器内部错误；报告时附上工具链版本、完整诊断和最小复现</td></tr>
+</table></div>
+<p>先看主错误及其源码位置，再读附属信息。重载报错中的 <code>cause[E0501]</code> 表示某个候选因类型不匹配而失败，复用同一条 E 规则；<code>note</code> 和 <code>help</code> 附属于主诊断，不是独立的严重级别。完整编号及触发条件见<a href="https://github.com/scoop-lang/scoop/blob/main/docs/diagnostics/RULES.md">诊断规则目录</a>。</p>
+<p>脚本可以用 <code>--message-format json</code> 读取标准错误流中的逐行 JSON：</p>
+<pre><code class="language-sh">$ scoop check main.scoop --release --message-format json 2&gt; diagnostics.jsonl</code></pre>
+<p>当前诊断记录使用 <code>schema: 2</code>、<code>kind: "diagnostic"</code>，包含 <code>code</code>、<code>severity</code>、<code>message</code> 和位置。递归的 <code>notes</code> 保存原因、说明与建议，其 <code>kind</code> 分别为 <code>cause</code>、<code>note</code>、<code>help</code>。按这些字段处理，不要从英文文案猜编号；编辑器通过 LSP 也使用相同的编号。</p>
 
 <h2 id="editor">编辑器支持</h2>
 <p>工具包附带 VS Code 扩展，提供 Tree-sitter 语法高亮、折叠、缩进，以及通过 <code>scoop-lsp</code> 提供的诊断、补全、悬停文档、签名帮助、跳转、引用、重命名和快速修复：</p>

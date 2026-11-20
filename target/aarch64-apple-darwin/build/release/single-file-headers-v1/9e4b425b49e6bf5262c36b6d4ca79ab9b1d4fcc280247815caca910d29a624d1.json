@@ -1,1 +1,0 @@
-[{"coordinate":["scoop","scoop.core","0.1.0"],"span":null},{"coordinate":["scoop","scoop.std","0.1.0"],"span":null},{"coordinate":["scoop","scoop.asyncio","0.1.0"],"span":{"start":0,"end":34}},{"coordinate":["scoop","scoop.http.server","0.1.0"],"span":{"start":35,"end":73}}]

@@ -53,7 +53,7 @@ class BrandDemo(scope: ComponentScope): Component(scope) {
 
     public override fun render(): View {
         val count = this.count
-        val palette = this.theme.current.value.tokens.palette
+        val palette = this.theme.read(scope).tokens.palette
         val content =
             column {
                 spacing = 12.0

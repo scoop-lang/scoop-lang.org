@@ -11,6 +11,7 @@ import scoop.ui.component.*
 import scoop.ui.style.ThemeMode
 import scoop.ui.style.ThemeSource
 import scoop.ui.style.currentThemeSource
+import scoop.ui.style.read
 import scoop.ui.style.shadcn.shadcnTheme
 
 class Counter(scope: ComponentScope): Component(scope) {
@@ -20,31 +21,30 @@ class Counter(scope: ComponentScope): Component(scope) {
 
     public override fun render(): View {
         val count = this.count
-        val content = column {
-            spacing = 16.0
-            alignment = CrossAlignment.Center
-            // Text fills the bounded width, so center the paragraph itself.
-            typography("Counter", TypographyRole.H3) {
-                settings { alignment = TextAlignment.Center }
-            }
-            label(f"Clicked ${count.value} times") {
-                settings { alignment = TextAlignment.Center }
-            }
-            row {
-                spacing = 8.0
-                button("-1", { count.value -= 1 }) {
-                    variant = ButtonVariant.Outline
-                    enabled = count.value > 0
+        val content =
+            column {
+                spacing = 16.0
+                alignment = CrossAlignment.Center
+                // Text fills the bounded width, so center the paragraph itself.
+                typography("Counter", TypographyRole.H3) {
+                    settings { alignment = TextAlignment.Center }
                 }
-                button("+1", { count.value += 1 })
-                button("Reset", { count.value = 0 }) { variant = ButtonVariant.Ghost }
+                label(f"Clicked ${count.value} times") {
+                    settings { alignment = TextAlignment.Center }
+                }
+                row {
+                    spacing = 8.0
+                    button("-1", { count.value -= 1 }) {
+                        variant = ButtonVariant.Outline
+                        enabled = count.value > 0
+                    }
+                    button("+1", { count.value += 1 })
+                    button("Reset", { count.value = 0 }) { variant = ButtonVariant.Ghost }
+                }
             }
-        }
-        // Reading theme.current subscribes this component to theme changes.
-        val pageColor = this.theme.current.value.tokens.palette.background.background
-        return frame(content) {
-            style { background(Some(Paint(pageColor))) }
-        }
+        // Read the theme with this window's display preferences.
+        val pageColor = this.theme.read(scope).tokens.palette.background.background
+        return frame(content) { style { background(Some(Paint(pageColor))) } }
     }
 }
 

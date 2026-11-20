@@ -101,6 +101,7 @@ assertions
       <ul class="checks">
         <li><strong>组件即 class</strong>：<code>render()</code> 返回不可变的 View，成员 <code>State</code> 被写入时只重绘依赖它的组件，模型与 SwiftUI、Jetpack Compose 相近。</li>
         <li><strong>开箱的控件库</strong>：按钮、输入框、选择器、表单校验、滚动与虚拟列表、Popover、Dialog、菜单、Toast、Tabs、表格、日历与图表。</li>
+        <li>控件支持<strong>触摸、手势与无障碍</strong>。除了轻点、长按和拖动，自绘内容还可以响应捏合与旋转。键盘和系统读屏器也能操作同一组控件。见<a href="guides/ui-interaction.html">手势翻页示例</a>。</li>
         <li><strong>四套主题预设</strong>：macOS、Material、Fluent 与 shadcn，支持浅色、深色与跟随系统，可定制 tokens 与局部样式。</li>
         <li><strong>完整的桌面集成</strong>：多窗口、原生菜单与窗框、文件对话框、Dock／任务栏、系统托盘，后台任务与 UI 线程协同。</li>
         <li><strong>可测试、可分发</strong>：状态测试与窗口测试由 <code>scoop test</code> 运行，<code>scoop bundle</code> 打包为 macOS app、deb／rpm／AppImage 或 NSIS／MSI。</li>

@@ -1,6 +1,6 @@
-<!-- title: 注解与编译期能力; nav: reference; layout: reference; description: Scoop 的注解与编译期功能：自定义注解、Target 与 Repeatable、use-site 目标、类型使用注解、文档注释、静态类型描述 typeInfo、编解码合成与 Serialize、源码位置、includeStr/includeBytes/includeDir/env 以及值观察与调试输出。 -->
+<!-- title: 注解与编译期能力; nav: reference; layout: reference; description: Scoop 的自定义注解、Target 与 Repeatable、use-site 目标、类型使用注解、文档注释、静态类型描述 typeInfo、用 GenerateWith 和 scoop.codec 生成编解码方法、Serialize 字段映射、源码位置、编译期输入与调试输出。 -->
 <h1>注解与编译期能力</h1>
-<p class="intro">Scoop 的注解是纯编译期的数据：没有运行期注解对象，也没有运行期反射。编译器根据注解与类型的静态描述完成编解码、调试视图等方法的合成，并提供读取源码位置、嵌入文件与读取构建环境的编译期函数。核心注解（<code>@Extern</code>、<code>@NoGC</code>、<code>@Unsafe</code> 等）见<a href="ffi.html">原生互操作</a>。</p>
+<p class="intro">Scoop 的注解只在编译期可用。用 <code>@GenerateWith</code> 可以选择生成器为类型实现接口方法，例如用 <code>scoop.codec</code> 生成编解码方法。编译器还提供静态类型描述、调试视图，以及读取源码位置、嵌入文件和读取构建环境的函数。核心注解（<code>@Extern</code>、<code>@NoGC</code>、<code>@Unsafe</code> 等）见<a href="ffi.html">原生互操作</a>。</p>
 
 <h2 id="custom-annotations">自定义注解</h2>
 <pre><code class="language-scoop">public annotation class Description(val text: String)
@@ -92,7 +92,7 @@ fun main() {
   <li><code>TypeShape</code> 区分 <code>Struct</code>、<code>Enum</code>、<code>IntegerEnum</code>、<code>Class</code>、<code>Object</code>、<code>Interface</code>、<code>Tuple</code>、<code>Unit</code>、<code>Intrinsic</code>、<code>Function</code>、<code>Pointer</code>。</li>
   <li><code>TypeRef</code> 按完整类型身份比较；透明别名与展开后的类型相同。</li>
   <li><code>annotationKey&lt;A&gt;()</code> 取得注解声明的键，配合 <code>findAnnotations</code> 在描述中筛选注解。</li>
-  <li>描述不提供按名称取类型、反射构造或调用，取得私有成员的描述也不会使其值可以访问。<code>scoop.cli</code> 等库用它从数据类型生成命令行 schema。</li>
+  <li>描述不提供按名称取类型、反射构造或调用，取得私有成员的描述也不会使其值可以访问。</li>
 </ul>
 
 <h2 id="codecs">编解码</h2>
@@ -104,7 +104,7 @@ fun main() {
 public interface ValueDecoder&lt;T&gt; {
     public fun decode(decoder: Decoder): T
 }</code></pre>
-<p>编解码器（codec）通常是数据类型的 companion。在 companion 上<strong>声明</strong>实现这两个接口而不写方法体时，编译器为 struct、enum、tuple 以及没有显式基类的普通 final class 合成实现；同一套实现可供 JSON、命令行参数、HTTP 查询参数等不同格式复用：</p>
+<p>要为 <code>User</code> 生成编解码方法，在实际实现接口的 companion 或独立 codec 类型上标注 <code>@GenerateWith</code>。下面的 <code>User.Companion</code> 声明了两个接口，并用 <code>"scoop.codec"</code> 为它们生成 <code>encode</code> 和 <code>decode</code>。只需要一个方向时，只声明并选择对应的接口。</p>
 <pre><code class="language-scoop">//! dep: scoop:scoop.json:0.1.0
 
 import scoop.json.*
@@ -115,6 +115,7 @@ public struct User(
     @Serialize(ignore = true) val cache: Int = 0,
     val tags: Array&lt;String&gt; = []
 ) {
+    @GenerateWith("scoop.codec", ["ValueEncoder&lt;User&gt;", "ValueDecoder&lt;User&gt;"])
     public companion object : ValueEncoder&lt;User&gt;, ValueDecoder&lt;User&gt;
 }
 
@@ -125,14 +126,15 @@ fun main() {
     println(f"${user.name} ${user.cache} ${user.tags.size}")      // Lin 0 0
 }</code></pre>
 <ul>
-  <li>数据实例本身<strong>不会</strong>因此实现任何接口；codec 是独立的值，泛型代码通过显式参数（<code>codec: ValueEncoder&lt;T&gt;</code>）或 <a href="generics.html#companion-constraints"><code>where T.Companion : ValueEncoder&lt;T&gt;</code></a> 取得它。<code>Json.encodeToString(value, User.Companion)</code> 显式传入 codec，<code>Json.encodeToString(value)</code> 使用 companion 约束。</li>
+  <li><code>Json.encodeToString(value)</code> 和 <code>Json.decodeFromString&lt;User&gt;(text)</code> 通过 <code>User</code> 的公开 companion 取得 codec。也可以显式传入一个 codec，例如 <code>Json.encodeToString(value, User.Companion)</code>。见<a href="generics.html#companion-constraints">伴生对象约束</a>。</li>
+  <li>已有的手写、继承或接口默认实现优先，生成器只补齐所选接口缺少的方法。本例若省略 <code>@GenerateWith</code>，编译器会报 <code>E1008</code>，指出 <code>User.Companion</code> 缺少 <code>encode</code> 和 <code>decode</code> 的实现。</li>
   <li>默认数据模型：struct 与合格的 class 编码为按声明顺序的键值记录，tuple、数组与 <code>ArrayList</code> 编码为序列，enum 编码为只有一个键（变体名）的记录，<code>Option</code> 的 <code>None</code> 编码为 null，<code>Unit</code> 编码为 null，<code>Char</code> 编码为单字符字符串。</li>
-  <li>每个字段的 codec 在定义处确定：字段类型的 companion、核心容器的组合、递归时的自身，或 codec 主构造函数中保存的显式依赖。找不到时是编译错误，不会生成运行期失败的代码。</li>
-  <li>解码先读取全部字段再调用正常的构造函数，不会构造半初始化的对象。缺失的字段使用默认值；声明处类型为 <code>Option</code> 且没有默认值的字段补 <code>None</code>；其他缺失字段是解码错误。</li>
-  <li>编码时，声明处为 <code>Option</code>、没有默认值（或默认值就是 <code>None</code>）的字段在值为 <code>None</code> 时省略。</li>
-  <li>手写 <code>encode</code>/<code>decode</code> 方法即可覆盖合成；两个方向互相独立。开放的类层级、循环图和多态需要手写 codec。</li>
+  <li>每个字段的 codec 按方向在定义处确定。生成器优先使用 codec 主构造函数中唯一匹配的 <code>val</code>，再依次考虑递归时的自身、核心容器或 tuple 的元素组合，以及字段类型可见且满足接口的 companion。缺少所需能力会在编译时报错。</li>
+  <li>生成器支持 struct、enum、tuple，以及没有显式 class 基类的普通 final class。为 struct 或 class 生成解码方法时，从 codec 的作用域看，唯一可见的构造函数须是主构造函数。开放的类层级、循环图和多态需要手写 codec。</li>
+  <li>解码先读取输入并完成容器检查，再调用构造函数。缺少未标记 <code>required</code> 的字段时，优先使用声明的默认值，其次为声明处的 <code>Option</code> 补 <code>None</code>，其余情况报解码错误。显式传入的 JSON <code>null</code> 交给字段的 codec 处理。</li>
+  <li>编码时，声明为 <code>Option</code> 的字段若没有默认值或默认值直接写作 <code>None</code>，其值为 <code>None</code> 时默认省略。设置 <code>required</code> 或 <code>emitNull</code> 会保留这个键。</li>
 </ul>
-<p><code>@Serialize</code> 注解调整字段或变体的映射：</p>
+<p>实现者上的 <code>@GenerateWith</code> 选择生成器和接口，字段或 enum 变体上的 <code>@Serialize</code> 指定数据映射。<code>scoop.codec</code> 生成方法时读取下列设置。手写方法自行决定如何读写字段。</p>
 <div class="table-wrap"><table>
   <tr><th>参数</th><th>作用</th></tr>
   <tr><td><code>rename = "…"</code></td><td>字段或 enum 变体在数据中的名称</td></tr>
@@ -184,7 +186,7 @@ fun main() {
 </ul>
 
 <h2 id="inspection">值观察与调试输出</h2>
-<p><code>ValueInspector&lt;T&gt;</code> 把值转换为只读的结构视图，<code>DebugPrinter</code> 把视图格式化为文本。与 codec 一样，在 companion 上声明实现 <code>ValueInspector&lt;T&gt;</code> 即可为 struct、enum、tuple 和普通 final class 合成实现：</p>
+<p><code>ValueInspector&lt;T&gt;</code> 把值转换为只读的结构视图，<code>DebugPrinter</code> 把视图格式化为文本。编译器可以为 struct、enum、tuple 和普通 final class 直接合成 <code>inspect</code> 方法。下面两个类型都在 companion 上声明这个接口。</p>
 <pre><code class="language-scoop">struct Point(val x: Int, val y: Int) {
     public companion object : ValueInspector&lt;Point&gt;
 }
@@ -206,4 +208,5 @@ fun main() {
 </ul>
 
 <h2 id="generators">代码生成器</h2>
-<p>核心库的 <code>@GenerateWith(generator, interface)</code> 注解可以为类型请求外部生成器实现指定接口的方法，生成的方法体与手写代码一样参与类型检查。它面向库作者，协议见 <a href="https://github.com/scoop-lang/scoop/blob/main/docs/milestone47/DESIGN.md">生成器设计文档</a>。Scoop 不提供通用的编译期执行语言或宏系统。</p>
+<p>核心库注解 <code>@GenerateWith</code> 的第一个参数是生成器名，第二个参数是字符串数组，每项写出实现者已声明或继承的完整接口类型，如 <code>"ValueDecoder&lt;User&gt;"</code>。构建时，生成器返回普通 Scoop 方法体，由编译器在实现者的作用域内检查。</p>
+<p>使用工具链自带的生成器时，<code>scoopc</code> 会在自己的目录中自动找到对应的程序。<code>scoop.codec</code> 对应 <code>scoop-codec-generator</code>，用来生成编解码方法。<code>scoop.cli</code> 对应 <code>scoop-cli-generator</code>，为 <code>CliArguments&lt;T&gt;</code> 生成参数布局和绑定方法。见<a href="stdlib.html#tools">命令行示例</a>和<a href="https://github.com/scoop-lang/scoop/blob/main/docs/milestone47/PROTOCOL.md">自定义生成器协议</a>。</p>

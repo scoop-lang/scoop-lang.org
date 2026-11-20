@@ -9,6 +9,7 @@ import scoop.ui.component.*
 import scoop.ui.style.Insets
 import scoop.ui.style.ThemeSource
 import scoop.ui.style.currentThemeSource
+import scoop.ui.style.read
 import scoop.ui.style.shadcn.shadcnTheme
 
 // One payment record. The id is stable and becomes the table row key.
@@ -66,14 +67,15 @@ class PaymentsApp(private val store: PaymentStore, scope: ComponentScope): Compo
     private val theme = currentThemeSource()
     public override fun render(): View {
         val store = this.store
-        val pageColor = this.theme.current.value.tokens.palette.background.background
-        val content = column {
-            this.typography("Payments", TypographyRole.H2)
-            this.typography("Click a column header to sort.", TypographyRole.Muted)
-            this.dataTable(store.table) { this.bodyHeight = 300.0 }
-            this.spacing = 16.0
-            this.alignment = CrossAlignment.Stretch
-        }
+        val pageColor = this.theme.read(scope).tokens.palette.background.background
+        val content =
+            column {
+                this.typography("Payments", TypographyRole.H2)
+                this.typography("Click a column header to sort.", TypographyRole.Muted)
+                this.dataTable(store.table) { this.bodyHeight = 300.0 }
+                this.spacing = 16.0
+                this.alignment = CrossAlignment.Stretch
+            }
         // The root frame paints the theme background and keeps content at the top.
         return frame(content) {
             this.padding = Some(Insets.all(24.0))

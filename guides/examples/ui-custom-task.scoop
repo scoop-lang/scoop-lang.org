@@ -4,12 +4,14 @@
 //! dep: scoop:scoop.ui.style.macos:0.1.0
 //! dep: scoop:scoop.graphics:0.1.0
 //! dep: scoop:scoop.surface:0.1.0
+//! dep: scoop:scoop.window:0.1.0
 import scoop.graphics.*
 import scoop.surface.InputArea
 import scoop.ui.*
 import scoop.ui.component.*
 import scoop.ui.style.*
 import scoop.ui.style.macos.macosTheme
+import scoop.window.accessibility.*
 
 class TaskList(scope: ComponentScope): Component(scope) {
     private val theme = currentThemeSource()
@@ -19,7 +21,7 @@ class TaskList(scope: ComponentScope): Component(scope) {
     public override fun render(): View {
         val first = this.first
         val second = this.second
-        val current = this.theme.current.value
+        val current = this.theme.read(scope)
         var finished = 0
         if (first.value)
             finished += 1
@@ -68,6 +70,7 @@ struct TaskLayout(val marker: Rect)
 class TaskToggle(private val props: Props<TaskInput>, scope: ComponentScope): Element<TaskLayout>(
     scope
 ) {
+    private val checkbox = scope.semantics(SemanticRole.Checkbox)
     private var area: InputArea? = None
     private var press: Press? = None
     private var painters: ThemePainterCache? = None
@@ -78,13 +81,29 @@ class TaskToggle(private val props: Props<TaskInput>, scope: ComponentScope): El
         decoration = Some(scope.resource { StylePainter() })
         val region = scope.createArea(focusable = true)
         area = Some(region)
-        // Joins Tab order together with the ordinary controls around it.
-        scope.focusTarget(region)
-        // Click, Space and Enter activation, with hover/pressed/focus state.
+        checkbox.bindFocus(Some(scope.focusTarget(region)))
+        // Use the visible task label as the accessible name.
+        checkbox.mergeLabels = true
+        scope.routeSemanticsChildren(Some(checkbox))
         press = Some(scope.press(region) { props.value.toggle() })
     }
 
     public override fun update(): UiInvalidation {
+        val checked =
+            if (props.value.done)
+                SemanticChecked.On
+            else
+                SemanticChecked.Off
+        checkbox.update(
+            SemanticProperties(checked = Some(checked)),
+            SemanticActions(
+                toggle =
+                    Some {
+                        props.value.toggle()
+                        SemanticActionResult.Completed
+                    }
+            )
+        )
         painters!!.get(props.value.theme)
         return UiInvalidation.Layout
     }
@@ -146,7 +165,9 @@ class TaskToggle(private val props: Props<TaskInput>, scope: ComponentScope): El
                         None
                 corners = Corners.all(input.theme.tokens.corners.medium)
             }
-        context.place(region, Rect(0.0, 0.0, context.size.width, context.size.height))
+        val bounds = Rect(0.0, 0.0, context.size.width, context.size.height)
+        context.place(region, bounds)
+        context.semantics(checkbox, bounds)
         decoration!!.scene(context, rowStyle) {
             content ->
             content.draw {

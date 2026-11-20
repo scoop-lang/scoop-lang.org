@@ -177,7 +177,7 @@ scoop run ui-custom-task.scoop --release
 
 ![自绘任务行：两行带勾选标记的任务，下方是完成计数和 Reset 按钮](images/ui/ui-custom-task.png){: .screenshot width="204"}
 
-点击一行切换勾选，下面的计数随之变化；鼠标悬停时整行显示圆角背景。按 Tab 在两行和 Reset 按钮之间移动焦点，聚焦的行在标记上显示主题的焦点环，按空格或回车切换。
+用鼠标点击或用手指轻点一行，下面的完成计数随之变化。按 Tab 聚焦任务行后可以用空格或回车切换。用读屏器导航时，每一行都是有标题和勾选状态的复选框，执行切换动作也会更新同一个计数。
 
 ### 17.1 可聚焦：focusTarget
 
@@ -194,8 +194,11 @@ scoop run ui-custom-task.scoop --release
 
 | 助手 | 用途 |
 | --- | --- |
-| `scope.press(area, options) { ... }` | 点击、空格、回车激活；`interaction` 给出 hovered／pressed／focused／focusVisible |
-| `scope.drag(area, options, accepts) { event -> ... }` | 拖动手势 |
+| `scope.press(area, options) { ... }` | 点击、轻点、空格或回车激活，`interaction` 给出 hovered／pressed／focused／focusVisible |
+| `scope.drag(area, options, accepts) { event -> ... }` | 鼠标或直接接触拖动，`DragOptions` 可分别启用两种来源 |
+| `scope.longPress(area) { sample -> ... }` | 静止长按触发，滚动接管或触点取消后结束 |
+| `scope.swipeGesture(area) { sample -> ... }` | 识别指定轴的轻扫，按方向执行一次命令 |
+| `scope.transformGesture(area) { event -> ... }` | 接收捏合倍率和旋转角度，用增量调整自绘内容 |
 | `scope.presence(open, options)` | 打开／关闭的呈现阶段和 0–1 的进入／退出进度 |
 | `scope.hover(trigger, open, options)` | 悬停一段时间后打开、离开后关闭，处理触发区和弹层之间的移动 |
 | `scope.activeItems(source, active, options, reveal)` | 列表中的“当前项”随方向键移动，焦点留在原处（例如组合框） |
@@ -207,13 +210,15 @@ TaskToggle 用的是 `scope.press`：
 ```scoop
 val region = scope.createArea(focusable = true)
 area = Some(region)
-// Joins Tab order together with the ordinary controls around it.
-scope.focusTarget(region)
-// Click, Space and Enter activation, with hover/pressed/focus state.
+checkbox.bindFocus(Some(scope.focusTarget(region)))
+checkbox.mergeLabels = true
+scope.routeSemanticsChildren(Some(checkbox))
 press = Some(scope.press(region) { props.value.toggle() })
 ```
 
 `press.interaction` 是一个 State；在 scene 中读取它，状态变化时框架会自动重新绘制这个元素，无需手动 `requestFrame()`。
+
+`checkbox` 是在挂载时创建的 `SemanticRole.Checkbox` 节点。这里复用真实焦点和可见标签。元素在 `update()` 发布勾选状态与切换动作，在 `scene()` 用 `context.semantics(checkbox, bounds)` 登记整行范围。见[触摸、手势与无障碍]({{ '/ui-interaction.html' | relative_url }})。
 
 ### 17.3 用 ThemePainterCache 画主题部件
 
@@ -225,7 +230,7 @@ press = Some(scope.press(region) { props.value.toggle() })
 
 `visual` 是 `CheckboxVisual(mark, interaction)`：`mark` 为 `CheckMark.Off`、`On` 或 `Mixed`，`interaction` 是 `InteractionVisual(enabled, hovered, pressed, focusVisible, ...)`。表面（`surfaceGeometry`／`drawSurface`）、单选框（`radioGeometry`／`drawRadio`）和滚动条（`scrollbarGeometry`／`drawScrollbar`）用法相同。
 
-Painter 会持有原生资源，由 `ThemePainterCache` 管理：在 onMount 中 `scope.resource { ThemePainterCache() }`，绘制时调用 `painters.get(theme)`。主题换了，`get` 会创建新 painter 并关闭旧的。主题通过 Props 传入（TaskList 在 render 中读取 `this.theme.current.value` 并放进 `TaskInput`），所以切换主题时每一行都会收到新 Props；在 `update()` 中先调用一次 `painters!!.get(props.value.theme)`，让替换发生在绘制之前。
+Painter 持有的原生资源由 `ThemePainterCache` 管理。在 onMount 中用 `scope.resource { ThemePainterCache() }` 创建缓存，绘制时调用 `painters.get(theme)`。`TaskList` 在 render 中读取 `this.theme.read(scope)`，通过 `TaskInput` 将应用了窗口偏好的主题传给每一行。在 `update()` 中先调用 `painters!!.get(props.value.theme)`，绘制前就能替换 painter 并关闭旧资源。
 
 ### 17.4 用 StylePainter 套用公共 Style
 
