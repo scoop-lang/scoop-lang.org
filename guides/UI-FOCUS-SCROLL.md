@@ -119,7 +119,7 @@ scoop run ui-focus-scroll-keyboard.scoop --release
 
 ### 10.1 滚动区域
 
-`scrollArea(content) { ... }` 在内容超出可用空间时提供滚动：鼠标滚轮、触控板、拖动滚动条、键盘（获得焦点后用方向键、Page Up／Down、Home／End）都可以操作。常用配置：
+`scrollArea(content) { ... }` 支持鼠标滚轮、触控板、手指或笔尖拖动，以及拖动滚动条。视口获得焦点后也可以用方向键、Page Up／Down、Home／End 滚动。直接接触先按轻点处理，移动越过阈值后视口才接管，所以在列表按钮上起手也能滚动。
 
 | 配置 | 作用 |
 | --- | --- |
@@ -127,6 +127,8 @@ scoop run ui-focus-scroll-keyboard.scoop --release
 | `axes` | 滚动方向，默认 `ScrollAxes.Vertical` |
 | `state` | 传入自己持有的 `ScrollState`，以便读取和控制滚动位置 |
 | `scrollbars` | `ScrollbarVisibility.Auto`、`Always` 或 `Hidden` |
+| `touchScroll` | `TouchScrollOptions` 配置触点的移动阈值、是否锁定主轴。嵌套视口默认沿 `ScrollChain.Chain` 把剩余位移交给外层。 |
+| `scrollPhysics` | `ScrollPhysicsOptions` 配置惯性和边界。平台默认在 macOS 使用弹性边界，在 Windows 和 Linux 使用硬边界。启用“减少动画”时关闭回弹。 |
 
 ### 10.2 ScrollState：读取与控制位置
 
@@ -190,6 +192,8 @@ class NumberRows(private val picked: State<Long>): ItemSource {
 
 - `ItemExtent.Fixed(32.0)`：每行同样高，定位最快，适合大部分列表；
 - `ItemExtent.Variable(56.0)`：行高不同，参数是估计值，实际高度在行第一次布局后记录下来。
+
+读屏器也可以查询屏幕外的条目。在 `virtualList` 的 builder 中用 `itemSemantics` 提供与同一 `ItemSource` 绑定的名称、状态等数据。查询本身只读数据，不执行 `build`、滚动或移动焦点。读屏器明确请求显露某一行时，列表才按稳定 key 定位并呈现它。[UI 无障碍规范](https://github.com/scoop-lang/scoop/blob/main/docs/specs/SCOOP-UI-ACCESSIBILITY-SPEC.md)
 
 ### 10.4 VirtualListHandle：定位、聚焦与阅读位置
 

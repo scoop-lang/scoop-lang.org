@@ -40,8 +40,8 @@ fun guardedOpen(open: State<Boolean>, locked: State<Boolean>): Binding<Boolean> 
 
 | 函数 | 何时显示 | 正文能否操作 | 典型用途 |
 | --- | --- | --- | --- |
-| `tooltip(trigger, text)` | 指针悬停或键盘聚焦触发器 | 否，只展示文字 | 图标按钮的说明 |
-| `hoverCard(trigger, content)` | 悬停一段时间后 | 可以选择文字、点击链接 | 用户名、链接的预览 |
+| `tooltip(trigger, text)` | 指针悬停、键盘聚焦或触摸长按触发器 | 否，只展示文字 | 图标按钮的说明 |
+| `hoverCard(trigger, content)` | 悬停一段时间或触摸长按后 | 可以选择文字、点击链接 | 用户名、链接的预览 |
 | `popover(open, content)` | 点击触发器或改变 `open` | 可以，包含真实输入框 | 小型表单、筛选条件 |
 
 `tooltip` 包装原有的按钮，不改变按钮的动作和焦点行为，默认带箭头；`hoverCard` 默认 600 毫秒后打开、300 毫秒后关闭。Popover 是唯一由 open 绑定控制的一个，它的 `mode` 决定与背景的关系：
@@ -77,12 +77,12 @@ Popover 的其他常用配置有 `side` / `alignment`（首选方向与对齐，
 
 ### 11.3 对话框、确认框、侧板与抽屉
 
-模态弹层占据整个窗口，打开时背景变暗并阻挡输入：
+模态弹层打开时背景变暗，指针、键盘与读屏器操作都限于弹层。通过读屏器请求关闭时，仍由弹层已有的关闭回调决定是否接受。
 
 - `dialog(open, content)`：普通对话框，可以有固定的 `footer`，默认显示右上角关闭按钮，Escape 和点击遮罩都会请求关闭。
 - `alertDialog(open, content)`：需要用户明确选择的确认框。初始焦点默认在取消按钮上，点击遮罩**不会**关闭；`action(text, onClick)` 只执行你的回调，不会替你关闭，需要在回调里自己把状态改回 `false`（这样才能在操作进行中保持打开）。
 - `sheet(open, content)`：从窗口一边滑出的侧板，`side` 取 `SheetSide.Top`、`Bottom`、`Start`、`End`，其中 Start / End 随从右到左的布局方向自动对调。
-- `drawer(open, content)`：抽屉，默认从底部滑出，可以用指针拖动关闭，还支持多个吸附高度、可聚焦的拖动把手和嵌套抽屉。
+- `drawer(open, content)` 默认从底部滑出，支持多个吸附高度、可聚焦的拖动把手和嵌套抽屉。可以用手指拖把手，也可以用系统轻扫切换吸附位置。在最低位置向外轻扫时，`swipeToClose` 决定是否发起关闭请求，应用仍可拒绝关闭。
 
 四者共享同一组配置，保存在 `ModalOptions` 中；在配置块里它们直接以成员形式出现：`title`、`description`、`header`、`scrollable` 与 `scrollState`（长表单滚动）、`focus`、`handle`、`backdrop`、`onOpenChange`、`onCloseRequest`、`onClosed` 等。学会一个，其他几个的写法就都会了。
 
@@ -114,7 +114,7 @@ scoop run ui-overlays-modal.scoop --release
 每个条目都需要一个稳定的 `ViewKey`，菜单靠它在重新 render 时保持焦点与悬停位置。入口有三种：
 
 - `dropdownMenu(open, content)`：点击触发器弹出，open 绑定规则与 Popover 相同；
-- `contextMenu(view, content)`：包装一个已有的控件，右键或焦点在其上时按 Shift+F10 弹出，原控件的点击动作不受影响；
+- `contextMenu(view, content)` 包装已有控件，右键、触摸长按，或聚焦后按 Shift+F10 都能打开菜单。`longPress` 可配置长按等待时间与移动容差，普通轻点仍执行原控件动作。
 - `menubar(binding) { menu(key, text, content) }`：横向菜单栏，绑定的是当前展开的那一项 `ViewKey?`。
 
 保存为 `ui-overlays-menus.scoop`（[下载](examples/ui-overlays-menus.scoop)）。菜单项的快捷键标签用到了 `scoop.window` 中的 `ShortcutChord`，所以多声明了一个依赖：

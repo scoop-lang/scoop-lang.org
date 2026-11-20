@@ -64,7 +64,7 @@ Windows 写作 `sco run ui-themes-brand.scoop --release`。窗口左上角显示
 - `surfaces { plain { ... }; action { ... }; elevated { ... } }`：三种表面的尺寸、填充、边框、文字颜色、焦点环和阴影；
 - `checkbox { ... }`、`radio { ... }`、`scrollbar { ... }`：对应部件的尺寸与外观。
 
-另外，示例里的组件用 `private val theme = currentThemeSource()` 在**构造时**取得当前主题来源，在 `render()` 中读取 `this.theme.current.value.tokens.palette.background.background` 给根 `frame` 铺上页面底色。不铺底色时，macOS 上窗口内容区默认是黑色。
+组件用 `private val theme = currentThemeSource()` 在构造时取得当前主题来源。在 `render()` 中读取 `this.theme.read(scope).tokens.palette.background.background` 给根 `frame` 铺上底色。这样自绘背景和标准控件会一起响应窗口的显示偏好。
 
 ### 14.3 用 copy 派生新主题
 
@@ -90,9 +90,8 @@ val reduced = theme.copy { tokens { motion { preference = MotionPreference.Reduc
 
 应用持有一个稳定的 `ThemeSource`，用 `context(source) { ... }` 包住 `runUiApplication`。`ThemeSource.current` 是一个 `State<Theme>`：
 
-- 控件在挂载时取得外围的 `ThemeSource`，在 render 或绘制时读取 `current.value`，因此自动订阅主题；
-- 你自己的组件在 `render()` 中读取 `source.current.value`，同样建立订阅；
-- 换主题只需要给 `source.current.value` 赋一个新的主题值。
+- `source.current.value` 保存应用选择的基础主题。为它赋一个新值即可切换主题。
+- 标准控件和自绘组件都可以调用 `source.read(scope)` 取得当前窗口应用了无障碍偏好的主题。在 `render()` 中读取它会订阅主题和偏好的变化。这个扩展函数由 `scoop.ui.style.read` 提供。
 
 **换主题不会重建界面。** 挂载树、组件实例和它们的 State 都保留，只是读到了新主题的组件重新 render 或重新绘制。按钮计数、复选框勾选、输入框里的文字和光标、当前焦点都不受影响。
 
@@ -110,7 +109,7 @@ scoop run ui-themes-switcher.scoop --release
 
 试试这样操作：先点几次 Count 按钮、取消勾选 Remember me、在输入框中改几个字，然后依次点 Material、Fluent、shadcn，再点 Light、Dark。按钮、复选框和输入框的外观立即换成对应风格，计数、勾选和文字都还在。
 
-这个例子把“用户选了什么”与“最终用哪个主题”分开：`preset` 和 `mode` 是两份普通 State，用于高亮当前选项；`ThemeModel.apply()` 把它们组合成一个主题值写入 `source.current`。页面底色读取的是 `model.source.current.value`，所以背景也随主题更新。每套预设都是独立的 Cone：依赖头中声明了哪几个，`Preset` 和 `apply()` 的 `when` 中就列出哪几个。不需要的风格不必依赖。
+`preset` 和 `mode` 保存用户选择的预设与明暗模式。`ThemeModel.apply()` 把两者组合成基础主题写入 `source.current`，根组件用 `model.source.read(scope)` 取得页面底色。每套预设都是独立的 Cone，依赖头、`Preset` 和 `apply()` 只需列出应用提供的风格。
 
 ### 14.5 跟随系统明暗
 
@@ -130,6 +129,10 @@ scope.observeWindow(window) {
 `scope.nativeWindow` 是组件所在的原生窗口；`observedTheme` 是窗口当前观察到的系统外观（`scoop.window.Theme?`，这里用 `as WindowTheme` 重命名以免和 UI 的 `Theme` 混淆）；`observeWindow` 登记窗口事件回调，组件卸载时自动注销。收到 `WindowEvent.ThemeChanged` 后，模型只更新记录的系统外观；只有当前模式是 Follow system 时，`apply()` 才会因此换主题。手动选择 Light 或 Dark 时，系统变化不会覆盖用户的选择。
 
 在 macOS 的“系统设置 → 外观”中切换浅色和深色，选择了 Follow system 的窗口会随之变化。自己用 `UiHost` 编写事件循环的程序，也可以在 `WindowEvent.ThemeChanged` 分支里做同样的处理，`scoop.ui.component` 自带的 themes 示例就是这样写的。
+
+### 14.6 跟随无障碍显示偏好
+
+`source.read(scope)` 返回的主题带有 `preferences`。内置主题会把高对比度、减少透明度和文字缩放应用到配色与排版。自绘文字应使用这份主题的字号和前景／背景配对。自定义动画可以读取 `preferences.reduceMotion`，直接呈现目标状态。默认滚动行为会在减少动画时关闭回弹。系统读屏器的接入见[触摸、手势与无障碍]({{ '/ui-interaction.html' | relative_url }})。
 
 ## 15. 局部样式与效果
 
@@ -266,7 +269,7 @@ restored: background=set, border=set
 | 现象 | 原因与处理 |
 | --- | --- |
 | 改了 `palette.primary`，按钮颜色没变 | 部件颜色在预设创建时已算好；同时配置 `surfaces { action { fill = ... } }` 等相关部件 |
-| 换主题后，自己画的背景还是旧颜色 | 在 `render()` 中读取 `source.current.value`（或 `currentThemeSource().current.value`）建立订阅，不要在构造时把颜色存成字段 |
+| 换主题或启用高对比度后，自绘背景还是旧颜色 | 在 `render()` 中调用 `source.read(scope)`，从返回的主题读取页面配色 |
 | 组件里调用 `currentThemeSource()` 报缺少上下文 | 在类字段初始化（构造阶段）调用，并确保 `runUiApplication` 位于 `context(source) { }` 之内 |
 | `Theme` 有歧义或找不到 `tokens` | 同时导入了 `scoop.window.*`；窗口的 `Theme` 用 `import scoop.window.Theme as WindowTheme` 单独导入 |
 | 窗口内容区是黑色 | 根 `frame` 没有铺底色；用 `style { background(Some(Paint(pageColor))) }` |

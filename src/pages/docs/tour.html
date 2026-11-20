@@ -119,10 +119,10 @@
 </ul>
 
 <h2 id="codec">编码、解码与类型描述</h2>
-<p>在 companion 上声明 <code>ValueEncoder&lt;T&gt;</code> / <code>ValueDecoder&lt;T&gt;</code>，编译器就会为 struct 合成编解码实现，供 JSON、命令行参数、HTTP 查询参数等不同格式复用：</p>
-{{example cli}}
-<pre><code class="language-sh">$ scoop run --release cli.scoop Ada --count 2 --excited</code></pre>
-<p><code>typeInfo&lt;T&gt;()</code> 返回编译器生成的静态类型描述（字段、注解、构造关系），用于上面的命令行 schema 这类场景；Scoop 不提供运行期反射。</p>
+<p>要把一个 <code>User</code> 写成 JSON 再读回来，让它的公开 companion 实现 <code>ValueEncoder&lt;User&gt;</code> 和 <code>ValueDecoder&lt;User&gt;</code>，并用 <code>@GenerateWith</code> 选择 <code>scoop.codec</code>。构建时，生成器按字段生成两个方法。这里 <code>note</code> 的值为 <code>None</code>，写出时省略，读回时使用声明的默认值。</p>
+{{example json}}
+<p>同一套编解码接口也用于 HTTP 请求和响应。解析命令行参数时，在实现 <code>CliArguments&lt;T&gt;</code> 的 companion 上选择 <code>scoop.cli</code>。见<a href="../reference/annotations.html#codecs">编解码规则</a>和<a href="../reference/stdlib.html#tools">命令行示例</a>。</p>
+<p>要在程序中查询类型有哪些字段、变体或注解，可以用 <code>typeInfo&lt;T&gt;()</code> 取得<a href="../reference/annotations.html#type-info">静态类型描述</a>。</p>
 
 <h2 id="packages">package 与 import</h2>
 <p>Cone 中的每个文件以 <code>package</code> 声明开头，再用 <code>import</code> 引入其他包的名称：</p>

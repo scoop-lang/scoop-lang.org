@@ -28,6 +28,7 @@ order: 40
 | [桌面集成与异步]({{ '/ui-desktop.html' | relative_url }}) | 19–21 | 应用根、多窗口、原生菜单与窗框、后台任务 |
 | [测试 UI]({{ '/ui-testing.html' | relative_url }}) | 22 | 状态测试与窗口测试 |
 | [综合项目]({{ '/ui-project.html' | relative_url }}) | 23 | 从零写一个带表格、确认和撤销的数据应用 |
+| [触摸、手势与无障碍]({{ '/ui-interaction.html' | relative_url }}) | 24 | 轻扫翻页、捏合与旋转、键盘等价操作、读屏器与自绘控件 |
 
 ## 1. 认识 Scoop UI
 
@@ -37,11 +38,12 @@ Scoop UI 由几个普通的库 Cone 组成，应用按需依赖：
 
 | Cone | 作用 |
 | --- | --- |
-| `scoop.ui` | 声明式 UI 框架：组件、状态、挂载、布局协议、输入、焦点、弹层、滚动。它本身**不带**按钮、标签这类控件，也不规定容器怎样排列子项。 |
+| `scoop.ui` | 声明式 UI 框架，提供组件、状态、挂载、布局协议、输入、焦点、弹层与滚动。组件可登记触摸手势，并为自绘元素提供无障碍语义。 |
 | `scoop.ui.style` | 公共样式与主题协议：颜色、边框、圆角、阴影等 Style，以及主题的 tokens 和部件绘制。 |
 | `scoop.ui.style.macos`、`.material`、`.fluent`、`.shadcn` | 四套主题预设，分别提供 `macosTheme`、`materialTheme`、`fluentTheme`、`shadcnTheme`。 |
 | `scoop.ui.component` | 基础控件库：Label、Button、Input、Checkbox、布局容器、滚动、列表、弹层、菜单、表格等。 |
 | `scoop.ui.component.tray` | 系统托盘组件，单独成库，不需要托盘的应用不必引入。 |
+| `scoop.window` | 原生窗口、触点与触控板手势事件，以及系统读屏器使用的无障碍接口。 |
 
 框架与控件是分开的：`scoop.ui.component` 只使用 `scoop.ui` 的公开接口来实现控件。所以你自己写的控件和库里的控件地位相同，可以用同一套状态、焦点和主题机制，[自绘元素]({{ '/ui-custom.html' | relative_url }})一篇会讲怎么做。
 
@@ -58,7 +60,7 @@ Scoop UI 由几个普通的库 Cone 组成，应用按需依赖：
 
 ### 1.3 运行环境
 
-UI 库随配套工具链一起安装，不需要单独下载。按[快速开始](../docs/install.html)安装后，用 `scoop --version` 确认工具链可用。当前支持的桌面平台：
+UI 库由工具链的 GUI 组件提供。在 Apple Silicon 上可用 `scoop-install component add gui --target aarch64-apple-darwin` 添加，其他桌面目标换成对应的 target。手势与无障碍示例需要包含这批新接口的 GUI 库。安装步骤见[快速开始](../docs/install.html)。
 
 - macOS（Apple Silicon 与 x86-64）；
 - Linux GNU x86-64：Wayland 与 X11 都支持，可以用环境变量 `SCOOP_WINDOW_BACKEND=wayland` 或 `x11` 选择显示协议；
@@ -119,16 +121,19 @@ scoop run ui-counter-layout.scoop --release
 
 1. **builder 写法**：`column { ... }`、`row { ... }` 用接收者 lambda 收集子项。在块中直接调用 `typography`、`label`、`button`，就会依次添加子项；`spacing`、`alignment` 等属性用来配置容器本身。控件的可选配置也写在尾随块里，例如 `button("-1", onClick) { variant = ButtonVariant.Outline }`。
 2. **State 作为字段**：`private val count = state(0)` 直接保存 `State<Int>`，通过 `count.value` 读写。render 开头的 `val count = this.count` 把它取到局部变量。
-3. **窗口底色**：组件构造时用 `currentThemeSource()` 取得 `context(source)` 中的主题来源。render 读取 `theme.current.value` 拿到当前主题，再用其中 `tokens.palette.background.background` 作为根 `frame` 的背景。读取 `current.value` 同时登记了依赖，以后在运行时切换主题，背景会随之更新。窗口本身不会自动铺底色，忘了这一步时，深色文字可能画在黑色背景上。
+3. **窗口底色。** 组件构造时用 `currentThemeSource()` 取得主题来源，在 render 中从 `theme.read(scope)` 取出 `tokens.palette.background.background` 作为根 `frame` 的背景。切换主题或窗口的高对比度等偏好发生变化时，背景会随之更新。
 4. **文字居中**：`column` 的 `alignment = CrossAlignment.Center` 让较窄的子项（例如按钮行）居中。但 Label 和 Typography 在有界宽度下会按可用宽度排版，宽度撑满整列，文字默认靠段落起始边。要让文字本身居中，需要通过 `settings { alignment = TextAlignment.Center }` 设置段落对齐。
 
 第 2 点是必须的。builder 块中有自己的接收者（`column` 和 `row` 的块接收者是 `LinearBuilder`），Scoop **不允许**在这样的块中隐式使用外层接收者（这里是 Counter 组件的成员）。直接写 `label(f"${count.value}")` 会得到：
 
 ```text
-error[SCOOPC_HIR_ERROR]: implicit use of an outer receiver is not allowed; use `this@label` or an explicit object reference
+error[E0716]: implicit use of an outer receiver is not allowed
+help[H0402]: use `this@label` or an explicit object reference
 ```
 
 所以要先用 `val count = this.count`（或 `val model = this.model`）取出局部变量，再在块中使用。第一个版本没有这个问题：`button(text, onClick)` 的回调是普通 lambda，不带接收者，可以直接访问组件成员。
+
+`E0716` 标识接收者规则错误，`help[H0402]` 是附属的修改建议。编号的读法和工具链版本说明见[编译器诊断](../docs/install.html#diagnostics)。
 
 ### 2.4 练一练
 

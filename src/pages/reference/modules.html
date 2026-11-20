@@ -90,7 +90,7 @@ rc = "resources/app.rc"      # 可选：相对 Cone 根的资源脚本（图标�
   <li>manifest Cone 的每个源文件<strong>必须</strong>声明 package，且 package 必须等于 Cone 的 <code>group</code> 或以它为前缀：group <code>dev.example</code> 允许 <code>dev.example</code> 与 <code>dev.example.http</code>，不允许 <code>dev.examples</code> 或 <code>other</code>。group 中带连字符的段用反引号书写，例如 <code>package dev.`my-team`</code>。</li>
   <li>文件路径不决定 package；同一 Cone 的所有文件一起编译，彼此之间没有顺序。</li>
   <li>不同 Cone 可以向同名 package 贡献声明（split package），但这不授予额外的可见性，来自不同 Cone 的同名声明仍是不同的实体。</li>
-  <li>单文件模式不需要 package；写了 package 时编译器给出警告并忽略它。</li>
+  <li>单文件模式不需要 package；写了 package 时编译器给出 <a href="../docs/install.html#diagnostics"><code>W2001</code></a> 警告并忽略它。</li>
 </ul>
 
 <h2 id="imports">import</h2>

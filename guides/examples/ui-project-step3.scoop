@@ -12,6 +12,7 @@ import scoop.ui.component.*
 import scoop.ui.style.Insets
 import scoop.ui.style.ThemeSource
 import scoop.ui.style.currentThemeSource
+import scoop.ui.style.read
 import scoop.ui.style.shadcn.shadcnTheme
 import scoop.ui.text.TextEditorState
 
@@ -157,37 +158,41 @@ class PaymentsApp(private val store: PaymentStore, scope: ComponentScope): Compo
     private val theme = currentThemeSource()
     public override fun render(): View {
         val store = this.store
-        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val pageColor = this.theme.read(scope).tokens.palette.background.background
         val filterInput =
             input(store.filter) {
                 this.placeholder = "Filter emails…"
                 this.onEdited = { _ -> store.applyFilter() }
             }
         val warning = label("The payment will be removed from this list.")
-        val content = column {
-            this.typography("Payments", TypographyRole.H2)
-            this.typography(
-                "Sort by a header, filter by email, select rows and page through results.",
-                TypographyRole.Muted
-            )
-            this.dataTable(store.table) {
-                this.bodyHeight = 280.0
-                this.pageSizes = [5L, 10L, 20L]
-                this.toolbar(filterInput)
-            }
-            this.typography(f"Selected amount: USD ${store.selectedAmount}", TypographyRole.Muted)
-            this.typography(store.status.value, TypographyRole.Muted)
-            this.alertDialog(store.confirming.binding(), warning) {
-                this.title("Delete this payment?")
-                this.description(store.pending.value?.email ?: "")
-                this.cancel("Keep payment")
-                this.action("Delete payment", { store.confirmDelete() }) {
-                    this.variant = ButtonVariant.Destructive
+        val content =
+            column {
+                this.typography("Payments", TypographyRole.H2)
+                this.typography(
+                    "Sort by a header, filter by email, select rows and page through results.",
+                    TypographyRole.Muted
+                )
+                this.dataTable(store.table) {
+                    this.bodyHeight = 280.0
+                    this.pageSizes = [5L, 10L, 20L]
+                    this.toolbar(filterInput)
                 }
+                this.typography(
+                    f"Selected amount: USD ${store.selectedAmount}",
+                    TypographyRole.Muted
+                )
+                this.typography(store.status.value, TypographyRole.Muted)
+                this.alertDialog(store.confirming.binding(), warning) {
+                    this.title("Delete this payment?")
+                    this.description(store.pending.value?.email ?: "")
+                    this.cancel("Keep payment")
+                    this.action("Delete payment", { store.confirmDelete() }) {
+                        this.variant = ButtonVariant.Destructive
+                    }
+                }
+                this.spacing = 16.0
+                this.alignment = CrossAlignment.Stretch
             }
-            this.spacing = 16.0
-            this.alignment = CrossAlignment.Stretch
-        }
         // The root frame paints the theme background and keeps content at the top.
         return frame(content) {
             this.padding = Some(Insets.all(24.0))

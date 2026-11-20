@@ -59,7 +59,7 @@ scoop run ui-project-step1.scoop --release
 - **列是带类型的描述。**`TableColumn` 依次给出列 id、表头文字、单元格怎样显示（`(Payment) -> View`）和列宽。`compare` 提供比较函数后，这一列就可以排序；没有提供的列不能排序。列宽中 `GridTrack.Fraction(1.0)` 占满剩余宽度，`GridTrack.Fixed(120.0)` 固定宽度，`GridTrack.Auto` 配合 `samples` 按样例文字估算宽度。
 - **表格状态属于 Store。**`DataTableState` 保存数据、排序、筛选、分页和选择结果。`main` 创建一个 `PaymentStore`，再交给根组件；组件不自己创建业务数据。
 - **render 开头先取局部变量。**`val store = this.store` 之后，`column { ... }` 里的 lambda 才能使用 `store`。在 builder lambda 中，接收者是 builder 本身，Scoop 不允许隐式使用外层的组件成员，写 `this.store` 或直接写 `store` 都会出错，见[布局与文字]({{ '/ui-layout.html' | relative_url }})。
-- **根 frame 负责铺背景。**组件字段 `currentThemeSource()` 取得 `main` 中绑定的主题来源，render 从 `this.theme.current.value` 读取当前主题的页面背景色，再通过 `frame` 的 `style` 铺满窗口。不铺背景时，窗口在 macOS 上是黑底，浅色主题的深色文字就看不见了。`alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)` 让内容从左上角开始排，而不是默认居中。
+- **根 frame 负责铺背景。** 组件字段 `currentThemeSource()` 取得 `main` 中绑定的主题来源。render 调用 `this.theme.read(scope)` 取得应用了窗口显示偏好的页面背景色，再通过 `frame` 的 `style` 铺满窗口。`alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)` 让内容从左上角开始排列。
 
 ### 23.3 第二步：筛选、分页和选择
 
@@ -389,3 +389,5 @@ scoop run ui-project-step4.scoop --release
 | 表格只显示四行多，下面被截断 | 页面内容超过窗口高度，表格正文被压缩。把页面放进 `scrollArea`，或创建更大的窗口 |
 
 要查看本篇用到的控件的完整用法，可以阅读工具链附带的 `scoop.ui.component` README，以及 shadcn Gallery 示例中的 `app_data.scoop`、`app_data_model.scoop` 和 `table_model.scoop`，它们是本篇示例的完整版本。要继续了解单个控件，回到[数据展示]({{ '/ui-data.html' | relative_url }})和[弹层与导航]({{ '/ui-overlays.html' | relative_url }})；全套目录见[总览]({{ '/ui.html' | relative_url }})。
+
+下一章用卡片翻页演示如何让轻扫、键盘和读屏器操作同一份状态。[触摸、手势与无障碍]({{ '/ui-interaction.html' | relative_url }})

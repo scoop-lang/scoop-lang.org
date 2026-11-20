@@ -41,6 +41,8 @@ order: 43
 | `enabled` / `readOnly` / `invalid` | 禁用、只读、标记为无效 |
 | `rows`（仅 textarea） | 可见行数，类型是 `Long`，例如 `4L` |
 
+触屏用户可以轻点定位光标，连续两次轻点选词，三次轻点选中逻辑行，再拖动选区把手调整范围。`touch` 配置文本手势，`touchScroll` 配置视口滚动。触摸、键盘和读屏器编辑的是同一个 `TextEditorState`，选区和撤销历史随模型更新。
+
 ### 6.3 编辑策略：长度、内容与粘贴
 
 `policy` 决定“哪些编辑可以被接受”。用 `textEditPolicy { ... }` 构造：
@@ -55,7 +57,7 @@ order: 43
 
 ### 6.4 掩码与投影：密码框
 
-`projection` 只改变“显示成什么样”，不改变模型里的文字。`textMask()` 把每个字符显示成 `•`，适合密码框；`textProjection()` 是默认的原样显示。切换两者时，选区和撤销历史都会保留。掩码状态下默认不允许复制。
+密码框设置 `protectedText = true`，并用 `projection = textMask()` 将字符显示成 `•`。“显示密码”只把投影切换为 `textProjection()`，继续保留保护标记。这样用户可以查看自己输入的文字，辅助技术仍将它识别为受保护的字段，复制和剪切默认受限。切换投影会保留正文、选区与撤销历史。
 
 ### 6.5 输入组与验证码
 
@@ -168,6 +170,8 @@ fieldLabel("Email", emailTarget)
 ```
 
 关联之后，点击标签会聚焦输入框，或切换勾选框、开关。`FieldTarget` 和 `FocusHandle` 一样，需要在多次 `render` 之间保持同一个对象，所以放在组件或模型的字段里，不要在 `render` 中新建。
+
+读屏器也通过同一个 `FieldTarget` 取得控件的标签、说明和错误信息。用 `label("Email", target)` 时，`field` 会采用标签的目标。如果表单行只有 `title`，可在 `field` 中显式设置 `target = Some(emailTarget)`。见[触摸、手势与无障碍]({{ '/ui-interaction.html' | relative_url }})。
 
 ### 8.2 field：标签、说明与错误
 

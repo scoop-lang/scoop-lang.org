@@ -12,6 +12,7 @@ import scoop.ui.style.Insets
 import scoop.ui.style.ThemeMode
 import scoop.ui.style.ThemeSource
 import scoop.ui.style.currentThemeSource
+import scoop.ui.style.read
 import scoop.ui.style.macos.macosTheme
 import scoop.ui.text.*
 
@@ -51,7 +52,7 @@ class TextInputs(scope: ComponentScope): Component(scope) {
     private val verified = state("")
 
     public override fun render(): View {
-        val pageColor = this.theme.current.value.tokens.palette.background.background
+        val pageColor = this.theme.read(scope).tokens.palette.background.background
         val name = this.name
         val phone = this.phone
         val password = this.password
@@ -82,6 +83,7 @@ class TextInputs(scope: ComponentScope): Component(scope) {
                 this.row {
                     this.input(password) {
                         this.placeholder = "Password"
+                        this.protectedText = true
                         this.projection =
                             if (revealed.value)
                                 textProjection()

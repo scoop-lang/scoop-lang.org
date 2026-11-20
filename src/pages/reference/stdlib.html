@@ -44,7 +44,7 @@
   <tr><td><code>scoop.url</code></td><td>URI/IRI 解析、相对引用、组件拼装、百分号编码与表单 codec。</td></tr>
   <tr><td><code>scoop.idna</code></td><td>国际化域名（UTS #46）与 Punycode。</td></tr>
 </table></div>
-<p>一个带 JSON 请求与响应的 HTTP 服务只需要几十行：</p>
+<p>在这个 HTTP 服务中，<code>scoop.codec</code> 为查询参数和 JSON 请求体生成 <code>decode</code>，为 JSON 响应生成 <code>encode</code>。每个类型只声明路由用到的方向。</p>
 {{example http_server nooutput}}
 <p>在一个终端启动服务：</p>
 <pre><code class="language-sh">$ scoop run --release http_server.scoop</code></pre>
@@ -58,7 +58,7 @@ $ curl -X POST -H 'content-type: application/json' -d '{"name":"Ada"}' http://12
 <h2 id="data">数据、文本与编码</h2>
 <div class="table-wrap"><table>
   <tr><th>Cone</th><th>内容</th></tr>
-  <tr><td><code>scoop.json</code></td><td>严格 JSON 解析与生成、不可变值树、基于 <code>ValueEncoder</code>/<code>ValueDecoder</code> 的类型化编解码。</td></tr>
+  <tr><td><code>scoop.json</code></td><td>严格 JSON 解析与生成、不可变值树，以及基于 <code>ValueEncoder</code>/<code>ValueDecoder</code> 的类型化编解码。数据类型可以使用 <code>scoop.codec</code> 生成方法，见<a href="annotations.html#codecs">编解码</a>。</td></tr>
   <tr><td><code>scoop.regex</code></td><td>基于 PCRE2（启用 JIT）的 UTF-8 正则：编号/命名捕获、惰性搜索、替换与分割。</td></tr>
   <tr><td><code>scoop.charset</code></td><td>字符集严格/有损转码、NFC 规范化、字素簇分段。</td></tr>
   <tr><td><code>scoop.compression</code></td><td>gzip、zlib、raw DEFLATE、Brotli 与 zstd；内存、增量、同步流与异步流共用一套 API。</td></tr>
@@ -68,14 +68,14 @@ $ curl -X POST -H 'content-type: application/json' -d '{"name":"Ada"}' http://12
 <h2 id="tools">应用开发与终端</h2>
 <div class="table-wrap"><table>
   <tr><th>Cone</th><th>内容</th></tr>
-  <tr><td><code>scoop.cli</code></td><td>声明式命令行解析：用注解描述位置参数、选项与开关，自动生成帮助。</td></tr>
+  <tr><td><code>scoop.cli</code></td><td>用注解描述位置参数、选项与开关。<code>scoop.cli</code> 生成器为 <code>CliArguments&lt;T&gt;</code> 实现 <code>entries</code> 和 <code>bind</code>，供 <code>CliParser</code> 解析参数和显示帮助。</td></tr>
   <tr><td><code>scoop.log</code></td><td>日志 facade：库创建分类 <code>Logger</code>，应用选择 provider；消息惰性求值。</td></tr>
   <tr><td><code>scoop.log.console</code></td><td>同步的 stdout/stderr 日志 provider，支持级别、格式与源码位置。</td></tr>
   <tr><td><code>scoop.terminal</code> / <code>scoop.terminal.asyncio</code></td><td>终端控制（以 crossterm 为基线移植）：ANSI 样式、光标、原始模式、输入协议解析、异步按键与尺寸事件。Windows 上使用当前 console（启用 VT 输入输出），退出时恢复原有模式与代码页。</td></tr>
   <tr><td><code>scoop.readline</code></td><td>交互式行编辑（移植自 rustyline）：历史、Emacs/Vi 模式、多行输入与补全；文件名补全遵循目标平台的路径语法（Windows 接受 <code>/</code> 与 <code>\</code>、盘符和 UNC 路径）。</td></tr>
 </table></div>
 {{example cli nooutput}}
-<pre><code class="language-sh">$ scoop run --release cli.scoop Ada --count 2 --excited
+<pre><code class="language-sh">$ scoop run --release cli.scoop -- Ada --count 2 --excited
 Hello, Ada!
 Hello, Ada!</code></pre>
 
@@ -83,14 +83,14 @@ Hello, Ada!</code></pre>
 <p>GUI 库随 <code>lib-gui</code> 组件包发布，支持 macOS、Linux GNU（Wayland 与 X11）和 Windows 桌面；Linux musl 目标不提供 GUI 后端。界面由 Scoop 通过 Skia 自绘（macOS 用 Metal，Windows 用 D3D12，Linux 用 EGL／GLES），窗口、菜单、文件对话框和托盘使用系统原生实现。入门见 <a href="../guides/ui.html">UI 教程</a>。</p>
 <div class="table-wrap"><table>
   <tr><th>Cone</th><th>内容</th></tr>
-  <tr><td><code>scoop.ui</code></td><td>声明式自绘框架：保留身份的 Component、成员 State、不可变 View、挂载与更新、布局协议、输入、焦点、弹层与滚动。本身不带控件和默认样式。</td></tr>
-  <tr><td><code>scoop.ui.component</code></td><td>基础控件库：Label、Button、Input、Checkbox、布局容器、滚动与虚拟列表、Popover、Dialog、菜单、Toast、Tabs、表格、日历与图表，以及原生菜单、窗框、文件对话框与多窗口控制器。</td></tr>
+  <tr><td><code>scoop.ui</code></td><td>声明式自绘框架，提供组件、状态、布局、焦点、弹层与滚动。输入区域可识别长按、轻扫、双指缩放与旋转。自绘元素通过 <code>SemanticsHandle</code> 发布角色、状态、动作和几何范围。见<a href="../guides/ui-interaction.html">触摸、手势与无障碍</a>。</td></tr>
+  <tr><td><code>scoop.ui.component</code></td><td>Label、Button、Input、Checkbox、布局容器、滚动与虚拟列表、Popover、Dialog、菜单、Toast、Tabs、表格、日历与图表，以及原生菜单、窗框、文件对话框与多窗口控制器。标准控件公开默认无障碍语义，可用 <code>ComponentSemantics</code> 补充名称和说明。</td></tr>
   <tr><td><code>scoop.ui.style</code></td><td>主题与样式协议：颜色、边框、圆角、阴影等 Style，主题 tokens、部件绘制与可复用效果。</td></tr>
   <tr><td><code>scoop.ui.style.macos</code> / <code>.material</code> / <code>.fluent</code> / <code>.shadcn</code></td><td>四套主题预设，提供 <code>macosTheme</code>、<code>materialTheme</code>、<code>fluentTheme</code>、<code>shadcnTheme</code>，支持浅色与深色。</td></tr>
   <tr><td><code>scoop.ui.component.desktop</code> / <code>scoop.ui.component.tray</code></td><td>把 Dock／任务栏状态与系统托盘接入组件 scope；单独成库，不需要的应用不必引入。</td></tr>
   <tr><td><code>scoop.graphics</code></td><td>与窗口无关的 Skia 2D 绘图：路径、渐变、裁剪与变换、图像和图层滤镜，左上原点的逻辑坐标；CPU 离屏绘制不需要启动应用。</td></tr>
   <tr><td><code>scoop.graphics.text</code> / <code>scoop.graphics.svg</code></td><td>字体与段落排版（SkParagraph、HarfBuzz、ICU，支持富文本与行内对象）；静态 SVG 渲染。</td></tr>
-  <tr><td><code>scoop.window</code> / <code>scoop.window.asyncio</code></td><td>原生窗口骨架（AppKit、Win32、Wayland／X11）：窗口、原生事件、重绘请求、显示器、原生菜单、剪贴板与显式生命周期，以及与事件循环的集成。</td></tr>
+  <tr><td><code>scoop.window</code> / <code>scoop.window.asyncio</code></td><td>原生窗口、输入事件、重绘、显示器、菜单、剪贴板、窗口生命周期与事件循环。<code>scoop.window.accessibility</code> 将窗口语义树接入 macOS 的 NSAccessibility、Windows 的 UI Automation 和 Linux GNU 的 AT-SPI。</td></tr>
   <tr><td><code>scoop.surface</code></td><td>窗口呈现、帧调度、动画与区域输入，是 UI 宿主与图形设备之间的一层。</td></tr>
   <tr><td><code>scoop.desktop</code> / <code>scoop.tray</code></td><td>应用与窗口图标、Dock 角标与菜单、任务栏进度与 overlay、Windows Jump List；原生系统托盘（Linux 使用 StatusNotifierItem）。</td></tr>
   <tr><td><code>scoop.icons.lucide</code></td><td>精选的 Lucide SVG 图标，以不可变 <code>SvgAsset</code> 提供。</td></tr>

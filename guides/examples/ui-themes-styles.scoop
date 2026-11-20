@@ -43,7 +43,7 @@ class StyleDemo(scope: ComponentScope): Component(scope) {
         val shadow = this.shadow
         val glow = this.glow
         val blur = this.blur
-        val palette = this.theme.current.value.tokens.palette
+        val palette = this.theme.read(scope).tokens.palette
 
         // Content effects run in array order on the card's actual pixels.
         val effects = ArrayList<ContentEffect>()

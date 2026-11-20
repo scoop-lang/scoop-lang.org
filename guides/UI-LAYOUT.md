@@ -84,10 +84,10 @@ column {
 ```
 
 ```text
-error[SCOOPC_HIR_ERROR]: dependency function argument must be of type View, found Unit
+error[E0501]: dependency function argument must be of type View, found Unit
 ```
 
-有三种常用的解决办法：
+`E0501` 表示类型不匹配。编号的读法和工具链版本说明见[编译器诊断](../docs/install.html#diagnostics)。这里有三种常用的解决办法：
 
 1. 在 builder 块**外面**先创建 View，存到局部变量里，再在块中用 `add(view)` 加入（[下一篇]({{ '/ui-state.html' | relative_url }})的 Stepper 就是这样写的）；
 2. 把一块界面写成返回 `View` 的顶层函数，块中用 `add(helper())` 加入（示例中的 `initials` 就是这样）；

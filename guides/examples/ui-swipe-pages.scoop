@@ -1,0 +1,91 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+//! dep: scoop:scoop.window:0.1.0
+
+import scoop.graphics.*
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.shadcn.shadcnTheme
+import scoop.window.accessibility.SemanticLive
+
+class Pages(scope: ComponentScope): Component(scope) {
+    private val titles = ["计划", "实现", "验证"]
+    private var index: Long by state(0L)
+    private val theme = currentThemeSource()
+
+    private fun turn(step: Long) {
+        index = (index + step + titles.size) % titles.size
+    }
+
+    public override fun render(): View {
+        val move = { step: Long -> turn(step) }
+        val palette = theme.read(scope).tokens.palette
+        val title =
+            label(f"第 ${index + 1L} 页 · ${titles[index]}") {
+                semantics = ComponentSemantics(live = SemanticLive.Polite)
+            }
+        val card =
+            frame(title) {
+                height = Some(120.0)
+                padding = Some(Insets.all(16.0))
+                style { border = Some(Border.all(1.0, palette.border)) }
+            }
+        val swipeArea = element(move, { props, mount -> PageSwipe(props, mount) }, [card])
+        val content =
+            column {
+                spacing = 12.0
+                add(swipeArea)
+                row {
+                    spacing = 8.0
+                    button("上一页", { move(-1L) })
+                    button("下一页", { move(1L) })
+                }
+            }
+        return frame(content) {
+            padding = Some(Insets.all(20.0))
+            style { background(Some(Paint(palette.background.background))) }
+        }
+    }
+}
+
+class PageSwipe(private val move: Props<(Long) -> Unit>, scope: ComponentScope): Element<Unit>(
+    scope
+) {
+    private val area = scope.createArea()
+
+    public override fun onMount() {
+        scope.routeChildren(area)
+        scope.swipeGesture(area) {
+            swipe ->
+            val step =
+                if (swipe.direction == SwipeDirection.Left)
+                    1L
+                else
+                    -1L
+            move.value(step)
+        }
+    }
+
+    public override fun measure(context: MeasureContext, constraints: Constraints): LayoutResult<
+        Unit
+    > {
+        val child = context.measureChild(0L, constraints)
+        context.placeChild(0L, Point(0.0, 0.0))
+        return LayoutResult(child, Unit)
+    }
+
+    public override fun scene(context: SceneContext, layout: Unit) {
+        context.place(area, Rect(0.0, 0.0, context.size.width, context.size.height))
+        context.children()
+    }
+}
+
+fun main() {
+    context(ThemeSource(shadcnTheme())) {
+        runUiApplication("手势翻页", { scope -> Pages(scope) })
+    }
+}
