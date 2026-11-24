@@ -216,8 +216,8 @@ fun main() {
   <tr><td><code>Increment</code> / <code>Decrement&lt;Result&gt;</code></td><td><code>inc()</code> / <code>dec()</code></td><td>整数与浮点</td></tr>
   <tr><td><code>Equals&lt;Rhs&gt;</code></td><td><code>equals(other: Rhs): Boolean</code></td><td>基本类型、<code>String</code>、<code>Unit</code>、<code>Ptr&lt;T&gt;</code></td></tr>
   <tr><td><code>Compare&lt;Rhs&gt;</code></td><td><code>compareTo(other: Rhs): Long</code></td><td>整数、浮点、<code>Char</code>、<code>String</code></td></tr>
-  <tr><td><code>RangeTo</code> / <code>RangeUntil&lt;Rhs, Result&gt;</code></td><td><code>rangeTo</code> / <code>rangeUntil</code></td><td>整数</td></tr>
-  <tr><td><code>Contains&lt;Element&gt;</code></td><td><code>contains(value: Element): Boolean</code></td><td>四种整数区间</td></tr>
+  <tr><td><code>RangeTo</code> / <code>RangeUntil&lt;Rhs, Result&gt;</code></td><td><code>rangeTo</code> / <code>rangeUntil</code></td><td>整数与 <code>Char</code>（同类型端点）</td></tr>
+  <tr><td><code>Contains&lt;Element&gt;</code></td><td><code>contains(value: Element): Boolean</code></td><td>四种整数区间与 <code>CharRange</code></td></tr>
   <tr><td><code>IndexGet&lt;Index, Value&gt;</code> / <code>IndexSet&lt;Index, Value&gt;</code>（及二维的 <code>IndexGet2</code>、<code>IndexSet2</code>）</td><td><code>get</code> / <code>set</code></td><td><code>List</code>、<code>MutableList</code>、<code>MutableArray</code></td></tr>
   <tr><td><code>Invoke0&lt;R&gt;</code> / <code>Invoke&lt;A, R&gt;</code> / <code>Invoke2&lt;A, B, R&gt;</code></td><td><code>invoke</code></td><td>用户类型</td></tr>
   <tr><td><code>AddAssign</code> 等 <code>…Assign&lt;Rhs&gt;</code></td><td><code>plusAssign</code> 等</td><td>用户类型</td></tr>

@@ -18,7 +18,7 @@
 # Linux：只安装 musl 目标，省略 GNU 默认目标
 curl -fsSL https://scoop-lang.org/install.sh | sh -s -- --target x86_64-unknown-linux-musl
 # 安装一个已发布的精确版本
-curl -fsSL https://scoop-lang.org/install.sh | sh -s -- 0.0.0-dev.20261122</code></pre>
+curl -fsSL https://scoop-lang.org/install.sh | sh -s -- 0.0.0-dev.20261124</code></pre>
 <p>脚本下载本机的 <code>scoop-install</code> 并调用 <code>toolchain install</code>。默认安装在 <code>~/.scoop</code>，将 <code>bin</code> 加入 Bash、Zsh、Fish 或 POSIX shell 配置。完成后打开新终端，或运行 <code>export PATH="$HOME/.scoop/bin:$PATH"</code>。用 <code>--home DIR</code> 或 <code>SCOOP_HOME</code> 指定其他目录；<code>SCOOP_NO_MODIFY_PATH=1</code> 可跳过持久化 PATH。</p>
 
 <h3 id="windows-install">Windows 一键安装</h3>
@@ -52,14 +52,14 @@ scoop-install target remove x86_64-apple-darwin</code></pre>
 <p>安装后生成已选目标的离线 API 文档，不重建系统库。<code>--skip-docs</code> 可暂缓生成，之后用 <code>scoop-install docs</code> 补齐；文档生成失败时工具链仍可使用，按提示重试。离线或私有分发可用 <code>toolchain install --manifest PATH_OR_URL</code>；镜像根地址通过 <code>SCOOP_DIST_SERVER</code> 配置。</p>
 
 <h3 id="toolchain-selection">版本与项目选择</h3>
-<pre><code class="language-sh">scoop-install toolchain install 0.0.0-dev.20261122
-scoop-install default 0.0.0-dev.20261122
-scoop +0.0.0-dev.20261122 --version
+<pre><code class="language-sh">scoop-install toolchain install 0.0.0-dev.20261124
+scoop-install default 0.0.0-dev.20261124
+scoop +0.0.0-dev.20261124 --version
 scoop-install update</code></pre>
 <p><code>update</code> 保留当前默认版本已选的 targets、各目标 GUI 和 vendor，完整安装成功后切换默认版本，旧版本继续保留。确认不再需要时用 <code>toolchain remove VERSION</code> 删除；删除当前默认版本前先选择另一个默认版本。构建缓存按工具链发行身份隔离，切换版本不需要手动 clean。</p>
 <p>在项目或其父目录放置 <code>scoop-toolchain.toml</code>：</p>
 <pre><code class="language-toml">[toolchain]
-version = "0.0.0-dev.20261122"
+version = "0.0.0-dev.20261124"
 targets = ["aarch64-apple-darwin"]</code></pre>
 <p>选择优先级为命令行 <code>+VERSION</code>、<code>SCOOP_TOOLCHAIN</code>、最近的项目配置、全局 default。项目缺少所需版本或 target 时给出安装命令，不在编译或编辑时自动下载。VS Code 扩展从工作区目录启动语言服务，多工作区可各自固定版本。</p>
 
@@ -213,11 +213,12 @@ $ scoop pm update</code></pre>
 <p>当前诊断记录使用 <code>schema: 2</code>、<code>kind: "diagnostic"</code>，包含 <code>code</code>、<code>severity</code>、<code>message</code> 和位置。递归的 <code>notes</code> 保存原因、说明与建议，其 <code>kind</code> 分别为 <code>cause</code>、<code>note</code>、<code>help</code>。按这些字段处理，不要从英文文案猜编号；编辑器通过 LSP 也使用相同的编号。</p>
 
 <h2 id="editor">编辑器支持</h2>
-<p>工具包附带 VS Code 扩展，提供 Tree-sitter 语法高亮、折叠、缩进，以及通过 <code>scoop-lsp</code> 提供的诊断、补全、悬停文档、签名帮助、跳转、引用、重命名和快速修复：</p>
+<p>工具包附带 VS Code 扩展，提供 Tree-sitter 语法高亮、折叠、缩进，以及通过 <code>scoop-lsp</code> 提供的诊断、补全、悬停文档、签名帮助、跳转、引用、类型与调用层级、重命名、重构和快速修复：</p>
 <pre><code class="language-sh">$ scoop-install show  # 查看 Root 所指的工具链目录
 $ code --install-extension /path/to/toolchain/tooling/scoop-language-support-*.vsix</code></pre>
 <p>扩展会依次查找 <code>scoop.server.path</code> 设置、<code>~/.scoop/bin/scoop-lsp</code> 与 PATH 中的 <code>scoop-lsp</code>。Tree-sitter 语法包（<code>tree-sitter-scoop</code>）也可以单独用于其他支持 Tree-sitter 的编辑器。</p>
-<p>编辑器消费已有的锁定依赖，不自动更新版本或下载源码。缺少 lock 或依赖时，在项目目录运行 <code>scoop pm resolve</code> 或 <code>scoop pm fetch</code>，再继续分析。</p>
+<p>除了转到定义、实现和引用，<code>Scoop: Go to Super Declaration</code> 打开被覆写的上级声明，<code>Peek Type Hierarchy</code> 与 <code>Peek Call Hierarchy</code> 逐层查看父子类型和调用关系，<code>Scoop: Go to Related Tests</code> 列出符号在测试源码中的用法。重构菜单提供提取局部变量、函数、常量、属性与参数，内联局部变量与函数，提取接口与父类，成员上移与下移，以及 Organize Imports；<code>Scoop: Move Declaration</code> 和 <code>Scoop: Change Signature</code> 可以先预览再应用。各项的适用范围见<a href="https://github.com/scoop-lang/scoop/blob/main/tooling/vscode-scoop/README.md">扩展说明</a>。</p>
+<p>语言服务按 workspace 成员读取当前目标下已锁定的依赖图。默认的 <code>scoop.purpose</code> 为 <code>auto</code>：生产源码用生产图分析，测试源码用测试图分析。项目还没有 <code>Cone.lock</code> 时，服务按已保存的清单解析一次生产图，首次解析可能获取 Git／registry 源码；已有 lock 时只离线读取，不自动更新版本。缺少本地依赖时运行 <code>scoop pm fetch</code>，依赖声明改变后运行 <code>scoop pm resolve</code>，需要分析测试源码而 lock 中还没有测试图时运行 <code>scoop pm resolve --purpose test</code>。</p>
 
 <h3 id="debugging">源码调试</h3>
 <p>工具包附带 <code>scoop-lldb</code> 与 <code>scoop-lldb-dap</code>（带 <code>scoop-</code> 前缀，可与其他 LLVM 安装共存于 PATH）。在 VS Code 中按 F5 选择 Scoop，或运行 <code>Scoop: Debug Current File</code>，可自动构建并启动调试；也支持调试测试和附加现有进程。</p>

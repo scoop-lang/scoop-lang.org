@@ -235,4 +235,4 @@ scoop run ui-forms-profile.scoop --release
 | `import scoop.window.Utf8Range` 报 `import target is not available` | 单文件程序需要为直接导入的 Cone 声明依赖：`//! dep: scoop:scoop.window:0.1.0` |
 | 期望控件自动检查“必填”“邮箱格式” | 控件只呈现结果；规则写在业务代码中，通过 `errors` 和 `invalid` 交给控件 |
 
-下一篇[焦点、键盘与滚动]({{ '/ui-focus-scroll.html' | relative_url }})介绍 Tab 顺序、程序聚焦、快捷键、滚动区域和可以承载上亿条数据的虚拟列表。完整的控件清单见 `scoop.ui.component` 的 README 与 shadcn 示例（安装后位于 `~/.scoop/src/scoop.ui.component/`）。
+下一篇[焦点、键盘与滚动]({{ '/ui-focus-scroll.html' | relative_url }})介绍 Tab 顺序、程序聚焦、快捷键、滚动区域和可以承载上亿条数据的虚拟列表。完整的控件清单见 `scoop.ui.component` 的 README 与 shadcn 示例（安装后位于 `<Root>/src/scoop.ui.component/`（`<Root>` 是 `scoop-install show` 显示的工具链根目录））。

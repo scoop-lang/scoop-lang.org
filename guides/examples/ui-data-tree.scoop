@@ -1,0 +1,175 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.Paint
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.component.column as makeColumn
+import scoop.ui.component.label as makeLabel
+import scoop.ui.style.Insets
+import scoop.ui.style.Theme
+import scoop.ui.style.ThemeMode
+import scoop.ui.style.ThemeSource
+import scoop.ui.style.currentThemeSource
+import scoop.ui.style.shadcn.shadcnTheme
+import scoop.ui.text.TextEditorState
+
+class FileInfo(val kind: String, val sizeKb: Long)
+
+fun file(path: String, name: String, sizeKb: Long): TreeNode<FileInfo> = TreeNode(
+    ViewKey.Text(path),
+    FileInfo("File", sizeKb),
+    name
+)
+
+/** A folder's size is the sum of its children. */
+fun folder(path: String, name: String, children: Array<TreeNode<FileInfo>>): TreeNode<FileInfo> {
+    var total = 0L
+    for (child in children)
+        total += child.value.sizeKb
+    return TreeNode(
+        ViewKey.Text(path),
+        FileInfo("Folder", total),
+        name,
+        TreeChildren.Known(children)
+    )
+}
+
+fun projectFiles(): TreeData<FileInfo> = TreeData(
+    [
+        folder(
+            "app",
+            "app",
+            [
+                folder(
+                    "app/src",
+                    "src",
+                    [
+                        file("app/src/main.scoop", "main.scoop", 4L),
+                        file("app/src/model.scoop", "model.scoop", 12L),
+                        folder(
+                            "app/src/views",
+                            "views",
+                            [
+                                file("app/src/views/list.scoop", "list.scoop", 9L),
+                                file("app/src/views/detail.scoop", "detail.scoop", 7L),
+                                file("app/src/views/settings.scoop", "settings.scoop", 5L)
+                            ]
+                        )
+                    ]
+                ),
+                folder("app/tests", "tests", [file("app/tests/model.scoop", "model.scoop", 6L)]),
+                file("app/Cone.toml", "Cone.toml", 1L)
+            ]
+        ),
+        folder(
+            "assets",
+            "assets",
+            [file("assets/icon.svg", "icon.svg", 3L), file("assets/splash.png", "splash.png", 240L)]
+        ),
+        file("README.md", "README.md", 2L)
+    ]
+)
+
+fun fileColumns(): TreeColumns<FileInfo> = TreeColumns(
+    [
+        TreeColumn<FileInfo>(
+            "name",
+            "Name",
+            { node -> makeLabel(node.label) },
+            TableColumnSize(GridTrack.Fixed(280.0), minimum = 160.0)
+        ),
+        TreeColumn<FileInfo>(
+            "kind",
+            "Kind",
+            { node -> makeLabel(node.value.kind) },
+            TableColumnSize(GridTrack.Fixed(80.0))
+        ),
+        TreeColumn<FileInfo>(
+            "size",
+            "Size",
+            { node -> makeLabel(f"${node.value.sizeKb} KB") },
+            TableColumnSize(GridTrack.Fixed(90.0)),
+            alignment = AxisAlignment.End,
+            compare = Some { a, b -> a.sizeKb.compareTo(b.sizeKb).toInt() }
+        )
+    ],
+    "name"
+)
+
+class FilesModel {
+    val filter = TextEditorState()
+    val handle = TreeHandle()
+    val opened = state("Nothing opened")
+    val files = TreeState(
+        projectFiles(),
+        columns = Some(fileColumns()),
+        selection = TreeSelectionMode.Multiple,
+        checking = TreeChecking.Cascade(),
+        initialExpandedKeys = [ViewKey.Text("app"), ViewKey.Text("app/src")]
+    )
+
+    fun search() {
+        files.setQuery(TreeQuery<FileInfo>(filter.committedText, TreeQueryMode.Filter))
+    }
+
+    fun reveal() {
+        val key = ViewKey.Text("app/src/views/settings.scoop")
+        handle.scrollToItem(key, ScrollAlignment.Start, expandAncestors = true)
+        files.select(key)
+    }
+}
+
+fun filesPage(model: FilesModel, theme: Theme): View {
+    val files = model.files
+    val content = makeColumn {
+        input(model.filter) {
+            placeholder = "Filter files…"
+            onEdited = { _ -> model.search() }
+        }
+        row {
+            button("Expand all", { files.setExpanded(files.data.loadedKeys) }) {
+                variant = ButtonVariant.Outline
+            }
+            button("Collapse all", { files.setExpanded([]) }) { variant = ButtonVariant.Outline }
+            button("Reveal settings.scoop", { model.reveal() }) { variant = ButtonVariant.Outline }
+            spacing = 8.0
+        }
+        add(
+            tree(files) {
+                height = Some(300.0)
+                handle = Some(model.handle)
+                showLines = true
+                sticky { enabled = true }
+                onActivate = { event -> model.opened.value = "Opened " + event.node.label }
+            }
+        )
+        val counts = f"${files.selectedKeys.size} selected · ${files.checkedKeys.size} checked"
+        typography(counts + " · " + model.opened.value, TypographyRole.Muted)
+        spacing = 12.0
+        alignment = CrossAlignment.Stretch
+    }
+    return page(theme, frame(content) { width = Some(480.0) })
+}
+
+/** Paints the theme background and places the content at the top-left. */
+fun page(theme: Theme, content: View): View = frame(content) {
+    padding = Some(Insets.all(24.0))
+    alignment = Alignment(AxisAlignment.Start, AxisAlignment.Start)
+    style { background(Some(Paint(theme.tokens.palette.background.background))) }
+}
+
+class FilesDemo(scope: ComponentScope) : Component(scope) {
+    private val model = FilesModel()
+    private val theme = currentThemeSource()
+    public override fun render(): View = filesPage(model, theme.current.value)
+}
+
+fun main() {
+    val source = ThemeSource(shadcnTheme(ThemeMode.Light))
+    context(source) {
+        runUiApplication("Files", { scope -> FilesDemo(scope) })
+    }
+}

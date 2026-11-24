@@ -88,7 +88,7 @@ scoop run ui-desktop-windows.scoop --release
 
 ## 20. 原生桌面能力
 
-本章介绍控件库 `scoop.ui.component` 中的原生桌面包装：原生菜单、自绘窗框、工具窗口、原生模态窗口、系统文件对话框，以及独立库 `scoop.ui.component.tray` 中的托盘图标。它们都是普通组件或应用级条目，与前面学过的 State、Binding 组合使用。
+本章介绍控件库 `scoop.ui.component` 中的原生桌面包装：原生菜单、自绘窗框与全屏、工具窗口、原生模态窗口、系统文件对话框，以及独立库 `scoop.ui.component.tray` 中的托盘图标。它们都是普通组件或应用级条目，与前面学过的 State、Binding 组合使用。
 
 ### 20.1 先查询能力
 
@@ -155,7 +155,7 @@ scoop run ui-desktop-native.scoop --release
 
 **为什么 `label` 写成了 `labelView`？** 在 `column { ... }` 等块中，`label(...)`、`textarea(...)` 是“追加一个子项”的成员函数，返回 `Unit`；而 `nativeContextMenu`、`windowResizeRegion` 需要一个 `View` 参数。示例在文件开头用 `import scoop.ui.component.textarea as textareaView` 引入顶层函数的别名，就可以在块中得到 View 了。
 
-### 20.4 自绘窗框
+### 20.4 自绘窗框与全屏
 
 **窗框模式。** 窗口的边框和标题栏由 `WindowFrame` 决定：
 
@@ -204,6 +204,27 @@ class Badge(scope: ComponentScope): Component(scope) {
 ```
 
 这段代码另需 `import scoop.graphics.Color` 和 `import scoop.graphics.Paint`。创建窗口时同样要在 `windowAttributes { ... }` 中设置 `frame = WindowFrame.Client` 和 `transparent = true`。这样椭圆之外是透明的，但在不支持 `inputShape` 的平台上，椭圆外的透明部分仍会接收鼠标。
+
+**全屏。** 普通的独立窗口可以用 `window.requestFullscreen(true)` 进入全屏、`requestFullscreen(false)` 退出，全屏使用窗口当前所在的显示器，退出后恢复原来的位置和大小。请求是异步的，返回 `RequestStatus.Requested` 只表示请求已经提交；实际状态从 `window.isFullscreen` 读取，并在窗框变化时重新读取。工具窗口和有父窗口的窗口返回 `RequestStatus.Unsupported`，窗口正被模态窗口阻塞时抛出 `WindowException`：
+
+```scoop
+class Viewer(scope: ComponentScope) : Component(scope) {
+    private val fullscreen = state(false)
+
+    public override fun onMount() {
+        // Read the state the system confirmed each time the window frame changes.
+        scope.observeFrameMetrics { fullscreen.value = scope.nativeWindow.isFullscreen }
+    }
+
+    public override fun render(): View {
+        val window = scope.nativeWindow
+        val text = if (fullscreen.value) "Exit full screen" else "Enter full screen"
+        return button(text, { window.requestFullscreen(!window.isFullscreen) })
+    }
+}
+```
+
+`requestFullscreen` 和 `isFullscreen` 是 `scoop.window` 中的扩展，需要声明 `//! dep: scoop:scoop.window:0.1.0` 并导入 `scoop.window.requestFullscreen`、`scoop.window.isFullscreen`。在 macOS 上，进入或退出全屏的动画完成前再次请求相反的状态会抛出 `WindowException`，按钮可以等 `isFullscreen` 更新后再切换。全屏期间通常还要隐藏自绘标题栏中的拖动与缩放区域，工具链示例 `native-desktop` 演示了这种组合。
 
 ### 20.5 工具窗口、模态窗口与文件对话框
 
@@ -262,7 +283,7 @@ scoop run ui-desktop-tray.scoop --release
 - `onActivated` 收到 `TrayActivation`。示例在主点击（`TrayActivationKind.Primary`）时打开窗口；设置了菜单时，平台可能直接弹出菜单而不报告主点击。
 - 托盘应用要用 `LastWindowPolicy.KeepRunning`，并提供明确的退出入口，这里是菜单中的 Quit。
 
-平台差异：Linux 的托盘需要桌面提供 StatusNotifierItem 宿主（部分桌面需要安装扩展），菜单由宿主显示，因此程序化弹出菜单（`NativeTrayHandle.requestMenu()`）不受支持；注册成功也不代表图标一定可见，可能被收进溢出区。Wayland 下普通窗口不能定位到托盘图标旁边。更完整的组合，包括托盘锚点查询和在图标旁显示面板，见工具链附带的示例 `~/.scoop/src/scoop.ui.component/examples/native-desktop`。
+平台差异：Linux 的托盘需要桌面提供 StatusNotifierItem 宿主（部分桌面需要安装扩展），菜单由宿主显示，因此程序化弹出菜单（`NativeTrayHandle.requestMenu()`）不受支持；注册成功也不代表图标一定可见，可能被收进溢出区。Wayland 下普通窗口不能定位到托盘图标旁边。更完整的组合，包括托盘锚点查询和在图标旁显示面板，见工具链附带的示例 `<Root>/src/scoop.ui.component/examples/native-desktop`（`<Root>` 是 `scoop-install show` 显示的工具链根目录）。
 
 ## 21. 异步与后台任务
 
@@ -358,7 +379,7 @@ case Resumed -> {
 
 HTTP 请求属于“等待”，用协程完成：在应用的协程作用域中用 `HttpClient.open(jobs)`（`scoop.http.client`）打开客户端，在协程中发起请求，进度回调同样运行在 UI 线程上。下载完成后若还要对文件做计算（例如计算 SHA-256），再交给 21.1 节的后台线程。
 
-工具链附带了完整的示例 `~/.scoop/src/scoop.ui.component/examples/download`：它用 `client.download(request, destination, httpDownloadOptions { ... })` 下载文件并显示进度，然后在后台线程中校验摘要；支持取消和重新开始，旧任务的迟到结果不会覆盖新任务，退出时回收尚未结束的线程。它需要网络或本地 HTTP 服务，运行方式见该目录的 README。
+工具链附带了完整的示例 `<Root>/src/scoop.ui.component/examples/download`：它用 `client.download(request, destination, httpDownloadOptions { ... })` 下载文件并显示进度，然后在后台线程中校验摘要；支持取消和重新开始，旧任务的迟到结果不会覆盖新任务，退出时回收尚未结束的线程。它需要网络或本地 HTTP 服务，运行方式见该目录的 README。
 
 ## 常见错误与继续阅读
 

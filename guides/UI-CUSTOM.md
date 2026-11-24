@@ -1,14 +1,14 @@
 ---
 title: UI 教程：自绘元素
 nav_title: UI · 自绘元素
-description: 用 Element 自己测量、放置子项、登记输入并在 Canvas 上绘制，再接入焦点、主题部件、文本和弹层，写出与内置控件同等能力的自定义控件和容器。
+description: 用 Element 自己测量、放置子项、登记输入并在 Canvas 上绘制，再接入焦点、主题部件、文本、SkSL 着色器和弹层，写出与内置控件同等能力的自定义控件和容器。
 permalink: /ui-custom.html
 order: 48
 ---
 
 # UI 教程：自绘元素
 
-本篇是 UI 教程的第 16–18 章。前面各章用的 Button、Checkbox、ScrollArea、Popover 都来自 `scoop.ui.component`，而它们本身也只是普通 Scoop 代码，建立在 `scoop.ui` 公开的同一套接口之上。本篇介绍这套接口：第 16 章从零写一个自绘控件，第 17 章让它获得焦点、主题外观和文字排版，第 18 章编写自己的弹层、滚动容器和按需构建的长列表。
+本篇是 UI 教程的第 16–18 章。前面各章用的 Button、Checkbox、ScrollArea、Popover 都来自 `scoop.ui.component`，而它们本身也只是普通 Scoop 代码，建立在 `scoop.ui` 公开的同一套接口之上。本篇介绍这套接口：第 16 章从零写一个自绘控件，第 17 章让它获得焦点、主题外观、文字排版和着色器效果，第 18 章编写自己的弹层、滚动容器和按需构建的长列表。
 
 上一篇：[主题与样式]({{ '/ui-themes.html' | relative_url }})。下一篇：[桌面集成与异步]({{ '/ui-desktop.html' | relative_url }})。
 
@@ -309,6 +309,37 @@ class Badge(private val props: Props<Int>, scope: ComponentScope): Element<Unit>
 
 缓存只节省绘制；场景、输入区域和子项每帧照常装配。拿不准时就用普通 `draw`，ParagraphHost 等内置部件已经在内部使用了这套机制。
 
+### 17.7 SkSL 着色器与背景效果
+
+纯色和渐变用普通的 Paint 就能画。需要逐像素计算的图案，或者“毛玻璃”这类读取背后内容的效果时，可以用 SkSL（Skia 的着色语言）编写程序，交给 `scoop.graphics` 执行：
+
+- **编译程序。** `ShaderProgram.compile(source)` 编译 SkSL，源码有错误时抛出带编译器诊断的 `GraphicsException`。一个程序可以被多个元素共用，在组件或元素中用 `scope.resource { ... }` 创建，由 scope 负责关闭。
+- **填充形状。** `program.makeShader { setColor(...); setFloat(...) }` 为 uniform 绑定一组值，得到一份不再改变的 `Shader`；`canvas.drawRect(rect, paint, Some(shader))` 用它填充矩形。颜色 uniform 写作 `layout(color) uniform half4`，用 `setColor` 绑定；`float`、`float2` 等用 `setFloat`、`setFloats`，没有绑定的数值 uniform 为 0。
+- **图像滤镜。** `ImageFilter.blur(sigmaX, sigmaY)` 是高斯模糊；`ImageFilter.runtimeShader(program, "background", sampleRadius) { ... }` 用 SkSL 处理输入图像，`background` 是程序中 `uniform shader` 的名字，`sampleRadius` 声明取样最多偏离当前像素多远。
+- **背景效果。** `StylePainter.scene(context, bounds, style, Some(filter)) { ... }` 先用滤镜处理当前图层中已经画出的内容，再在上面画 Style 的底色、边框和子项。底层对应 Canvas 的 `drawBackdrop(outline, filter)`。
+
+下面的程序用 SkSL 画出蓝色的等高线，在中间放一块磨砂玻璃面板。保存为 `ui-custom-shader.scoop`（[下载](examples/ui-custom-shader.scoop)）：
+
+```scoop
+{% include_relative examples/ui-custom-shader.scoop %}
+```
+
+```sh
+scoop run ui-custom-shader.scoop --release
+```
+
+![SkSL 示例：蓝色波浪等高线铺满窗口，中间是一块圆角磨砂玻璃面板，面板后的线条被模糊，面板上有 Frosted glass 标题和 Blur on 按钮](images/ui/ui-custom-shader.jpg){: .screenshot width="480"}
+
+窗口中铺满由着色器逐像素计算的波浪线；中间面板背后的线条被高斯模糊，上面叠加半透明的白色底色和细边框。点 Blur on 关闭模糊，面板变成普通的半透明底，线条清晰地透过来；再点一次恢复。
+
+几点说明：
+
+- **坐标是元素的局部逻辑坐标。** 着色器 `main(float2 p)` 中的 `p` 以元素左上角为原点，单位与布局相同，不随屏幕缩放改变。
+- **背景只采样同一图层中先画的内容。** `Poster` 先画波浪线再画面板，所以面板模糊的是波浪线。面板的 `glass` Style 设置了 `clipContent = true`，子项不会画出圆角之外。
+- **静止时不产生帧。** Shader 和滤镜都是参数的快照，持有它们不会启动帧循环；要改变参数，创建新的快照并关闭旧的。示例在 `scope.resource` 中创建它们，元素卸载时一并关闭。
+
+工具链附带的 `scoop.ui.component/examples/glass` 在可滚动的色样列表上放置固定工具栏，分别对比高斯模糊和用 `runtimeShader` 写的折射效果。把该目录复制到自己的工作目录后运行 `scoop run --release`。
+
 ## 18. 自定义弹层与容器
 
 ### 18.1 portal 与锚点
@@ -409,6 +440,9 @@ scoop run ui-custom-list.scoop --release
 | 动画结束后窗口仍在持续重绘 | 在 draw 中调用了 `animateTo` 或 `requestFrame()`；只在 `update()` 或输入回调中启动动画 |
 | 子项没有显示 | measure 中测量了子项但忘记 `placeChild`，或 scene 中没有调用 `children()` |
 | `drawLayer` 显示旧内容 | `revision` 没有覆盖所有影响像素的输入 |
+| `ShaderProgram.compile` 抛出 `GraphicsException` | SkSL 源码有误，异常消息就是编译器诊断 |
+| 绑定 uniform 时报 `invalid shader binding` | 名称或类型与程序中的 uniform 不一致，例如对 `layout(color) uniform half4` 用了 `setFloat` |
+| 背景滤镜没有效果 | 要模糊的内容必须在同一图层中先于面板绘制；画在面板之后或其他图层中的内容不会被采样 |
 | 在 builder 块中写 `anchored(anchor)`、`label(...)` 等时报 “implicit use of an outer receiver” 或类型为 `Unit` | 先把组件字段取到局部变量（`val anchor = this.anchor`）；需要 View 值时在块外构造 |
 | 点弹层的内边距也会关闭弹层 | 弹层面板没有覆盖整个面板的输入区域；像 `PanelArea` 那样创建区域并 `routeChildren` |
 | 列表滚走后正在编辑或聚焦的行丢失状态 | 没有测量和放置 `context.pinnedItems` 中的条目 |

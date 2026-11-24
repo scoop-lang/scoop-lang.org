@@ -1,0 +1,109 @@
+//! dep: scoop:scoop.graphics:0.1.0
+//! dep: scoop:scoop.ui:0.1.0
+//! dep: scoop:scoop.ui.component:0.1.0
+//! dep: scoop:scoop.ui.style:0.1.0
+//! dep: scoop:scoop.ui.style.shadcn:0.1.0
+import scoop.graphics.*
+import scoop.ui.*
+import scoop.ui.component.*
+import scoop.ui.style.*
+import scoop.ui.style.shadcn.shadcnTheme
+
+/** SkSL: contour lines whose color comes from a uniform. */
+val wavesSource = """
+layout(color) uniform half4 ink;
+uniform float phase;
+half4 main(float2 p) {
+    float level = (p.y + 26.0 * sin(p.x * 0.018 + phase)) / 16.0;
+    float line = 1.0 - smoothstep(0.03, 0.12, abs(fract(level) - 0.5));
+    float band = 0.5 + 0.5 * sin(level * 0.6 + phase);
+    return half4(mix(half3(0.97), ink.rgb, 0.18 + 0.32 * band + 0.5 * line), 1.0);
+}
+"""
+
+class GlassModel {
+    val frosted = state(true)
+}
+
+/** Fills itself with the shader and draws a glass panel around its only child. */
+class Poster(private val frosted: Props<Boolean>, program: ShaderProgram, scope: ComponentScope) :
+    Element<Rect>(scope) {
+    private val waves = scope
+        .resource {
+            program
+                .makeShader {
+                    setColor("ink", Color(0.15, 0.35, 0.85))
+                    setFloat("phase", 0.8f)
+                }
+        }
+    private val blur = scope.resource { ImageFilter.blur(9.0, 9.0) }
+    private val painter = scope.resource { StylePainter() }
+    private val glass = style {
+        corners = Corners.all(20.0)
+        background = Some(Paint(Color(1.0, 1.0, 1.0, 0.3)))
+        border = Some(Border.all(1.0, Color.White.withAlpha(0.85)))
+        clipContent = true
+    }
+
+    public override fun measure(context: MeasureContext, constraints: Constraints): LayoutResult<
+        Rect
+    > {
+        val size = constraints
+            .constrain(Size(constraints.maxWidth ?: 640.0, constraints.maxHeight ?: 420.0))
+        val panel = Rect((size.width - 320.0) * 0.5, (size.height - 132.0) * 0.5, 320.0, 132.0)
+        // Measure the child at its natural size, then center it inside the panel.
+        val child = context.measureChild(0L, Constraints())
+        context
+            .placeChild(
+                0L,
+                Point(
+                    panel.x + (panel.width - child.size.width) * 0.5,
+                    panel.y + (panel.height - child.size.height) * 0.5
+                )
+            )
+        return LayoutResult(LayoutMetrics(size), panel)
+    }
+
+    public override fun scene(context: SceneContext, layout: Rect) {
+        val size = context.size
+        context
+            .draw { paint ->
+                paint
+                    .canvas
+                    .drawRect(
+                        Rect(0.0, 0.0, size.width, size.height),
+                        Paint(Color.White),
+                        Some(waves)
+                    )
+            }
+        // The backdrop filter samples what this layer has drawn so far: the waves.
+        val backdrop = if (frosted.value) Some(blur) else None
+        painter.scene(context, layout, glass, backdrop) { local -> local.children() }
+    }
+}
+
+class GlassDemo(private val model: GlassModel, scope: ComponentScope) : Component(scope) {
+    private val program = scope.resource { ShaderProgram.compile(wavesSource) }
+
+    public override fun render(): View {
+        val model = this.model
+        val program = this.program
+        val active = model.frosted.value
+        val content = column {
+            typography("Frosted glass", TypographyRole.H4)
+            button(if (active) "Blur on" else "Blur off", { model.frosted.value = !active }) {
+                variant = ButtonVariant.Secondary
+            }
+            spacing = 12.0
+            alignment = CrossAlignment.Center
+        }
+        return element(active, { props, mount -> Poster(props, program, mount) }, [content])
+    }
+}
+
+fun main() {
+    val model = GlassModel()
+    context(ThemeSource(shadcnTheme(ThemeMode.Light))) {
+        runUiApplication("Shader", { scope -> GlassDemo(model, scope) })
+    }
+}
