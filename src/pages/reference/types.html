@@ -123,7 +123,7 @@ fun main() {
 <p><code>Char</code> 表示一个 Unicode 标量值（U+0000–U+D7FF 或 U+E000–U+10FFFF），不是 UTF-16 码元，也不是用户感知的字素簇。它以 32 位存储，与整数之间没有隐式转换，也没有算术运算。</p>
 <ul>
   <li><code>c.code: Int</code> 返回标量编号；<code>n.toChar()</code> 把 <code>Int</code> 转为 <code>Char</code>，编号不合法时抛出 <code>IllegalArgumentException</code>；</li>
-  <li>比较与相等按标量编号进行，<code>toString()</code> 返回只含该字符的字符串；</li>
+  <li>比较与相等按标量编号进行，<code>toString()</code> 返回只含该字符的字符串；<code>'a'..'z'</code> 等写法构造按标量顺序排列的 <code>CharRange</code>，见<a href="expressions.html#char-ranges">字符区间</a>；</li>
   <li><code>Char</code> 实现 <code>Hash</code>，可以作为哈希表的键，也可以用于 <code>const val</code> 和模式。</li>
 </ul>
 

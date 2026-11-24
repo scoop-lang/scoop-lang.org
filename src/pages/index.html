@@ -13,7 +13,7 @@
       <a class="btn btn-primary" href="docs/install.html">快速开始 →</a>
       <a class="btn btn-ghost" href="docs/tour.html">语言导览</a>
     </div>
-    <div class="meta">支持 macOS (AArch64)、Linux (x86-64，glibc / musl) 与 Windows (x64，MSVC / LLVM-MinGW) · LLVM 22.1</div>
+    <div class="meta">支持 macOS (AArch64 / x86-64)、Linux (x86-64，glibc / musl) 与 Windows (x64，MSVC / LLVM-MinGW) · LLVM 22.1</div>
   </div>
   <div>
     {{example hero}}
@@ -100,7 +100,7 @@ assertions
     <div>
       <ul class="checks">
         <li><strong>组件即 class</strong>：<code>render()</code> 返回不可变的 View，成员 <code>State</code> 被写入时只重绘依赖它的组件，模型与 SwiftUI、Jetpack Compose 相近。</li>
-        <li><strong>开箱的控件库</strong>：按钮、输入框、选择器、表单校验、滚动与虚拟列表、Popover、Dialog、菜单、Toast、Tabs、表格、日历与图表。</li>
+        <li><strong>开箱的控件库</strong>：按钮、输入框、选择器、表单校验、滚动与虚拟列表、Popover、Dialog、菜单、Toast、Tabs、表格、多列树、日历与图表。</li>
         <li>控件支持<strong>触摸、手势与无障碍</strong>。除了轻点、长按和拖动，自绘内容还可以响应捏合与旋转。键盘和系统读屏器也能操作同一组控件。见<a href="guides/ui-interaction.html">手势翻页示例</a>。</li>
         <li><strong>四套主题预设</strong>：macOS、Material、Fluent 与 shadcn，支持浅色、深色与跟随系统，可定制 tokens 与局部样式。</li>
         <li><strong>完整的桌面集成</strong>：多窗口、原生菜单与窗框、文件对话框、Dock／任务栏、系统托盘，后台任务与 UI 线程协同。</li>
@@ -135,11 +135,11 @@ assertions
     <div class="card"><span class="tag">scoop test</span><h3>内建测试</h3><p><code>@Test</code> 标注、断言库与生命周期钩子。</p></div>
     <div class="card"><span class="tag">scoop doc</span><h3>API 文档</h3><p>从文档注释生成离线、可搜索的文档站点。</p></div>
     <div class="card"><span class="tag">scoop build</span><h3>构建产物</h3><p>生成可执行文件或 <code>.slib</code> 库，可用 <code>--emit</code> 导出 AST/HIR/MIR/LIR。</p></div>
-    <div class="card"><span class="tag">scoop fmt / check</span><h3>格式化与检查</h3><p>统一源码格式，完成前端检查；支持检查测试源码。</p></div>
+    <div class="card"><span class="tag">scoop fmt / check</span><h3>格式化与检查</h3><p>参照 Kotlin 编码约定统一源码格式，完成前端检查；支持检查测试源码。</p></div>
     <div class="card"><span class="tag">scoop example</span><h3>离线示例</h3><p>按主题或关键词查找完整程序、运行步骤与预期结果。</p></div>
     <div class="card"><span class="tag">LLDB / VS Code</span><h3>原生调试</h3><p>断点、变量、源码行与异常物理栈；可调试应用和 Cone 测试。</p></div>
     <div class="card"><span class="tag">scoop bundle</span><h3>应用打包</h3><p>生成 macOS app、deb／rpm／AppImage 与 NSIS／MSI 安装包，统一部署资源和原生库。</p></div>
-    <div class="card"><span class="tag">scoop-lsp / VS Code</span><h3>语言服务</h3><p>诊断、补全、跳转、重命名与快速修复；VS Code 扩展提供 Tree-sitter 高亮。</p></div>
+    <div class="card"><span class="tag">scoop-lsp / VS Code</span><h3>语言服务</h3><p>诊断、补全、跳转、类型与调用层级、重命名、提取与内联等重构；VS Code 扩展提供 Tree-sitter 高亮。</p></div>
     <div class="card"><span class="tag">.slib</span><h3>增量与缓存</h3><p>预编译库产物，输入未变化时直接复用。</p></div>
   </div>
 </section>
@@ -157,8 +157,8 @@ assertions
     <a class="card" href="reference/stdlib.html#tools"><span class="tag">scoop.cli / log</span><h3>应用开发</h3><p>声明式命令行解析、日志 facade。</p></a>
     <a class="card" href="reference/stdlib.html#tools"><span class="tag">scoop.terminal</span><h3>终端</h3><p>ANSI 样式、按键事件、readline。</p></a>
     <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.ui.*</span><h3>声明式 UI</h3><p>组件与状态框架、基础控件库，macOS／Material／Fluent／shadcn 主题。</p></a>
-    <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.graphics</span><h3>2D 图形</h3><p>基于 Skia 的绘图、SVG 与段落排版，可离屏渲染。</p></a>
-    <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.window</span><h3>窗口与呈现</h3><p>原生窗口、事件与菜单，帧调度、动画与区域输入。</p></a>
+    <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.graphics</span><h3>2D 图形</h3><p>基于 Skia 的绘图、SkSL 着色器、SVG 与段落排版，可离屏渲染。</p></a>
+    <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.window</span><h3>窗口与呈现</h3><p>原生窗口、全屏、事件与菜单，帧调度、动画与区域输入。</p></a>
     <a class="card" href="reference/stdlib.html#gui"><span class="tag">scoop.desktop / tray</span><h3>桌面集成</h3><p>Dock 与任务栏状态、Jump List、系统托盘、Lucide 图标。</p></a>
   </div>
 </section>

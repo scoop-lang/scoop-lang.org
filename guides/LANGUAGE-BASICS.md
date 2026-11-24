@@ -285,6 +285,7 @@ for (index in 0L until names.size) {
 | `3 downTo 1` | `3, 2, 1`，降序且包含右端点 |
 | `(1..5) step 2` | `1, 3, 5` |
 | `3..1` | 空区间，不自动改成降序 |
+| `'a'..'e'` | `'a', 'b', 'c', 'd', 'e'`，按 Unicode 标量顺序 |
 
 例如：
 
@@ -296,7 +297,7 @@ for (value in (1..5) step 2) {
 println(total)
 ```
 
-输出 `9`。`step` 必须大于零，它改变步长而不改变方向；降序用 `downTo`。`Long` 区间应配合 `Long` 操作数和步长，例如 `(1L..5L) step 2L`。遍历数组下标时用 `0L until names.size`，不要把等于长度的下标包含进来。
+输出 `9`。`step` 必须大于零，它改变步长而不改变方向；降序用 `downTo`。`Long` 区间应配合 `Long` 操作数和步长，例如 `(1L..5L) step 2L`。遍历数组下标时用 `0L until names.size`，不要把等于长度的下标包含进来。字符区间的 `step` 参数是 `Int`，例如 `('a'..'z') step 2`；规则见参考文档的[字符区间](../reference/expressions.html#char-ranges)。
 
 ### while、do/while 与循环控制
 

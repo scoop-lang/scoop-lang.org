@@ -171,4 +171,4 @@ SCOOP_WINDOW_BACKEND=x11 scoop test ui-testing-cone --release
 | 等待帧的测试偶尔超时 | 窗口被遮挡、未聚焦或会话锁屏；在可见的桌面上运行，或标注 `@Ignore` 单独运行 |
 | 测试之间互相影响 | 不要在顶层对象中保存可变状态；每个测试方法都会得到新的类实例，状态放在字段中 |
 
-下一篇[综合项目]({{ '/ui-project.html' | relative_url }})把前面各篇的内容组合成一个完整的应用。`scoop.test` 的更多示例见工具链附带的 `~/.scoop/src/scoop.test/examples`。
+下一篇[综合项目]({{ '/ui-project.html' | relative_url }})把前面各篇的内容组合成一个完整的应用。`scoop.test` 的更多示例见工具链附带的 `<Root>/src/scoop.test/examples`（`<Root>` 是 `scoop-install show` 显示的工具链根目录）。

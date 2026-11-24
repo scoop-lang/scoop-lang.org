@@ -63,7 +63,7 @@ when = { os = "linux" }
 path = "src/os/darwin"
 when = { os = "darwin" }</code></pre>
 <ul>
-  <li><code>when</code> 支持 <code>os</code>（<code>darwin</code>、<code>linux</code>、<code>windows</code>）、<code>arch</code>（<code>aarch64</code>、<code>x86_64</code>）与 <code>env</code>（<code>none</code>、<code>gnu</code>、<code>musl</code>、<code>msvc-ucrt</code>、<code>llvm-mingw-ucrt</code>、<code>llvm-mingw-msvcrt</code>）；多个键取“与”，同一键的数组取“或”。条件按构建目标而不是宿主求值。各目标对应的取值见<a href="#targets">构建目标</a>。</li>
+  <li><code>when</code> 支持 <code>os</code>（<code>darwin</code>、<code>ios</code>、<code>linux</code>、<code>windows</code>）、<code>arch</code>（<code>aarch64</code>、<code>x86_64</code>）与 <code>env</code>（<code>none</code>、<code>gnu</code>、<code>musl</code>、<code>simulator</code>、<code>msvc-ucrt</code>、<code>llvm-mingw-ucrt</code>、<code>llvm-mingw-msvcrt</code>）；多个键取“与”，同一键的数组取“或”。<code>darwin</code> 只选择 macOS，<code>ios</code> 选择 iOS 设备与模拟器，再用 <code>env = "simulator"</code> 区分模拟器。条件按构建目标而不是宿主求值。各目标对应的取值见<a href="#targets">构建目标</a>。</li>
   <li>选中的路径不能重叠或重复；最终源码为空是构建错误。文件按完整相对路径排序，编译结果不依赖文件枚举顺序。</li>
   <li>Scoop 没有文件内的条件编译或 <code>expect</code>/<code>actual</code>：平台差异通过按目标选择源码目录来表达。</li>
   <li>C/C++ 源码与系统库在 <code>[native]</code> 中配置，见<a href="ffi.html#native-sources">原生互操作</a>。</li>
@@ -202,6 +202,7 @@ fun main() {
 <div class="table-wrap"><table>
   <tr><th>目标</th><th><code>os</code> / <code>arch</code> / <code>env</code></th><th>说明</th></tr>
   <tr><td><code>aarch64-apple-darwin</code></td><td><code>darwin</code> / <code>aarch64</code> / <code>none</code></td><td>macOS，Apple Clang 与系统 SDK</td></tr>
+  <tr><td><code>x86_64-apple-darwin</code></td><td><code>darwin</code> / <code>x86_64</code> / <code>none</code></td><td>Intel macOS，可在 Apple Silicon 宿主上交叉编译</td></tr>
   <tr><td><code>x86_64-unknown-linux-gnu</code></td><td><code>linux</code> / <code>x86_64</code> / <code>gnu</code></td><td>Linux glibc，默认动态链接</td></tr>
   <tr><td><code>x86_64-unknown-linux-musl</code></td><td><code>linux</code> / <code>x86_64</code> / <code>musl</code></td><td>Linux musl，默认静态链接</td></tr>
   <tr><td><code>x86_64-pc-windows-msvc-ucrt</code></td><td><code>windows</code> / <code>x86_64</code> / <code>msvc-ucrt</code></td><td>Windows 默认目标：Microsoft SDK/MSVC 工具集（cl 或 clang-cl）、UCRT、MSVC STL</td></tr>
@@ -209,6 +210,7 @@ fun main() {
   <tr><td><code>x86_64-w64-windows-llvm-mingw-msvcrt</code></td><td><code>windows</code> / <code>x86_64</code> / <code>llvm-mingw-msvcrt</code></td><td>LLVM-MinGW、旧版 <code>msvcrt.dll</code>、libc++</td></tr>
 </table></div>
 <ul>
+  <li>编译器还实现了 iOS 目标 <code>aarch64-apple-ios</code>（<code>ios</code> / <code>aarch64</code> / <code>none</code>）与 <code>aarch64-apple-ios-sim</code>（<code>ios</code> / <code>aarch64</code> / <code>simulator</code>），用于把 <code>native-app</code> 打包为供 Swift／Objective-C 宿主调用的 XCFramework。发行包尚未提供这两个目标的预编译库，需要在 Scoop 源码仓库中准备 sysroot，步骤见<a href="https://github.com/scoop-lang/scoop/blob/main/tests/ios-native-app/README.md">iOS native-app 宿主示例</a>。</li>
   <li>Windows 目标必须写完整名称，没有 <code>windows-ucrt</code> 这类简称，也不会根据本机恰好安装的编译器改选目标。三个 Windows 目标生成 Win64 ABI 的 PE32+ 程序，要求 Windows 10 x64 及以上；它们之间的产物不能混用，即使 CRT 相同。</li>
   <li>Windows 目标的可执行文件默认名追加 <code>.exe</code>（包括测试程序），显式 <code>-o</code> 的路径保持原样。</li>
   <li>Windows 目标动态依赖所选 CRT，<code>--link-mode static</code> 不适用。使用 C++ 的 MSVC 程序部署时需要附带实际依赖的 VCRuntime/MSVC STL DLL。</li>

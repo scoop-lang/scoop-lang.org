@@ -1,14 +1,14 @@
 ---
 title: UI 教程：数据展示
 nav_title: UI · 数据展示
-description: 用卡片、提示、加载占位、表格、日历、日期选择器、图表和会话组件展示应用数据。
+description: 用卡片、提示、加载占位、表格、树、日历、日期选择器、图表和会话组件展示应用数据。
 permalink: /ui-data.html
 order: 46
 ---
 
 # UI 教程：数据展示
 
-本篇是 UI 教程的第 13 章，介绍把数据呈现给用户的控件：从卡片、提示和加载状态这些“内容块”，到可排序、筛选、分页的表格，再到日历、日期选择器、图表和聊天式的会话组件。
+本篇是 UI 教程的第 13 章，介绍把数据呈现给用户的控件：从卡片、提示和加载状态这些“内容块”，到可排序、筛选、分页的表格和可展开的多列树，再到日历、日期选择器、图表和聊天式的会话组件。
 
 上一篇：[弹层与导航]({{ '/ui-overlays.html' | relative_url }})。下一篇：[主题与样式]({{ '/ui-themes.html' | relative_url }})。
 
@@ -113,7 +113,46 @@ fun replaceRows(payments: DataTableState<Payment>, items: Array<Payment>) {
 
 页码从 0 开始，默认每页 10 行；`pageSizes` 只决定下拉框里的可选项。`TableData.Local` 由表格在本地完成筛选、排序和分页；数据在服务器上时改用 `TableData.Provided(currentPage, totalRows)`，并在 `DataTableState` 的 `onQueryChange` 回调中按新的查询取回对应一页，再用 `replaceData` 交给表格。
 
-### 13.3 日历与日期选择器
+### 13.3 树
+
+文件目录、组织结构这类层级数据用 `tree(state)` 展示。数据和交互状态保存在应用持有的 `TreeState<T>` 中：
+
+1. **节点** `TreeNode(key, value, label, children)`：`key` 是显式、稳定且唯一的 `ViewKey`，树靠它在展开、筛选和替换数据后保持选择与勾选；`value` 是业务数据；`label` 是节点名称，同时用于键盘查找、筛选和无障碍名称。`children` 为 `TreeChildren.Leaf`（叶子）、`TreeChildren.Known(nodes)`（已知子项）或 `TreeChildren.Deferred`（展开时再加载）。
+2. **数据** `TreeData(roots)`：一组根节点组成的不可变快照，之后用 `state.replaceData(next)` 整体替换。
+3. **列** `TreeColumns(columns, treeColumn)`：可选。每个 `TreeColumn(id, header, cell, size, ...)` 的 `cell` 接收 `TreeNode<T>`，`treeColumn` 指定哪一列带缩进、展开箭头和勾选框；不提供列时只有一列名称。
+
+`TreeState` 的其余参数决定交互方式：`selection` 为 `TreeSelectionMode.None`、`Single` 或 `Multiple`；`checking = TreeChecking.Cascade()` 显示勾选框，勾选父项会勾选全部后代，部分后代被勾选时父项显示为半选，`TreeChecking.Independent(...)` 让每个节点各自勾选；`initialExpandedKeys` 或 `initialExpandAll` 设定初始展开。
+
+保存为 `ui-data-tree.scoop`（[下载](examples/ui-data-tree.scoop)）：
+
+```scoop
+{% include_relative examples/ui-data-tree.scoop %}
+```
+
+```sh
+scoop run ui-data-tree.scoop --release
+```
+
+![树示例：上方是筛选框和三个按钮，下面是 Name、Kind、Size 三列的文件树，src 及其后代被勾选，app 显示为半选，app、src、views 三行固定在顶部，settings.scoop 被选中](images/ui/ui-data-tree.png){: .screenshot width="528"}
+
+窗口中是一个三列的文件树，`app` 和 `app/src` 初始展开，文件夹的大小是子项之和。可以这样试：
+
+- 勾选 `src`，它的全部后代随之勾选，`app` 变为半选，底部的 checked 数变为 7；
+- 点一行会触发 `onActivate`，底部显示 `Opened ...`。多选模式下，`tree` 单击即可把一行加入或移出选择，按住 Shift 选择一段；`directoryTree` 则像文件管理器那样单击只选一行，按住 Cmd（Windows、Linux 上为 Ctrl）再增减；
+- 点 Reveal settings.scoop：`TreeHandle.scrollToItem(..., expandAncestors = true)` 展开 `views` 并把该文件滚动到顶部。开启 `sticky` 后，它的祖先 `app`、`src`、`views` 固定在列表上方，向下滚动时仍能看出所在位置；
+- 在筛选框输入 `scoop`：每次文字修改后 `onEdited` 调用 `setQuery`，`TreeQueryMode.Filter` 只保留名称匹配的节点及其祖先，并临时展开路径，`Cone.toml`、`assets` 和 `README.md` 暂时隐藏；清空后恢复原来的展开状态。改用 `TreeQueryMode.Highlight` 时只标出匹配，不隐藏其他行；
+- 用方向键在行间移动，左右键折叠或展开，Space 勾选，Enter 激活。
+
+几点说明：
+
+- **树默认只挂载可见的行。** 与虚拟列表一样，默认虚拟模式需要显式的 `height` 或父布局给出的有限高度；节点很少、希望按内容自然撑开时，设置 `virtualize = false`。
+- **展开、选择和勾选都可以读写。** `state.expandedKeys`、`selectedKeys`、`checkedKeys` 和 `halfCheckedKeys` 是可观察的状态，示例底部的计数直接读取它们；代码中用 `setExpanded`、`select`、`setChecked` 修改。需要由外部状态控制时，可以给 `TreeState` 传入 `expanded`、`selected` 等 `Binding`。
+- **列和表格的用法相近。** `compare` 让列可以排序，排序只在同级节点之间进行；`state.setColumnVisible(id, visible)`、`resizeColumn` 隐藏列和调整列宽，带缩进的树列不能隐藏。
+- **`directoryTree(state)` 是文件浏览器的预设。** 它默认显示图标、整行可点、单击展开并开启祖先吸顶。
+
+`TreeChildren.Deferred` 节点在第一次展开时才通过 `TreeLoader` 加载子项，失败后可以重试；`drag = Some(TreeDrag(onDrop = ...))` 开启节点拖放。工具链源码中 `scoop.ui.component/examples/shadcn` 的 Tree 页面演示了这两项，以及 180 个文件的三层祖先吸顶和单列／多列切换。
+
+### 13.4 日历与日期选择器
 
 日期使用标准库 `scoop.datetime` 中的 `LocalDate`，例如 `LocalDate(2026, 11, 6)`；`plusDays`、`daysUntil` 等方法用于日期运算。日期范围是控件库提供的 `DateRange(start, end)`，`nights` 给出两端之间的天数。
 
@@ -123,7 +162,7 @@ fun replaceRows(payments: DataTableState<Payment>, items: Array<Payment>) {
 - `calendarMultiple(binding, initialPage)`：多选，绑定 `Array<LocalDate>`；
 - `calendarRange(binding, initialPage)`：范围，绑定 `DateRange?`，点击两次分别确定起止日期。
 
-配置块中，`today` 标出“今天”（标准库不读取系统日期，需要由应用提供），`rules = CalendarRules(minDate = ..., maxDate = ...)` 限制可选范围，`monthCount = 2L` 并排显示两个月，`caption = CalendarCaption.Dropdowns` 用月份／年份下拉框代替标题，`locale` 设置月份与星期的名称和一周起始日。
+配置块中，`today` 标出“今天”（标准库不读取系统日期，需要由应用提供），`rules = CalendarRules(minDate = ..., maxDate = ...)` 限制可选范围，`monthCount = 2L` 并排显示两个月，`caption = CalendarCaption.Dropdowns` 用月份／年份下拉框代替标题，`locale` 设置月份与星期的名称和一周起始日；翻月按钮的无障碍名称也在其中配置，例如 `CalendarLocale(previousMonth = "上个月", nextMonth = "下个月")`。
 
 `datePicker(binding, initialPage)` 和 `dateRangePicker(binding, initialPage)` 把日历放进弹层：点击按钮打开，选好日期后自动关闭。日历相关的配置写在 `calendar { ... }` 子块里；`presets` 提供“未来 7 天”这类快捷选项。
 
@@ -143,7 +182,7 @@ scoop run ui-data-dates.scoop --release
 
 日历支持完整的键盘操作：方向键在日期间移动，PageUp／PageDown 翻月。需要让用户直接输入日期时，给 `datePicker` 设置 `draft = Some(DatePickerDraft())`：输入框按严格的 `YYYY-MM-DD`（范围为 `start .. end`）解析，按 Enter 提交，解析失败时保留原文供用户修改；`parser` 可以换成自己的解析函数。
 
-### 13.4 图表与会话组件
+### 13.5 图表与会话组件
 
 **图表。** `chart(model) { kind = ... }` 绘制折线、面积、柱状、饼图、雷达和径向图（`ChartKind.Line`、`Area`、`Bar`、`Pie`、`Radar`、`Radial`）。数据是 `ChartData(datums, series)`：`datums` 是横轴上的类别（例如月份），每个 `ChartSeries` 是一组数值，`None` 表示缺失。数据交给 `ChartModel(data)` 持有，之后用 `model.replaceData(newData)` 更新；图例点击可以隐藏某个系列，悬停或用方向键移动时显示数值提示。常用配置有 `curve`（`Linear`、`Step`、`Monotone`）、`stack`（堆叠）、`height`、`xAxis` / `yAxis`、`legend`、`tooltip`。
 
@@ -182,6 +221,7 @@ scoop run ui-data-chart.scoop --release
 | 筛选没有效果 | 列没有提供 `filter`，或 `setFilter` 的列 id 与 `TableColumn` 的 id 不一致 |
 | `String` 没有 `contains` 方法 | 导入 `scoop.text.contains` |
 | f-string 中直接插入 `ChartKind` 等枚举报 “does not implement core ToString” | 写一个 `when` 把枚举转成文字 |
+| 树报 `virtual tree requires a finite height` | 默认虚拟模式需要显式 `height` 或有限的父布局高度；小树可设 `virtualize = false` |
 | 日历上没有标出今天 | 需要通过 `today = Some(date)` 显式提供 |
 | 骨架切换时正文状态丢失 | 用 `skeleton(content) { loading = ... }` 包住正文，而不是用 `if` 在占位和正文之间切换 |
 

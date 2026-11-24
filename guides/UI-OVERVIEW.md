@@ -22,10 +22,10 @@ order: 40
 | [输入与表单]({{ '/ui-forms.html' | relative_url }}) | 6–8 | 文本输入、选择类控件、字段与校验 |
 | [焦点、键盘与滚动]({{ '/ui-focus-scroll.html' | relative_url }}) | 9–10 | Tab 与快捷键、ScrollArea、虚拟列表 |
 | [弹层与导航]({{ '/ui-overlays.html' | relative_url }}) | 11–12 | Popover、Dialog、菜单、Toast、Tabs、侧栏 |
-| [数据展示]({{ '/ui-data.html' | relative_url }}) | 13 | 卡片、表格、日历、图表、会话组件 |
+| [数据展示]({{ '/ui-data.html' | relative_url }}) | 13 | 卡片、表格、树、日历、图表、会话组件 |
 | [主题与样式]({{ '/ui-themes.html' | relative_url }}) | 14–15 | 主题预设与定制、局部样式和效果 |
-| [自绘元素]({{ '/ui-custom.html' | relative_url }}) | 16–18 | Element、Canvas、焦点、自定义弹层与容器 |
-| [桌面集成与异步]({{ '/ui-desktop.html' | relative_url }}) | 19–21 | 应用根、多窗口、原生菜单与窗框、后台任务 |
+| [自绘元素]({{ '/ui-custom.html' | relative_url }}) | 16–18 | Element、Canvas、焦点、SkSL 着色器、自定义弹层与容器 |
+| [桌面集成与异步]({{ '/ui-desktop.html' | relative_url }}) | 19–21 | 应用根、多窗口、原生菜单与窗框、全屏、后台任务 |
 | [测试 UI]({{ '/ui-testing.html' | relative_url }}) | 22 | 状态测试与窗口测试 |
 | [综合项目]({{ '/ui-project.html' | relative_url }}) | 23 | 从零写一个带表格、确认和撤销的数据应用 |
 | [触摸、手势与无障碍]({{ '/ui-interaction.html' | relative_url }}) | 24 | 轻扫翻页、捏合与旋转、键盘等价操作、读屏器与自绘控件 |
@@ -41,7 +41,7 @@ Scoop UI 由几个普通的库 Cone 组成，应用按需依赖：
 | `scoop.ui` | 声明式 UI 框架，提供组件、状态、挂载、布局协议、输入、焦点、弹层与滚动。组件可登记触摸手势，并为自绘元素提供无障碍语义。 |
 | `scoop.ui.style` | 公共样式与主题协议：颜色、边框、圆角、阴影等 Style，以及主题的 tokens 和部件绘制。 |
 | `scoop.ui.style.macos`、`.material`、`.fluent`、`.shadcn` | 四套主题预设，分别提供 `macosTheme`、`materialTheme`、`fluentTheme`、`shadcnTheme`。 |
-| `scoop.ui.component` | 基础控件库：Label、Button、Input、Checkbox、布局容器、滚动、列表、弹层、菜单、表格等。 |
+| `scoop.ui.component` | 基础控件库：Label、Button、Input、Checkbox、布局容器、滚动、列表、弹层、菜单、表格、树等。 |
 | `scoop.ui.component.tray` | 系统托盘组件，单独成库，不需要托盘的应用不必引入。 |
 | `scoop.window` | 原生窗口、触点与触控板手势事件，以及系统读屏器使用的无障碍接口。 |
 
