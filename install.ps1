@@ -41,7 +41,7 @@ function Install-ScoopToolchain {
     }
     $scoopUrl = $env:SCOOP_INSTALL_URL
     if (-not $scoopUrl) {
-        $scoopUrl = 'https://release.scoop-lang.org/installers/0.1.0/scoop-install-x86_64-pc-windows-gnullvm.exe'
+        $scoopUrl = 'https://release.scoop-lang.org/installers/0.2.0/scoop-install-x86_64-pc-windows-gnullvm.exe'
     }
     $scoopDownloadDir = Join-Path $scoopInstallRoot ('tmp\bootstrap.' + [IO.Path]::GetRandomFileName())
     New-Item -ItemType Directory -Force -Path $scoopDownloadDir | Out-Null
